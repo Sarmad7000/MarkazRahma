@@ -1,16 +1,101 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Clock, Heart, Book, Users, Phone, Mail, Twitter } from 'lucide-react';
+import { MapPin, Clock, Heart, Book, Users, Phone, Mail, Twitter, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { mosqueInfo, prayerTimes, donationInfo, aboutContent, facilities, weeklyPrograms } from '../data/mock';
+import { toast, Toaster } from 'sonner';
+import DonationProgress from '../components/DonationProgress';
+import DonationModal from '../components/DonationModal';
+import { getPrayerTimes, getDonationStatus, getDonationGoal } from '../services/api';
+import { mosqueInfo, donationInfo, aboutContent, facilities, weeklyPrograms } from '../data/mock';
 
 const Home = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [prayerTimes, setPrayerTimes] = useState(null);
+  const [donationGoal, setDonationGoal] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [donationModalOpen, setDonationModalOpen] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    fetchPrayerTimes();
+    fetchDonationGoal();
+    checkPaymentStatus();
+  }, []);
+
+  const fetchPrayerTimes = async () => {
+    try {
+      const data = await getPrayerTimes();
+      setPrayerTimes(data);
+    } catch (error) {
+      console.error('Failed to fetch prayer times:', error);
+      toast.error('Failed to load prayer times');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchDonationGoal = async () => {
+    try {
+      const data = await getDonationGoal();
+      setDonationGoal(data);
+    } catch (error) {
+      console.error('Failed to fetch donation goal:', error);
+    }
+  };
+
+  const checkPaymentStatus = async () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionId = urlParams.get('session_id');
+    const donationStatus = urlParams.get('donation');
+
+    if (donationStatus === 'cancelled') {
+      toast.error('Donation was cancelled');
+      window.history.replaceState({}, '', '/');
+      return;
+    }
+
+    if (sessionId) {
+      toast.info('Checking payment status...');
+      pollPaymentStatus(sessionId);
+    }
+  };
+
+  const pollPaymentStatus = async (sessionId, attempts = 0) => {
+    const maxAttempts = 5;
+    
+    if (attempts >= maxAttempts) {
+      toast.error('Payment verification timed out. Please contact us if you made a payment.');
+      window.history.replaceState({}, '', '/');
+      return;
+    }
+
+    try {
+      const status = await getDonationStatus(sessionId);
+      
+      if (status.payment_status === 'paid') {
+        toast.success('Payment successful! Thank you for your generous donation.');
+        window.history.replaceState({}, '', '/');
+        // Refresh donation goal
+        fetchDonationGoal();
+        return;
+      } else if (status.status === 'expired') {
+        toast.error('Payment session expired. Please try again.');
+        window.history.replaceState({}, '', '/');
+        return;
+      }
+
+      // Continue polling
+      setTimeout(() => pollPaymentStatus(sessionId, attempts + 1), 2000);
+    } catch (error) {
+      console.error('Error checking payment status:', error);
+      toast.error('Failed to verify payment status');
+      window.history.replaceState({}, '', '/');
+    }
+  };
 
   const formatTime = (time) => {
     return new Date(`2000-01-01T${time}`).toLocaleTimeString('en-GB', {
@@ -21,11 +106,23 @@ const Home = () => {
   };
 
   const handleDonate = () => {
-    alert('Payment integration will be implemented in the backend phase');
+    setDonationModalOpen(true);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-cyan-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading prayer times...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white">
+      <Toaster position="top-center" richColors />
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         <div className="container mx-auto px-4 py-4">
@@ -98,14 +195,25 @@ const Home = () => {
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold text-gray-900 mb-3">Prayer Times</h2>
-              <p className="text-gray-600">{prayerTimes.today}</p>
-              <p className="text-cyan-600 font-medium">{prayerTimes.hijriDate}</p>
+              {prayerTimes && (
+                <>
+                  <p className="text-gray-600">
+                    {new Date(prayerTimes.date).toLocaleDateString('en-GB', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </p>
+                  <p className="text-cyan-600 font-medium">{prayerTimes.hijri_date}</p>
+                </>
+              )}
             </div>
 
             <Card className="shadow-lg border-t-4 border-t-cyan-600">
               <CardContent className="p-6">
                 <div className="space-y-4">
-                  {prayerTimes.prayers.map((prayer, index) => (
+                  {prayerTimes?.prayers.map((prayer, index) => (
                     <div 
                       key={index} 
                       className="flex items-center justify-between p-4 rounded-lg bg-gray-50 hover:bg-cyan-50 transition-colors"
@@ -128,24 +236,26 @@ const Home = () => {
                   ))}
 
                   {/* Jummah */}
-                  <div className="mt-6 p-4 bg-cyan-600 text-white rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Clock className="h-5 w-5" />
-                        <span className="font-semibold text-lg">Jummah (Friday)</span>
-                      </div>
-                      <div className="flex gap-8">
-                        <div className="text-right">
-                          <div className="text-xs text-cyan-100 mb-1">Khutbah</div>
-                          <div className="font-mono text-lg font-semibold">{formatTime(prayerTimes.jummah.khutbah)}</div>
+                  {prayerTimes?.jummah && (
+                    <div className="mt-6 p-4 bg-cyan-600 text-white rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Clock className="h-5 w-5" />
+                          <span className="font-semibold text-lg">Jummah (Friday)</span>
                         </div>
-                        <div className="text-right">
-                          <div className="text-xs text-cyan-100 mb-1">Salah</div>
-                          <div className="font-mono text-lg font-semibold">{formatTime(prayerTimes.jummah.salah)}</div>
+                        <div className="flex gap-8">
+                          <div className="text-right">
+                            <div className="text-xs text-cyan-100 mb-1">Khutbah</div>
+                            <div className="font-mono text-lg font-semibold">{formatTime(prayerTimes.jummah.khutbah)}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-xs text-cyan-100 mb-1">Salah</div>
+                            <div className="font-mono text-lg font-semibold">{formatTime(prayerTimes.jummah.salah)}</div>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -163,6 +273,13 @@ const Home = () => {
               <p className="text-lg text-gray-600 max-w-2xl mx-auto">{donationInfo.message}</p>
             </div>
 
+            {/* Donation Progress Tracker */}
+            {donationGoal && (
+              <div className="mb-8">
+                <DonationProgress goal={donationGoal} />
+              </div>
+            )}
+
             <div className="grid md:grid-cols-2 gap-8">
               {/* Online Donation */}
               <Card className="shadow-lg hover:shadow-xl transition-shadow">
@@ -173,13 +290,11 @@ const Home = () => {
                 <CardContent className="p-6">
                   <div className="space-y-4">
                     <Button onClick={handleDonate} className="w-full bg-cyan-600 hover:bg-cyan-700 text-white py-6 text-lg">
-                      Donate via Stripe
-                    </Button>
-                    <Button onClick={handleDonate} variant="outline" className="w-full border-gray-300 py-6 text-lg">
-                      Donate via PayPal
+                      <Heart className="mr-2 h-5 w-5" />
+                      Donate Now
                     </Button>
                     <p className="text-xs text-gray-500 text-center mt-4">
-                      All donations are tax-deductible and will be used for mosque expansion and community services.
+                      All donations are used for mosque expansion and community services. May Allah reward you.
                     </p>
                   </div>
                 </CardContent>
@@ -392,6 +507,9 @@ const Home = () => {
           </div>
         </div>
       </footer>
+
+      {/* Donation Modal */}
+      <DonationModal open={donationModalOpen} onClose={() => setDonationModalOpen(false)} />
     </div>
   );
 };
