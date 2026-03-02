@@ -1,21 +1,24 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Request
+from fastapi import FastAPI, APIRouter, HTTPException, Request, Depends
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
-from datetime import datetime
-from typing import Optional
+from datetime import datetime, timedelta
+from typing import Optional, List
 
 from models import (
-    PrayerTimes, UpdateIqamahRequest, DonationRequest, DonationResponse,
-    PaymentTransaction, CheckoutStatusResponse, DonationGoal, DonationGoalResponse
+    PrayerTimes, UpdateIqamahRequest, UpdateJummahRequest,
+    DonationRequest, DonationResponse,
+    PaymentTransaction, CheckoutStatusResponse, DonationGoal, DonationGoalResponse,
+    UpdateDonationGoalRequest, AdminLoginRequest, AdminLoginResponse, DonationHistoryItem
 )
 from services.prayer_service import prayer_service
 from emergentintegrations.payments.stripe.checkout import (
     StripeCheckout, CheckoutSessionRequest, CheckoutSessionResponse, CheckoutStatusResponse as StripeCheckoutStatus
 )
+from auth import authenticate_admin, create_access_token, get_current_user
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -128,8 +131,8 @@ async def get_prayer_times_by_date(date: str):
         raise HTTPException(status_code=500, detail="Failed to fetch prayer times")
 
 @api_router.put("/prayers/iqamah")
-async def update_iqamah_time(request: UpdateIqamahRequest):
-    """Update iqamah time for a specific prayer (admin use)"""
+async def update_iqamah_time(request: UpdateIqamahRequest, current_user: dict = Depends(get_current_user)):
+    """Update iqamah time for a specific prayer (admin only)"""
     try:
         today = datetime.now().strftime("%Y-%m-%d")
         
@@ -162,7 +165,7 @@ async def update_iqamah_time(request: UpdateIqamahRequest):
             upsert=True
         )
         
-        logger.info(f"Updated {request.prayer_name} iqamah time to {request.iqamah_time}")
+        logger.info(f"Admin updated {request.prayer_name} iqamah time to {request.iqamah_time}")
         return {"message": "Iqamah time updated successfully", "prayer": request.prayer_name, "iqamah": request.iqamah_time}
         
     except HTTPException:
@@ -170,6 +173,38 @@ async def update_iqamah_time(request: UpdateIqamahRequest):
     except Exception as e:
         logger.error(f"Error updating iqamah time: {e}")
         raise HTTPException(status_code=500, detail="Failed to update iqamah time")
+
+@api_router.put("/prayers/jummah")
+async def update_jummah_times(request: UpdateJummahRequest, current_user: dict = Depends(get_current_user)):
+    """Update Jummah prayer times (admin only)"""
+    try:
+        today = datetime.now().strftime("%Y-%m-%d")
+        
+        # Get current prayer times
+        current_times = await db.prayer_times.find_one({"date": today})
+        
+        if not current_times:
+            # If no record exists, fetch from API first
+            api_data = prayer_service.fetch_prayer_times_from_api()
+            prayer_times = prayer_service.create_prayer_times_object(api_data)
+            current_times = prayer_times.dict()
+        
+        # Update Jummah times
+        current_times['jummah'] = {"khutbah": request.khutbah, "salah": request.salah}
+        current_times['updated_at'] = datetime.utcnow()
+        
+        await db.prayer_times.update_one(
+            {"date": today},
+            {"$set": current_times},
+            upsert=True
+        )
+        
+        logger.info(f"Admin updated Jummah times: Khutbah {request.khutbah}, Salah {request.salah}")
+        return {"message": "Jummah times updated successfully", "jummah": {"khutbah": request.khutbah, "salah": request.salah}}
+        
+    except Exception as e:
+        logger.error(f"Error updating Jummah times: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update Jummah times")
 
 # ============== DONATION ENDPOINTS ==============
 
@@ -380,6 +415,131 @@ async def get_donation_goal():
     except Exception as e:
         logger.error(f"Error fetching donation goal: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch donation goal")
+
+# ============== ADMIN ENDPOINTS ==============
+
+@api_router.post("/admin/login", response_model=AdminLoginResponse)
+async def admin_login(request: AdminLoginRequest):
+    """Admin login endpoint"""
+    try:
+        if not authenticate_admin(request.username, request.password):
+            raise HTTPException(
+                status_code=401,
+                detail="Incorrect username or password"
+            )
+        
+        # Create access token
+        access_token = create_access_token(data={"sub": request.username})
+        
+        logger.info(f"Admin user '{request.username}' logged in successfully")
+        
+        return AdminLoginResponse(
+            access_token=access_token,
+            username=request.username
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error during admin login: {e}")
+        raise HTTPException(status_code=500, detail="Login failed")
+
+@api_router.get("/admin/donations/history", response_model=List[DonationHistoryItem])
+async def get_donation_history(
+    limit: int = 50,
+    skip: int = 0,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get donation history (admin only)"""
+    try:
+        # Fetch transactions sorted by created_at descending
+        transactions = await db.payment_transactions.find(
+            {},
+            {
+                "id": 1,
+                "session_id": 1,
+                "amount": 1,
+                "currency": 1,
+                "payment_status": 1,
+                "status": 1,
+                "created_at": 1
+            }
+        ).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+        
+        return [DonationHistoryItem(**t) for t in transactions]
+        
+    except Exception as e:
+        logger.error(f"Error fetching donation history: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch donation history")
+
+@api_router.get("/admin/donations/stats")
+async def get_donation_stats(current_user: dict = Depends(get_current_user)):
+    """Get donation statistics (admin only)"""
+    try:
+        # Total donations count
+        total_count = await db.payment_transactions.count_documents({"payment_status": "paid"})
+        
+        # Total amount raised
+        pipeline = [
+            {"$match": {"payment_status": "paid"}},
+            {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+        ]
+        result = await db.payment_transactions.aggregate(pipeline).to_list(1)
+        total_amount = result[0]['total'] if result else 0
+        
+        # Recent donations (last 7 days)
+        seven_days_ago = datetime.utcnow() - timedelta(days=7)
+        recent_count = await db.payment_transactions.count_documents({
+            "payment_status": "paid",
+            "created_at": {"$gte": seven_days_ago}
+        })
+        
+        return {
+            "total_donations": total_count,
+            "total_amount": total_amount,
+            "recent_donations": recent_count,
+            "currency": "gbp"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error fetching donation stats: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch donation stats")
+
+@api_router.put("/admin/donations/goal")
+async def update_donation_goal(
+    request: UpdateDonationGoalRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Update donation goal settings (admin only)"""
+    try:
+        # Get active goal
+        goal = await db.donation_goals.find_one({"active": True})
+        
+        if not goal:
+            raise HTTPException(status_code=404, detail="No active donation goal found")
+        
+        # Prepare update data
+        update_data = {"updated_at": datetime.utcnow()}
+        if request.title:
+            update_data["title"] = request.title
+        if request.target_amount:
+            update_data["target_amount"] = request.target_amount
+        if request.description:
+            update_data["description"] = request.description
+        
+        # Update goal
+        await db.donation_goals.update_one(
+            {"_id": goal['_id']},
+            {"$set": update_data}
+        )
+        
+        logger.info(f"Admin updated donation goal")
+        return {"message": "Donation goal updated successfully", "updated_fields": list(update_data.keys())}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating donation goal: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update donation goal")
 
 # Include the router in the main app
 app.include_router(api_router)

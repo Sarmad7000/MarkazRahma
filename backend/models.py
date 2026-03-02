@@ -28,6 +28,10 @@ class UpdateIqamahRequest(BaseModel):
     prayer_name: str
     iqamah_time: str
 
+class UpdateJummahRequest(BaseModel):
+    khutbah: str
+    salah: str
+
 # Payment Models
 class DonationRequest(BaseModel):
     amount: Optional[float] = None
@@ -58,6 +62,15 @@ class CheckoutStatusResponse(BaseModel):
     currency: str
     metadata: Optional[Dict[str, str]] = None
 
+class DonationHistoryItem(BaseModel):
+    id: str
+    session_id: str
+    amount: float
+    currency: str
+    payment_status: str
+    status: str
+    created_at: datetime
+
 # Mosque Settings Models
 class DonationGoal(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -77,3 +90,18 @@ class DonationGoalResponse(BaseModel):
     currency: str
     description: str
     percentage: float
+
+class UpdateDonationGoalRequest(BaseModel):
+    title: Optional[str] = None
+    target_amount: Optional[float] = None
+    description: Optional[str] = None
+
+# Admin Models
+class AdminLoginRequest(BaseModel):
+    username: str
+    password: str
+
+class AdminLoginResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    username: str
