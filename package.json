@@ -1,0 +1,26 @@
+{
+  "name": "markaz-rahma-website",
+  "version": "1.0.0",
+  "description": "Mosque website for Markaz Al-Rahma, Colindale, London",
+  "main": "index.js",
+  "scripts": {
+    "install-all": "cd frontend && yarn install && cd ../backend && pip install -r requirements.txt",
+    "dev-frontend": "cd frontend && yarn start",
+    "dev-backend": "cd backend && uvicorn server:app --reload --host 0.0.0.0 --port 8001",
+    "build-frontend": "cd frontend && yarn build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "your-repo-url"
+  },
+  "keywords": [
+    "mosque",
+    "masjid",
+    "prayer-times",
+    "islamic",
+    "community"
+  ],
+  "author": "Markaz Al-Rahma",
+  "license": "UNLICENSED",
+  "private": true
+}
