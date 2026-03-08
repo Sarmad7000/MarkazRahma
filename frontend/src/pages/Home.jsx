@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Clock, Heart, Mail, Twitter, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { toast, Toaster } from 'sonner';
 import DonationProgress from '../components/DonationProgress';
 import DonationModal from '../components/DonationModal';
+import RamadanPopup from '../components/RamadanPopup';
 import { getPrayerTimes, getDonationStatus, getDonationGoal } from '../services/api';
 import { mosqueInfo, donationInfo, aboutContent } from '../data/mock';
 
@@ -14,6 +16,7 @@ const Home = () => {
   const [donationGoal, setDonationGoal] = useState(null);
   const [loading, setLoading] = useState(true);
   const [donationModalOpen, setDonationModalOpen] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -142,6 +145,9 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-white">
       <Toaster position="top-center" richColors />
+      
+      {/* Ramadan Fundraising Popup */}
+      <RamadanPopup onDonate={handleDonate} />
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         <div className="container mx-auto px-4 py-4">
