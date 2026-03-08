@@ -16,9 +16,6 @@ from models import (
     AddOfflineDonationRequest
 )
 from services.prayer_service import prayer_service
-from emergentintegrations.payments.stripe.checkout import (
-    StripeCheckout, CheckoutSessionRequest, CheckoutSessionResponse, CheckoutStatusResponse as StripeCheckoutStatus
-)
 from auth import authenticate_admin, create_access_token, get_current_user
 
 ROOT_DIR = Path(__file__).parent
@@ -208,154 +205,39 @@ async def update_jummah_times(request: UpdateJummahRequest, current_user: dict =
         raise HTTPException(status_code=500, detail="Failed to update Jummah times")
 
 # ============== DONATION ENDPOINTS ==============
+# Note: Stripe checkout replaced with Square external redirect
+# These endpoints kept for API compatibility but return not implemented
 
 @api_router.post("/donations/create-checkout", response_model=DonationResponse)
 async def create_donation_checkout(request: DonationRequest, http_request: Request):
-    """Create a Stripe checkout session for donation"""
-    try:
-        # Initialize Stripe checkout
-        host_url = str(http_request.base_url).rstrip('/')
-        webhook_url = f"{host_url}/api/webhook/stripe"
-        stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
-        
-        # Prepare checkout request
-        amount = request.amount if request.amount else 10.0  # Default £10
-        
-        checkout_request = CheckoutSessionRequest(
-            amount=float(amount),
-            currency=request.currency,
-            success_url=request.success_url,
-            cancel_url=request.cancel_url,
-            metadata=request.metadata or {"source": "web_donation"}
-        )
-        
-        # Create checkout session
-        session: CheckoutSessionResponse = await stripe_checkout.create_checkout_session(checkout_request)
-        
-        # Store transaction in database with PENDING status
-        transaction = PaymentTransaction(
-            session_id=session.session_id,
-            amount=amount,
-            currency=request.currency,
-            payment_status="pending",
-            status="initiated",
-            metadata=request.metadata
-        )
-        
-        await db.payment_transactions.insert_one(transaction.dict())
-        
-        logger.info(f"Created checkout session: {session.session_id} for amount {amount} {request.currency}")
-        
-        return DonationResponse(url=session.url, session_id=session.session_id)
-        
-    except Exception as e:
-        logger.error(f"Error creating checkout session: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to create checkout session: {str(e)}")
+    """
+    Legacy endpoint - Now using Square external checkout
+    Kept for API compatibility
+    """
+    raise HTTPException(
+        status_code=501, 
+        detail="Direct checkout deprecated. Please use Square external link."
+    )
 
 @api_router.get("/donations/status/{session_id}", response_model=CheckoutStatusResponse)
 async def get_donation_status(session_id: str, http_request: Request):
-    """Get the status of a donation checkout session"""
-    try:
-        # Check database first
-        transaction = await db.payment_transactions.find_one({"session_id": session_id})
-        
-        if not transaction:
-            raise HTTPException(status_code=404, detail="Transaction not found")
-        
-        # If already completed, return cached status
-        if transaction.get('payment_status') == 'paid' and transaction.get('status') == 'complete':
-            return CheckoutStatusResponse(
-                status=transaction['status'],
-                payment_status=transaction['payment_status'],
-                amount=transaction['amount'],
-                currency=transaction['currency'],
-                metadata=transaction.get('metadata')
-            )
-        
-        # Otherwise, check with Stripe for latest status
-        host_url = str(http_request.base_url).rstrip('/')
-        webhook_url = f"{host_url}/api/webhook/stripe"
-        stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
-        
-        stripe_status: StripeCheckoutStatus = await stripe_checkout.get_checkout_status(session_id)
-        
-        # Update database if payment is complete
-        if stripe_status.payment_status == 'paid' and transaction.get('payment_status') != 'paid':
-            # Only process once to avoid duplicate donation counting
-            await db.payment_transactions.update_one(
-                {"session_id": session_id, "payment_status": {"$ne": "paid"}},
-                {
-                    "$set": {
-                        "payment_status": "paid",
-                        "status": "complete",
-                        "updated_at": datetime.utcnow()
-                    }
-                }
-            )
-            
-            # Update donation goal progress
-            await update_donation_goal_progress(stripe_status.amount_total / 100, stripe_status.currency)
-            
-            logger.info(f"Payment completed for session {session_id}: {stripe_status.amount_total/100} {stripe_status.currency}")
-        
-        return CheckoutStatusResponse(
-            status=stripe_status.status,
-            payment_status=stripe_status.payment_status,
-            amount=stripe_status.amount_total / 100,  # Convert from cents to main currency
-            currency=stripe_status.currency,
-            metadata=stripe_status.metadata
-        )
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error checking donation status: {e}")
-        raise HTTPException(status_code=500, detail="Failed to check donation status")
+    """
+    Legacy endpoint - Now using Square external checkout
+    Kept for API compatibility
+    """
+    raise HTTPException(
+        status_code=501,
+        detail="Status check deprecated. Donations tracked manually via admin panel."
+    )
 
 @api_router.post("/webhook/stripe")
 async def stripe_webhook(request: Request):
-    """Handle Stripe webhook events"""
-    try:
-        webhook_body = await request.body()
-        signature = request.headers.get("Stripe-Signature")
-        
-        if not signature:
-            raise HTTPException(status_code=400, detail="Missing Stripe signature")
-        
-        # Initialize Stripe checkout for webhook handling
-        host_url = str(request.base_url).rstrip('/')
-        webhook_url = f"{host_url}/api/webhook/stripe"
-        stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
-        
-        # Handle webhook
-        webhook_response = await stripe_checkout.handle_webhook(webhook_body, signature)
-        
-        logger.info(f"Webhook received: {webhook_response.event_type} for session {webhook_response.session_id}")
-        
-        # Update transaction in database based on webhook event
-        if webhook_response.payment_status == 'paid':
-            result = await db.payment_transactions.update_one(
-                {"session_id": webhook_response.session_id, "payment_status": {"$ne": "paid"}},
-                {
-                    "$set": {
-                        "payment_status": "paid",
-                        "status": "complete",
-                        "updated_at": datetime.utcnow()
-                    }
-                }
-            )
-            
-            # If this is a new payment completion, update donation goal
-            if result.modified_count > 0:
-                transaction = await db.payment_transactions.find_one({"session_id": webhook_response.session_id})
-                if transaction:
-                    await update_donation_goal_progress(transaction['amount'], transaction['currency'])
-        
-        return {"status": "success"}
-        
-    except Exception as e:
-        logger.error(f"Webhook error: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
+    """
+    Legacy Stripe webhook endpoint
+    Not used with Square checkout
+    """
+    return {"status": "deprecated", "message": "Using Square checkout - webhook not applicable"}
+
 
 # ============== DONATION GOAL ENDPOINTS ==============
 
@@ -533,7 +415,7 @@ async def update_donation_goal(
             {"$set": update_data}
         )
         
-        logger.info(f"Admin updated donation goal")
+        logger.info("Admin updated donation goal")
         return {"message": "Donation goal updated successfully", "updated_fields": list(update_data.keys())}
         
     except HTTPException:
