@@ -6,15 +6,14 @@ export const mosqueInfo = {
   tagline: "The Centre of Mercy",
   description: "A small community mosque in Colindale, London, dedicated to serving the local Muslim community with prayer services, Islamic education, and community support.",
   location: {
-    address: "Colindale, London",
+    address: "15a Carlisle Road, London, NW9 0HD",
     coordinates: {
       lat: 51.590636,
       lng: -0.25
     }
   },
   contact: {
-    email: "info@markazrahma.org",
-    phone: "+44 20 1234 5678"
+    email: "info@markazrahma.org"
   },
   social: {
     twitter: "@MarkazRahma",
@@ -62,26 +61,11 @@ export const donationInfo = {
   title: "Support Our Expansion",
   message: "As a small community mosque, we are striving to expand our space to better serve our growing community. Your donations help us provide prayer facilities, Islamic education, and community services.",
   bankTransfer: {
-    bankName: "Example Bank",
-    accountName: "Markaz Al-Rahma",
-    sortCode: "12-34-56",
-    accountNumber: "12345678",
-    reference: "Donation"
-  },
-  stats: [
-    {
-      label: "Families Served",
-      value: "150+"
-    },
-    {
-      label: "Weekly Programs",
-      value: "5"
-    },
-    {
-      label: "Years Serving",
-      value: "10+"
-    }
-  ]
+    accountName: "Markaz Al Rahma",
+    sortCode: "20-92-63",
+    accountNumber: "53805387",
+    bankType: "Business"
+  }
 };
 
 export const aboutContent = {
@@ -106,39 +90,3 @@ export const aboutContent = {
     }
   ]
 };
-
-export const facilities = [
-  "Prayer hall (separate areas for men and women)",
-  "Wudu facilities",
-  "Quran classes for children",
-  "Islamic library",
-  "Community events and lectures"
-];
-
-export const weeklyPrograms = [
-  {
-    day: "Monday",
-    program: "Quran Memorization Circle",
-    time: "6:30 PM"
-  },
-  {
-    day: "Wednesday",
-    program: "Islamic Studies Class",
-    time: "7:00 PM"
-  },
-  {
-    day: "Friday",
-    program: "Jummah Prayer",
-    time: "1:00 PM"
-  },
-  {
-    day: "Saturday",
-    program: "Youth Program",
-    time: "4:00 PM"
-  },
-  {
-    day: "Sunday",
-    program: "Family Day",
-    time: "2:00 PM"
-  }
-];

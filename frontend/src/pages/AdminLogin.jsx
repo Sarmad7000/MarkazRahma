@@ -112,7 +112,7 @@ const AdminLogin = () => {
         </Card>
 
         <div className="mt-4 text-center text-sm text-gray-500">
-          <p>Default credentials: admin / markaz2026</p>
+          <p>Default credentials: MarkazRahma2026 / Bismillah20!</p>
         </div>
       </div>
     </div>

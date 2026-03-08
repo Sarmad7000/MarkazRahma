@@ -15,8 +15,8 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
 
 # Default admin credentials (should be changed in production)
-ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
-ADMIN_PASSWORD_HASH = pwd_context.hash(os.environ.get('ADMIN_PASSWORD', 'markaz2026'))
+ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'MarkazRahma2026')
+ADMIN_PASSWORD_HASH = pwd_context.hash(os.environ.get('ADMIN_PASSWORD', 'Bismillah20!'))
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against its hash"""

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Clock, Heart, Book, Users, Phone, Mail, Twitter, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { MapPin, Clock, Heart, Mail, Twitter, Loader2 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { toast, Toaster } from 'sonner';
 import DonationProgress from '../components/DonationProgress';
 import DonationModal from '../components/DonationModal';
 import { getPrayerTimes, getDonationStatus, getDonationGoal } from '../services/api';
-import { mosqueInfo, donationInfo, aboutContent, facilities, weeklyPrograms } from '../data/mock';
+import { mosqueInfo, donationInfo, aboutContent } from '../data/mock';
 
 const Home = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -175,16 +175,6 @@ const Home = () => {
                 Visit Us
               </Button>
             </div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-8 mt-16 max-w-2xl mx-auto">
-              {donationInfo.stats.map((stat, index) => (
-                <div key={index} className="text-center">
-                  <div className="text-3xl font-bold text-cyan-600 mb-2">{stat.value}</div>
-                  <div className="text-sm text-gray-600">{stat.label}</div>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </section>
@@ -309,10 +299,6 @@ const Home = () => {
                 <CardContent className="p-6">
                   <div className="space-y-4">
                     <div>
-                      <div className="text-sm text-gray-500 mb-1">Bank Name</div>
-                      <div className="font-semibold text-gray-900">{donationInfo.bankTransfer.bankName}</div>
-                    </div>
-                    <div>
                       <div className="text-sm text-gray-500 mb-1">Account Name</div>
                       <div className="font-semibold text-gray-900">{donationInfo.bankTransfer.accountName}</div>
                     </div>
@@ -327,8 +313,8 @@ const Home = () => {
                       </div>
                     </div>
                     <div>
-                      <div className="text-sm text-gray-500 mb-1">Reference</div>
-                      <div className="font-semibold text-gray-900">{donationInfo.bankTransfer.reference}</div>
+                      <div className="text-sm text-gray-500 mb-1">Bank Type</div>
+                      <div className="font-semibold text-gray-900">{donationInfo.bankTransfer.bankType}</div>
                     </div>
                   </div>
                 </CardContent>
@@ -349,7 +335,7 @@ const Home = () => {
             </div>
 
             {/* Values */}
-            <div className="grid md:grid-cols-2 gap-6 mb-12">
+            <div className="grid md:grid-cols-2 gap-6">
               {aboutContent.values.map((value, index) => (
                 <Card key={index} className="border-l-4 border-l-cyan-600 shadow-md hover:shadow-lg transition-shadow">
                   <CardHeader>
@@ -360,50 +346,6 @@ const Home = () => {
                   </CardContent>
                 </Card>
               ))}
-            </div>
-
-            {/* Facilities & Programs */}
-            <div className="grid md:grid-cols-2 gap-8">
-              <Card className="shadow-md">
-                <CardHeader className="bg-cyan-50">
-                  <CardTitle className="flex items-center gap-2 text-gray-900">
-                    <Book className="h-5 w-5 text-cyan-600" />
-                    Facilities
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <ul className="space-y-3">
-                    {facilities.map((facility, index) => (
-                      <li key={index} className="flex items-start gap-2">
-                        <div className="h-2 w-2 bg-cyan-600 rounded-full mt-2"></div>
-                        <span className="text-gray-700">{facility}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
-
-              <Card className="shadow-md">
-                <CardHeader className="bg-cyan-50">
-                  <CardTitle className="flex items-center gap-2 text-gray-900">
-                    <Users className="h-5 w-5 text-cyan-600" />
-                    Weekly Programs
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <div className="space-y-3">
-                    {weeklyPrograms.map((program, index) => (
-                      <div key={index} className="flex justify-between items-center">
-                        <div>
-                          <div className="font-semibold text-gray-900">{program.day}</div>
-                          <div className="text-sm text-gray-600">{program.program}</div>
-                        </div>
-                        <div className="font-mono text-sm text-cyan-600">{program.time}</div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
             </div>
           </div>
         </div>
@@ -446,15 +388,7 @@ const Home = () => {
               <p className="text-gray-600">Get in touch with our community</p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-6">
-              <Card className="text-center shadow-md hover:shadow-lg transition-shadow">
-                <CardContent className="p-6">
-                  <Phone className="h-10 w-10 text-cyan-600 mx-auto mb-4" />
-                  <h3 className="font-semibold text-gray-900 mb-2">Phone</h3>
-                  <p className="text-gray-600">{mosqueInfo.contact.phone}</p>
-                </CardContent>
-              </Card>
-
+            <div className="grid md:grid-cols-2 gap-6">
               <Card className="text-center shadow-md hover:shadow-lg transition-shadow">
                 <CardContent className="p-6">
                   <Mail className="h-10 w-10 text-cyan-600 mx-auto mb-4" />
@@ -487,11 +421,13 @@ const Home = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <div className="mb-6">
-              <img 
-                src="https://customer-assets.emergentagent.com/job_markaz-rahma-1/artifacts/s5521pmg_Untitled%20design.png" 
-                alt="Markaz Al-Rahma Logo" 
-                className="h-16 w-auto mx-auto mb-4 brightness-0 invert"
-              />
+              <div className="h-16 w-auto mx-auto mb-4 flex justify-center">
+                <img 
+                  src="https://customer-assets.emergentagent.com/job_markaz-rahma-1/artifacts/s5521pmg_Untitled%20design.png" 
+                  alt="Markaz Al-Rahma Logo" 
+                  className="h-16 w-auto logo-inverted"
+                />
+              </div>
               <h3 className="text-2xl font-bold mb-2">{mosqueInfo.name}</h3>
               <p className="text-gray-400">{mosqueInfo.tagline}</p>
             </div>
