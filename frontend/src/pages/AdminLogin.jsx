@@ -96,6 +96,17 @@ const AdminLogin = () => {
                   'Login'
                 )}
               </Button>
+              
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full text-cyan-600 hover:text-cyan-700 hover:bg-cyan-50"
+                onClick={() => {
+                  window.location.href = `mailto:info@markazrahma.org?subject=Password Reset Request for ${username}&body=Please reset my admin password for username: ${username}`;
+                }}
+              >
+                Forgot Password?
+              </Button>
             </form>
 
             <div className="mt-6 text-center">
@@ -109,10 +120,6 @@ const AdminLogin = () => {
             </div>
           </CardContent>
         </Card>
-
-        <div className="mt-4 text-center text-sm text-gray-500">
-          <p>Default credentials: MarkazRahma2026 / Bismillah20!</p>
-        </div>
       </div>
     </div>
   );

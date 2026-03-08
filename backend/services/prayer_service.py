@@ -9,9 +9,9 @@ logger = logging.getLogger(__name__)
 class PrayerTimesService:
     def __init__(self):
         self.base_url = "https://api.aladhan.com/v1"
-        # Colindale, London coordinates
-        self.latitude = 51.590636
-        self.longitude = -0.25
+        # 15a Carlisle Road, NW9 0HD, Colindale, London coordinates
+        self.latitude = 51.5956
+        self.longitude = -0.2656
         self.timezone = "Europe/London"
         self.method = 2  # ISNA method
         self.school = 0  # Shafi school

@@ -480,9 +480,15 @@ const Home = () => {
               <p className="text-gray-400 text-sm mb-2">
                 © {new Date().getFullYear()} {mosqueInfo.fullName}. All rights reserved.
               </p>
-              <p className="text-gray-500 text-xs">
+              <p className="text-gray-500 text-xs mb-4">
                 Following the Quran and authentic Sunnah
               </p>
+              <button
+                onClick={() => navigate('/admin/login')}
+                className="text-gray-600 hover:text-gray-400 text-xs transition-colors"
+              >
+                Admin
+              </button>
             </div>
           </div>
         </div>
