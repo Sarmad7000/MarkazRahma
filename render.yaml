@@ -1,0 +1,32 @@
+services:
+  # Backend API Service
+  - type: web
+    name: markaz-rahma-api
+    env: python
+    region: oregon
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: MONGO_URL
+        sync: false
+      - key: DB_NAME
+        value: markaz_rahma
+      - key: CORS_ORIGINS
+        value: https://markaz-rahma.vercel.app
+      - key: ADMIN_USERNAME
+        value: MarkazRahma2026
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: STRIPE_API_KEY
+        sync: false
+    healthCheckPath: /api/
+    
+databases:
+  # MongoDB Database
+  - name: markaz-rahma-db
+    databaseName: markaz_rahma
+    user: markaz_admin
