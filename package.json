@@ -2,12 +2,17 @@
   "name": "markaz-rahma-website",
   "version": "1.0.0",
   "description": "Mosque website for Markaz Al-Rahma, Colindale, London",
-  "main": "index.js",
+  "packageManager": "yarn@1.22.22",
+  "engines": {
+    "node": ">=18.x",
+    "yarn": "1.22.22"
+  },
   "scripts": {
     "install-all": "cd frontend && yarn install && cd ../backend && pip install -r requirements.txt",
     "dev-frontend": "cd frontend && yarn start",
     "dev-backend": "cd backend && uvicorn server:app --reload --host 0.0.0.0 --port 8001",
-    "build-frontend": "cd frontend && yarn build"
+    "build-frontend": "cd frontend && yarn build",
+    "vercel-build": "cd frontend && yarn install && yarn build"
   },
   "repository": {
     "type": "git",
