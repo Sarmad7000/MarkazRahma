@@ -9,7 +9,7 @@
       "src": "frontend/package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "frontend/build"
+        "distDir": "build"
       }
     }
   ],
@@ -19,19 +19,11 @@
       "dest": "api/index.py"
     },
     {
+      "handle": "filesystem"
+    },
+    {
       "src": "/(.*)",
-      "dest": "frontend/$1"
+      "dest": "/index.html"
     }
-  ],
-  "env": {
-    "MONGO_URL": "@mongo_url",
-    "DB_NAME": "@db_name",
-    "STRIPE_API_KEY": "@stripe_api_key",
-    "JWT_SECRET": "@jwt_secret"
-  },
-  "build": {
-    "env": {
-      "REACT_APP_BACKEND_URL": "https://your-project.vercel.app"
-    }
-  }
+  ]
 }
