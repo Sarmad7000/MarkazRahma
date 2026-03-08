@@ -12,13 +12,15 @@ const AdminLogin = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setError('');
     
     if (!username || !password) {
-      toast.error('Please enter username and password');
+      setError('Please enter username and password');
       return;
     }
 
@@ -28,7 +30,13 @@ const AdminLogin = () => {
       toast.success('Login successful');
       navigate('/admin/dashboard');
     } catch (error) {
-      toast.error('Login failed. Please check your credentials.');
+      console.error('Login error:', error);
+      if (error.response?.status === 401) {
+        setError('Incorrect username or password. Please try again.');
+      } else {
+        setError('Login failed. Please check your credentials and try again.');
+      }
+      toast.error('Login failed');
     } finally {
       setLoading(false);
     }
@@ -56,6 +64,12 @@ const AdminLogin = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
+              {error && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                  <p className="text-sm text-red-800 text-center">{error}</p>
+                </div>
+              )}
+              
               <div className="space-y-2">
                 <Label htmlFor="username">Username</Label>
                 <Input
