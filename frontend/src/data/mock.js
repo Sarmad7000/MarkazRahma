@@ -72,7 +72,7 @@ export const aboutContent = {
   vision: "To create a thriving Islamic community center that serves as a beacon of knowledge, compassion, and unity in Colindale.",
   values: [
     {
-      title: "Faith",
+      title: "Creed",
       description: "Adhering strictly to the Quran and authentic Sunnah"
     },
     {
