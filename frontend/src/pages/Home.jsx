@@ -128,7 +128,7 @@ const Home = () => {
   };
 
   const handleDonate = () => {
-    setDonationModalOpen(true);
+    window.open('https://checkout.square.site/merchant/MLSD6EY5CMY2P/checkout/HXF33WVBEFWIA65YBXUQST3B?src=sheet', '_blank');
   };
 
   if (loading) {
@@ -324,7 +324,10 @@ const Home = () => {
                 </CardHeader>
                 <CardContent className="p-6">
                   <div className="space-y-4">
-                    <Button onClick={handleDonate} className="w-full bg-cyan-600 hover:bg-cyan-700 text-white py-6 text-lg">
+                    <Button 
+                      onClick={() => window.open('https://checkout.square.site/merchant/MLSD6EY5CMY2P/checkout/HXF33WVBEFWIA65YBXUQST3B?src=sheet', '_blank')}
+                      className="w-full bg-cyan-600 hover:bg-cyan-700 text-white py-6 text-lg"
+                    >
                       <Heart className="mr-2 h-5 w-5" />
                       Donate Now
                     </Button>
