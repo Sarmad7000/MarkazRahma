@@ -38,10 +38,10 @@ const RamadanPopup = ({ onDonate }) => {
         {/* Close button */}
         <button
           onClick={handleClose}
-          className="absolute top-4 right-4 z-10 bg-white rounded-full p-2 shadow-lg hover:bg-gray-100 transition-colors"
+          className="absolute top-2 right-2 md:top-4 md:right-4 z-10 bg-white rounded-full p-3 md:p-2 shadow-lg hover:bg-gray-100 transition-colors touch-manipulation"
           aria-label="Close"
         >
-          <X className="h-5 w-5 text-gray-600" />
+          <X className="h-6 w-6 md:h-5 md:w-5 text-gray-600" />
         </button>
 
         {/* Image */}
@@ -54,11 +54,11 @@ const RamadanPopup = ({ onDonate }) => {
         </div>
 
         {/* Call to action */}
-        <div className="p-6 bg-gradient-to-br from-cyan-50 to-white">
-          <h3 className="text-2xl font-bold text-gray-900 mb-3 text-center">
+        <div className="p-4 md:p-6 bg-gradient-to-br from-cyan-50 to-white">
+          <h3 className="text-lg md:text-2xl font-bold text-gray-900 mb-2 md:mb-3 text-center">
             Our Last Ramadan in Colindale
           </h3>
-          <p className="text-gray-700 mb-6 text-center">
+          <p className="text-sm md:text-base text-gray-700 mb-4 md:mb-6 text-center">
             Help us reach our goal of £100,000 to relocate before Ramadan ends. 
             Every donation brings us closer to a permanent home for our community.
           </p>
@@ -66,13 +66,13 @@ const RamadanPopup = ({ onDonate }) => {
           <div className="flex flex-col gap-3">
             <Button 
               onClick={handleDonate}
-              className="w-full bg-cyan-600 hover:bg-cyan-700 text-white py-6 text-lg font-semibold"
+              className="w-full bg-cyan-600 hover:bg-cyan-700 text-white py-4 md:py-6 text-base md:text-lg font-semibold"
             >
               Donate Now
             </Button>
           </div>
 
-          <p className="text-xs text-gray-500 text-center mt-4">
+          <p className="text-xs md:text-xs text-gray-500 text-center mt-3 md:mt-4">
             "Whoever builds a mosque for Allah, Allah will build for him a house like it in Paradise."
             <br />
             <span className="text-gray-400">- Sahih Al-Bukhari 450, Sahih Muslim 533</span>
