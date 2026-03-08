@@ -51,6 +51,9 @@ const DonationProgress = ({ goal }) => {
             <p className="text-xs text-gray-500 text-center">
               Every donation brings us closer to serving our community better
             </p>
+            <p className="text-xs text-amber-600 text-center mt-2 font-medium">
+              ⓘ Total is updated manually and may not reflect real-time donations
+            </p>
           </div>
         </div>
       </CardContent>

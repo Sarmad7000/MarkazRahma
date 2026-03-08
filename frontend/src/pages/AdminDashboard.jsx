@@ -13,7 +13,9 @@ import {
   getDonationStats,
   updateIqamahTime,
   updateJummahTimes,
-  updateDonationGoal
+  updateDonationGoal,
+  addOfflineDonation,
+  getDonationSummary
 } from '../services/adminApi';
 import { getPrayerTimes, getDonationGoal } from '../services/api';
 import {
@@ -37,6 +39,8 @@ const AdminDashboard = () => {
   const [editingPrayer, setEditingPrayer] = useState({});
   const [editingJummah, setEditingJummah] = useState({khutbah: '', salah: ''});
   const [editingGoal, setEditingGoal] = useState({title: '', target_amount: '', description: ''});
+  const [offlineDonation, setOfflineDonation] = useState({amount: '', source: 'paypal', note: ''});
+  const [donationSummary, setDonationSummary] = useState(null);
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -49,17 +53,19 @@ const AdminDashboard = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [prayerData, donationData, statsData, goalData] = await Promise.all([
+      const [prayerData, donationData, statsData, goalData, summaryData] = await Promise.all([
         getPrayerTimes(),
         getDonationHistory(),
         getDonationStats(),
-        getDonationGoal()
+        getDonationGoal(),
+        getDonationSummary()
       ]);
 
       setPrayerTimes(prayerData);
       setDonations(donationData);
       setStats(statsData);
       setGoal(goalData);
+      setDonationSummary(summaryData);
 
       // Initialize editing states
       const initialEditing = {};
@@ -126,6 +132,27 @@ const AdminDashboard = () => {
       fetchData();
     } catch (error) {
       toast.error('Failed to update donation goal');
+    }
+  };
+
+  const handleAddOfflineDonation = async () => {
+    try {
+      if (!offlineDonation.amount || parseFloat(offlineDonation.amount) <= 0) {
+        toast.error('Please enter a valid amount');
+        return;
+      }
+
+      await addOfflineDonation(
+        offlineDonation.amount,
+        offlineDonation.source,
+        offlineDonation.note
+      );
+      
+      toast.success(`£${offlineDonation.amount} donation from ${offlineDonation.source} added successfully`);
+      setOfflineDonation({amount: '', source: 'paypal', note: ''});
+      fetchData();
+    } catch (error) {
+      toast.error('Failed to add offline donation');
     }
   };
 
@@ -228,6 +255,7 @@ const AdminDashboard = () => {
             <TabsList className="inline-flex">
               <TabsTrigger value="prayers" className="px-8">Prayer Times</TabsTrigger>
               <TabsTrigger value="donations" className="px-8">Donations</TabsTrigger>
+              <TabsTrigger value="offline" className="px-8">Add Donation</TabsTrigger>
               <TabsTrigger value="settings" className="px-8">Settings</TabsTrigger>
             </TabsList>
           </div>
@@ -302,14 +330,59 @@ const AdminDashboard = () => {
 
           {/* Donations Tab */}
           <TabsContent value="donations">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Heart className="h-5 w-5 text-cyan-600" />
-                  Donation History
-                </CardTitle>
-                <CardDescription>Recent donations received</CardDescription>
-              </CardHeader>
+            <div className="space-y-6">
+              {/* Donation Summary */}
+              {donationSummary && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5 text-cyan-600" />
+                      Donation Breakdown by Source
+                    </CardTitle>
+                    <CardDescription>How donations are coming in</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <div className="font-semibold text-gray-900">Website (Stripe)</div>
+                            <div className="text-sm text-gray-600">{donationSummary.stripe.count} donations</div>
+                          </div>
+                          <div className="text-2xl font-bold text-green-600">
+                            £{donationSummary.stripe.total.toFixed(2)}
+                          </div>
+                        </div>
+                      </div>
+
+                      {Object.entries(donationSummary.offline).map(([source, data]) => (
+                        data.count > 0 && (
+                          <div key={source} className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <div className="font-semibold text-gray-900 capitalize">{source.replace('_', ' ')}</div>
+                                <div className="text-sm text-gray-600">{data.count} donations</div>
+                              </div>
+                              <div className="text-2xl font-bold text-blue-600">
+                                £{data.total.toFixed(2)}
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Heart className="h-5 w-5 text-cyan-600" />
+                    Donation History
+                  </CardTitle>
+                  <CardDescription>All donations received</CardDescription>
+                </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
                   <table className="w-full">
@@ -317,8 +390,8 @@ const AdminDashboard = () => {
                       <tr className="border-b">
                         <th className="text-left p-3 text-sm font-semibold text-gray-700">Date</th>
                         <th className="text-left p-3 text-sm font-semibold text-gray-700">Amount</th>
+                        <th className="text-left p-3 text-sm font-semibold text-gray-700">Source</th>
                         <th className="text-left p-3 text-sm font-semibold text-gray-700">Status</th>
-                        <th className="text-left p-3 text-sm font-semibold text-gray-700">Session ID</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -343,6 +416,12 @@ const AdminDashboard = () => {
                             <td className="p-3 text-sm font-semibold">
                               £{donation.amount.toFixed(2)}
                             </td>
+                            <td className="p-3 text-sm">
+                              <span className="capitalize">
+                                {donation.metadata?.source === 'web_donation' ? 'Website' : 
+                                 donation.metadata?.source?.replace('_', ' ') || 'Website'}
+                              </span>
+                            </td>
                             <td className="p-3">
                               <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
                                 donation.payment_status === 'paid' 
@@ -352,14 +431,98 @@ const AdminDashboard = () => {
                                 {donation.payment_status}
                               </span>
                             </td>
-                            <td className="p-3 text-xs text-gray-500 font-mono">
-                              {donation.session_id.substring(0, 20)}...
-                            </td>
                           </tr>
                         ))
                       )}
                     </tbody>
                   </table>
+                </div>
+              </CardContent>
+            </Card>
+            </div>
+          </TabsContent>
+
+          {/* Add Offline Donation Tab */}
+          <TabsContent value="offline">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Heart className="h-5 w-5 text-cyan-600" />
+                  Add Offline Donation
+                </CardTitle>
+                <CardDescription>
+                  Manually add donations from PayPal, LaunchGood, bank transfers, or cash
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-sm text-blue-800">
+                    💡 Use this form to record donations received outside of the website (PayPal, LaunchGood, bank transfers, cash). 
+                    These will be added to your total fundraising progress.
+                  </p>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Donation Amount (£)</Label>
+                    <Input
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      value={offlineDonation.amount}
+                      onChange={(e) => setOfflineDonation({...offlineDonation, amount: e.target.value})}
+                      placeholder="25.00"
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Source</Label>
+                    <select
+                      value={offlineDonation.source}
+                      onChange={(e) => setOfflineDonation({...offlineDonation, source: e.target.value})}
+                      className="w-full p-2 border rounded-md"
+                    >
+                      <option value="paypal">PayPal</option>
+                      <option value="launchgood">LaunchGood</option>
+                      <option value="bank_transfer">Bank Transfer</option>
+                      <option value="cash">Cash</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <Label>Note (Optional)</Label>
+                  <Input
+                    value={offlineDonation.note}
+                    onChange={(e) => setOfflineDonation({...offlineDonation, note: e.target.value})}
+                    placeholder="e.g., Monthly LaunchGood total, Donor name, etc."
+                  />
+                </div>
+
+                <Button
+                  onClick={handleAddOfflineDonation}
+                  className="w-full bg-cyan-600 hover:bg-cyan-700"
+                  disabled={!offlineDonation.amount}
+                >
+                  Add £{offlineDonation.amount || '0'} Donation
+                </Button>
+
+                <div className="mt-8 p-4 bg-gray-50 rounded-lg">
+                  <h3 className="font-semibold text-gray-900 mb-3">Current Total Progress</h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Current:</span>
+                      <span className="font-semibold">£{goal?.current_amount?.toFixed(2) || '0.00'}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Target:</span>
+                      <span className="font-semibold">£{goal?.target_amount?.toFixed(2) || '0.00'}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Progress:</span>
+                      <span className="font-semibold text-cyan-600">{goal?.percentage?.toFixed(1) || 0}%</span>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>

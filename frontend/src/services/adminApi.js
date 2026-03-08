@@ -119,6 +119,45 @@ export const updateJummahTimes = async (khutbah, salah) => {
   }
 };
 
+export const addOfflineDonation = async (amount, source, note) => {
+  try {
+    const token = getAuthToken();
+    const response = await axios.post(
+      `${API}/admin/donations/add-offline`,
+      {
+        amount: parseFloat(amount),
+        source,
+        note,
+        date: new Date().toISOString()
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error adding offline donation:', error);
+    throw error;
+  }
+};
+
+export const getDonationSummary = async () => {
+  try {
+    const token = getAuthToken();
+    const response = await axios.get(`${API}/admin/donations/summary`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching donation summary:', error);
+    throw error;
+  }
+};
+
 export const updateDonationGoal = async (goalData) => {
   try {
     const token = getAuthToken();

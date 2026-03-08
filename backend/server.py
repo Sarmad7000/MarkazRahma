@@ -12,7 +12,8 @@ from models import (
     PrayerTimes, UpdateIqamahRequest, UpdateJummahRequest,
     DonationRequest, DonationResponse,
     PaymentTransaction, CheckoutStatusResponse, DonationGoal, DonationGoalResponse,
-    UpdateDonationGoalRequest, AdminLoginRequest, AdminLoginResponse, DonationHistoryItem
+    UpdateDonationGoalRequest, AdminLoginRequest, AdminLoginResponse, DonationHistoryItem,
+    AddOfflineDonationRequest
 )
 from services.prayer_service import prayer_service
 from emergentintegrations.payments.stripe.checkout import (
@@ -540,6 +541,96 @@ async def update_donation_goal(
     except Exception as e:
         logger.error(f"Error updating donation goal: {e}")
         raise HTTPException(status_code=500, detail="Failed to update donation goal")
+
+@api_router.post("/admin/donations/add-offline")
+async def add_offline_donation(
+    request: AddOfflineDonationRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Add offline donation from PayPal, LaunchGood, bank transfer, or cash (admin only)"""
+    try:
+        # Create a transaction record for the offline donation
+        transaction = PaymentTransaction(
+            session_id=f"offline_{request.source}_{datetime.utcnow().timestamp()}",
+            amount=request.amount,
+            currency="gbp",
+            payment_status="paid",
+            status="complete",
+            metadata={
+                "source": request.source,
+                "note": request.note or "",
+                "date": request.date or datetime.utcnow().isoformat(),
+                "added_by": "admin"
+            }
+        )
+        
+        await db.payment_transactions.insert_one(transaction.dict())
+        
+        # Update donation goal progress
+        await update_donation_goal_progress(request.amount, "gbp")
+        
+        logger.info(f"Admin added offline donation: £{request.amount} from {request.source}")
+        return {
+            "message": "Offline donation added successfully",
+            "amount": request.amount,
+            "source": request.source
+        }
+        
+    except Exception as e:
+        logger.error(f"Error adding offline donation: {e}")
+        raise HTTPException(status_code=500, detail="Failed to add offline donation")
+
+@api_router.get("/admin/donations/summary")
+async def get_donation_summary(current_user: dict = Depends(get_current_user)):
+    """Get breakdown of donations by source (admin only)"""
+    try:
+        # Stripe donations (from website)
+        stripe_donations = await db.payment_transactions.count_documents({
+            "payment_status": "paid",
+            "metadata.source": {"$ne": "offline"}
+        })
+        
+        stripe_pipeline = [
+            {"$match": {"payment_status": "paid", "metadata.source": {"$ne": "offline"}}},
+            {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+        ]
+        stripe_result = await db.payment_transactions.aggregate(stripe_pipeline).to_list(1)
+        stripe_total = stripe_result[0]['total'] if stripe_result else 0
+        
+        # Offline donations by source
+        offline_sources = ["paypal", "launchgood", "bank_transfer", "cash"]
+        offline_breakdown = {}
+        
+        for source in offline_sources:
+            count = await db.payment_transactions.count_documents({
+                "payment_status": "paid",
+                "metadata.source": source
+            })
+            
+            pipeline = [
+                {"$match": {"payment_status": "paid", "metadata.source": source}},
+                {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+            ]
+            result = await db.payment_transactions.aggregate(pipeline).to_list(1)
+            total = result[0]['total'] if result else 0
+            
+            offline_breakdown[source] = {
+                "count": count,
+                "total": total
+            }
+        
+        return {
+            "stripe": {
+                "count": stripe_donations,
+                "total": stripe_total
+            },
+            "offline": offline_breakdown,
+            "currency": "gbp"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error fetching donation summary: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch donation summary")
 
 # Include the router in the main app
 app.include_router(api_router)
