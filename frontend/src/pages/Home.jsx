@@ -105,6 +105,25 @@ const Home = () => {
     });
   };
 
+  const getNextPrayer = () => {
+    if (!prayerTimes) return null;
+    
+    const now = new Date();
+    const currentTime = now.getHours() * 60 + now.getMinutes();
+    
+    for (const prayer of prayerTimes.prayers) {
+      const [hours, minutes] = prayer.iqamah.split(':').map(Number);
+      const prayerTime = hours * 60 + minutes;
+      
+      if (prayerTime > currentTime) {
+        return prayer.name;
+      }
+    }
+    
+    // If no prayer found today, next is Fajr tomorrow
+    return prayerTimes.prayers[0]?.name;
+  };
+
   const handleDonate = () => {
     setDonationModalOpen(true);
   };
@@ -135,14 +154,15 @@ const Home = () => {
               />
               <div>
                 <h1 className="text-xl font-bold text-gray-900">{mosqueInfo.name}</h1>
-                <p className="text-sm text-cyan-600">{mosqueInfo.tagline}</p>
               </div>
             </div>
-            <nav className="hidden md:flex items-center gap-6">
-              <a href="#prayer-times" className="text-gray-700 hover:text-cyan-600 transition-colors">Prayer Times</a>
-              <a href="#donate" className="text-gray-700 hover:text-cyan-600 transition-colors">Donate</a>
-              <a href="#about" className="text-gray-700 hover:text-cyan-600 transition-colors">About</a>
-              <a href="#contact" className="text-gray-700 hover:text-cyan-600 transition-colors">Contact</a>
+            <nav className="hidden md:flex items-center justify-center flex-1">
+              <div className="flex items-center gap-6">
+                <a href="#prayer-times" className="text-gray-700 hover:text-cyan-600 transition-colors">Prayer Times</a>
+                <a href="#donate" className="text-gray-700 hover:text-cyan-600 transition-colors">Donate</a>
+                <a href="#about" className="text-gray-700 hover:text-cyan-600 transition-colors">About</a>
+                <a href="#contact" className="text-gray-700 hover:text-cyan-600 transition-colors">Contact</a>
+              </div>
             </nav>
             <Button onClick={handleDonate} className="bg-cyan-600 hover:bg-cyan-700 text-white hidden md:flex items-center gap-2">
               <Heart className="h-4 w-4" />
@@ -208,27 +228,47 @@ const Home = () => {
             <Card className="shadow-lg border-t-4 border-t-cyan-600">
               <CardContent className="p-6">
                 <div className="space-y-4">
-                  {prayerTimes?.prayers.map((prayer, index) => (
-                    <div 
-                      key={index} 
-                      className="flex items-center justify-between p-4 rounded-lg bg-gray-50 hover:bg-cyan-50 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Clock className="h-5 w-5 text-cyan-600" />
-                        <span className="font-semibold text-gray-900 text-lg">{prayer.name}</span>
-                      </div>
-                      <div className="flex gap-8">
-                        <div className="text-right">
-                          <div className="text-xs text-gray-500 mb-1">Adhan</div>
-                          <div className="font-mono text-lg font-semibold text-gray-900">{formatTime(prayer.adhan)}</div>
+                  {prayerTimes?.prayers.map((prayer, index) => {
+                    const isNext = prayer.name === getNextPrayer();
+                    return (
+                      <div 
+                        key={index} 
+                        className={`flex items-center justify-between p-4 rounded-lg transition-all ${
+                          isNext 
+                            ? 'bg-cyan-50 border-2 border-cyan-500 shadow-md' 
+                            : 'bg-gray-50 hover:bg-cyan-50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Clock className={`h-5 w-5 ${isNext ? 'text-cyan-700' : 'text-cyan-600'}`} />
+                          <div>
+                            <span className={`font-semibold text-lg ${isNext ? 'text-cyan-700' : 'text-gray-900'}`}>
+                              {prayer.name}
+                            </span>
+                            {isNext && (
+                              <span className="ml-2 text-xs bg-cyan-600 text-white px-2 py-1 rounded-full">
+                                Next
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <div className="text-xs text-gray-500 mb-1">Iqamah</div>
-                          <div className="font-mono text-lg font-semibold text-cyan-600">{formatTime(prayer.iqamah)}</div>
+                        <div className="flex gap-8">
+                          <div className="text-right">
+                            <div className="text-xs text-gray-500 mb-1">Adhan</div>
+                            <div className={`font-mono text-lg font-semibold ${isNext ? 'text-cyan-700' : 'text-gray-900'}`}>
+                              {formatTime(prayer.adhan)}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-xs text-gray-500 mb-1">Iqamah</div>
+                            <div className={`font-mono text-lg font-semibold ${isNext ? 'text-cyan-700' : 'text-cyan-600'}`}>
+                              {formatTime(prayer.iqamah)}
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
 
                   {/* Jummah */}
                   {prayerTimes?.jummah && (
@@ -434,7 +474,6 @@ const Home = () => {
                 />
               </div>
               <h3 className="text-2xl font-bold mb-2">{mosqueInfo.name}</h3>
-              <p className="text-gray-400">{mosqueInfo.tagline}</p>
             </div>
             
             <div className="border-t border-gray-800 pt-6">

@@ -3,7 +3,6 @@
 export const mosqueInfo = {
   name: "Markaz Al-Rahma",
   fullName: "Al-Rahma Centre",
-  tagline: "The Centre of Mercy",
   description: "A small community mosque in Colindale, London, dedicated to serving the local Muslim community with prayer services, Islamic education, and community support.",
   location: {
     address: "15a Carlisle Road, London, NW9 0HD",
