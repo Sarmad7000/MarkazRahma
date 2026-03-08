@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
@@ -35,15 +35,7 @@ const AdminDashboard = () => {
   const [offlineDonation, setOfflineDonation] = useState({amount: '', source: 'bank_transfer', note: ''});
   const [donationSummary, setDonationSummary] = useState(null);
 
-  useEffect(() => {
-    if (!isAuthenticated()) {
-      navigate('/admin/login');
-      return;
-    }
-    fetchData();
-  }, [navigate]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       const [prayerData, donationData, statsData, goalData, summaryData] = await Promise.all([
@@ -82,7 +74,15 @@ const AdminDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate]);
+
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      navigate('/admin/login');
+      return;
+    }
+    fetchData();
+  }, [navigate, fetchData]);
 
   const handleLogout = () => {
     logout();
