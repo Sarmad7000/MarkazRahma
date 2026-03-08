@@ -284,15 +284,9 @@ const Home = () => {
                           <Clock className="h-5 w-5" />
                           <span className="font-semibold text-lg">Jummah (Friday)</span>
                         </div>
-                        <div className="flex gap-8">
-                          <div className="text-right">
-                            <div className="text-xs text-cyan-100 mb-1">Khutbah</div>
-                            <div className="font-mono text-lg font-semibold">{formatTime(prayerTimes.jummah.khutbah)}</div>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-xs text-cyan-100 mb-1">Salah</div>
-                            <div className="font-mono text-lg font-semibold">{formatTime(prayerTimes.jummah.salah)}</div>
-                          </div>
+                        <div className="text-right">
+                          <div className="text-xs text-cyan-100 mb-1">Time</div>
+                          <div className="font-mono text-lg font-semibold">{formatTime(prayerTimes.jummah.time)}</div>
                         </div>
                       </div>
                     </div>

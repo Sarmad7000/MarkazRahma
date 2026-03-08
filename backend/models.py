@@ -10,8 +10,7 @@ class Prayer(BaseModel):
     iqamah: str
 
 class JummahTime(BaseModel):
-    khutbah: str
-    salah: str
+    time: str
 
 class PrayerTimes(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -29,8 +28,7 @@ class UpdateIqamahRequest(BaseModel):
     iqamah_time: str
 
 class UpdateJummahRequest(BaseModel):
-    khutbah: str
-    salah: str
+    time: str
 
 # Payment Models
 class DonationRequest(BaseModel):

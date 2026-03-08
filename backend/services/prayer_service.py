@@ -141,7 +141,7 @@ class PrayerTimesService:
             date=date_str,
             hijri_date=hijri_date,
             prayers=prayers,
-            jummah=JummahTime(khutbah="13:00", salah="13:30"),  # Default Jummah times
+            jummah=JummahTime(time="13:00"),  # Default Jummah time
             sunrise=self.format_time(timings.get('Sunrise', 'N/A')),
             sunset=self.format_time(timings.get('Sunset', 'N/A'))
         )

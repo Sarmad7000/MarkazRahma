@@ -177,7 +177,7 @@ async def update_iqamah_time(request: UpdateIqamahRequest, current_user: dict = 
 
 @api_router.put("/prayers/jummah")
 async def update_jummah_times(request: UpdateJummahRequest, current_user: dict = Depends(get_current_user)):
-    """Update Jummah prayer times (admin only)"""
+    """Update Jummah prayer time (admin only)"""
     try:
         today = datetime.now().strftime("%Y-%m-%d")
         
@@ -190,8 +190,8 @@ async def update_jummah_times(request: UpdateJummahRequest, current_user: dict =
             prayer_times = prayer_service.create_prayer_times_object(api_data)
             current_times = prayer_times.dict()
         
-        # Update Jummah times
-        current_times['jummah'] = {"khutbah": request.khutbah, "salah": request.salah}
+        # Update Jummah time
+        current_times['jummah'] = {"time": request.time}
         current_times['updated_at'] = datetime.utcnow()
         
         await db.prayer_times.update_one(
@@ -200,8 +200,8 @@ async def update_jummah_times(request: UpdateJummahRequest, current_user: dict =
             upsert=True
         )
         
-        logger.info(f"Admin updated Jummah times: Khutbah {request.khutbah}, Salah {request.salah}")
-        return {"message": "Jummah times updated successfully", "jummah": {"khutbah": request.khutbah, "salah": request.salah}}
+        logger.info(f"Admin updated Jummah time to {request.time}")
+        return {"message": "Jummah time updated successfully", "jummah": {"time": request.time}}
         
     except Exception as e:
         logger.error(f"Error updating Jummah times: {e}")

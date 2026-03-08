@@ -97,14 +97,13 @@ export const updateIqamahTime = async (prayerName, iqamahTime) => {
   }
 };
 
-export const updateJummahTimes = async (khutbah, salah) => {
+export const updateJummahTimes = async (time) => {
   try {
     const token = getAuthToken();
     const response = await axios.put(
       `${API}/prayers/jummah`,
       {
-        khutbah,
-        salah
+        time
       },
       {
         headers: {
@@ -114,7 +113,7 @@ export const updateJummahTimes = async (khutbah, salah) => {
     );
     return response.data;
   } catch (error) {
-    console.error('Error updating Jummah times:', error);
+    console.error('Error updating Jummah time:', error);
     throw error;
   }
 };

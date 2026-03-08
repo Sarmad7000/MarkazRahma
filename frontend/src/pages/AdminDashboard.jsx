@@ -37,7 +37,7 @@ const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
   const [goal, setGoal] = useState(null);
   const [editingPrayer, setEditingPrayer] = useState({});
-  const [editingJummah, setEditingJummah] = useState({khutbah: '', salah: ''});
+  const [editingJummah, setEditingJummah] = useState('');
   const [editingGoal, setEditingGoal] = useState({title: '', target_amount: '', description: ''});
   const [offlineDonation, setOfflineDonation] = useState({amount: '', source: 'paypal', note: ''});
   const [donationSummary, setDonationSummary] = useState(null);
@@ -73,10 +73,7 @@ const AdminDashboard = () => {
         initialEditing[p.name] = p.iqamah;
       });
       setEditingPrayer(initialEditing);
-      setEditingJummah({
-        khutbah: prayerData.jummah.khutbah,
-        salah: prayerData.jummah.salah
-      });
+      setEditingJummah(prayerData.jummah.time);
       setEditingGoal({
         title: goalData.title,
         target_amount: goalData.target_amount,
@@ -113,11 +110,11 @@ const AdminDashboard = () => {
 
   const handleUpdateJummah = async () => {
     try {
-      await updateJummahTimes(editingJummah.khutbah, editingJummah.salah);
-      toast.success('Jummah times updated successfully');
+      await updateJummahTimes(editingJummah);
+      toast.success('Jummah time updated successfully');
       fetchData();
     } catch (error) {
-      toast.error('Failed to update Jummah times');
+      toast.error('Failed to update Jummah time');
     }
   };
 
@@ -296,33 +293,25 @@ const AdminDashboard = () => {
                   </div>
                 ))}
 
-                {/* Jummah Times */}
+                {/* Jummah Time */}
                 <div className="mt-6 p-4 bg-cyan-50 rounded-lg border border-cyan-200">
-                  <div className="font-semibold text-gray-900 mb-4">Jummah (Friday) Times</div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Khutbah Time</Label>
+                  <div className="font-semibold text-gray-900 mb-4">Jummah (Friday) Time</div>
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1">
+                      <Label>Jummah Time</Label>
                       <Input
                         type="time"
-                        value={editingJummah.khutbah}
-                        onChange={(e) => setEditingJummah({...editingJummah, khutbah: e.target.value})}
+                        value={editingJummah}
+                        onChange={(e) => setEditingJummah(e.target.value)}
                       />
                     </div>
-                    <div>
-                      <Label>Salah Time</Label>
-                      <Input
-                        type="time"
-                        value={editingJummah.salah}
-                        onChange={(e) => setEditingJummah({...editingJummah, salah: e.target.value})}
-                      />
-                    </div>
+                    <Button
+                      onClick={handleUpdateJummah}
+                      className="mt-6 bg-cyan-600 hover:bg-cyan-700"
+                    >
+                      Update Jummah
+                    </Button>
                   </div>
-                  <Button
-                    onClick={handleUpdateJummah}
-                    className="mt-4 bg-cyan-600 hover:bg-cyan-700"
-                  >
-                    Update Jummah Times
-                  </Button>
                 </div>
               </CardContent>
             </Card>
