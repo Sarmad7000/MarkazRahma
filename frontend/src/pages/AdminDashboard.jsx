@@ -225,11 +225,11 @@ const AdminDashboard = () => {
 
         {/* Tabs */}
         <Tabs defaultValue="prayers" className="space-y-6">
-          <div className="flex justify-center">
-            <TabsList className="grid grid-cols-3 w-full max-w-md">
-              <TabsTrigger value="prayers">Prayer Times</TabsTrigger>
-              <TabsTrigger value="donations">Donations</TabsTrigger>
-              <TabsTrigger value="settings">Settings</TabsTrigger>
+          <div className="flex justify-center w-full">
+            <TabsList className="inline-flex">
+              <TabsTrigger value="prayers" className="px-8">Prayer Times</TabsTrigger>
+              <TabsTrigger value="donations" className="px-8">Donations</TabsTrigger>
+              <TabsTrigger value="settings" className="px-8">Settings</TabsTrigger>
             </TabsList>
           </div>
 

@@ -170,7 +170,12 @@ const Home = () => {
                 <Heart className="h-5 w-5 mr-2" />
                 Support Our Expansion
               </Button>
-              <Button size="lg" variant="outline" className="border-cyan-600 text-cyan-600 hover:bg-cyan-50">
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="border-cyan-600 text-cyan-600 hover:bg-cyan-50"
+                onClick={() => document.querySelector('#location')?.scrollIntoView({ behavior: 'smooth' })}
+              >
                 <MapPin className="h-5 w-5 mr-2" />
                 Visit Us
               </Button>
@@ -339,10 +344,10 @@ const Home = () => {
               {aboutContent.values.map((value, index) => (
                 <Card key={index} className="border-l-4 border-l-cyan-600 shadow-md hover:shadow-lg transition-shadow">
                   <CardHeader>
-                    <CardTitle className="text-cyan-600">{value.title}</CardTitle>
+                    <CardTitle className="text-cyan-600 text-center">{value.title}</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-gray-600">{value.description}</p>
+                    <p className="text-gray-600 text-center">{value.description}</p>
                   </CardContent>
                 </Card>
               ))}
@@ -364,7 +369,7 @@ const Home = () => {
             <Card className="shadow-lg overflow-hidden">
               <div className="h-96 w-full">
                 <iframe
-                  src={`https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2479.5!2d${mosqueInfo.location.coordinates.lng}!3d${mosqueInfo.location.coordinates.lat}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNTHCsDM1JzI2LjMiTiAwwrAxNScwMC4wIlc!5e0!3m2!1sen!2suk!4v1234567890!5m2!1sen!2suk`}
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2476.8!2d-0.2507!3d51.5906!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x487618c3a1e7e9e3%3A0x1234567890!2s15a%20Carlisle%20Rd%2C%20London%20NW9%200HD!5e0!3m2!1sen!2suk!4v1234567890!5m2!1sen!2suk"
                   width="100%"
                   height="100%"
                   style={{ border: 0 }}
@@ -421,11 +426,11 @@ const Home = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <div className="mb-6">
-              <div className="h-16 w-auto mx-auto mb-4 flex justify-center">
+              <div className="h-16 w-auto mx-auto mb-4 flex justify-center items-center bg-white rounded-lg p-2" style={{ width: 'fit-content' }}>
                 <img 
                   src="https://customer-assets.emergentagent.com/job_markaz-rahma-1/artifacts/s5521pmg_Untitled%20design.png" 
                   alt="Markaz Al-Rahma Logo" 
-                  className="h-16 w-auto logo-inverted"
+                  className="h-14 w-auto"
                 />
               </div>
               <h3 className="text-2xl font-bold mb-2">{mosqueInfo.name}</h3>
