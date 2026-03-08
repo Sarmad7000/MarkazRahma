@@ -96,17 +96,6 @@ const AdminLogin = () => {
                   'Login'
                 )}
               </Button>
-              
-              <Button
-                type="button"
-                variant="ghost"
-                className="w-full text-cyan-600 hover:text-cyan-700 hover:bg-cyan-50"
-                onClick={() => {
-                  window.location.href = `mailto:sarmadsimab@gmail.com?subject=Password Reset Request for ${username}&body=Please reset my admin password for username: ${username}`;
-                }}
-              >
-                Forgot Password?
-              </Button>
             </form>
 
             <div className="mt-6 text-center">
