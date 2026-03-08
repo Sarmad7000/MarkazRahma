@@ -6,28 +6,20 @@ const RamadanPopup = ({ onDonate }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    // Check if user has dismissed the popup in this session
-    const dismissed = sessionStorage.getItem('ramadan_popup_dismissed');
+    // Show popup after 1 second delay on every page load
+    const timer = setTimeout(() => {
+      setIsOpen(true);
+    }, 1000);
     
-    if (!dismissed) {
-      // Show popup after 1 second delay
-      const timer = setTimeout(() => {
-        setIsOpen(true);
-      }, 1000);
-      
-      return () => clearTimeout(timer);
-    }
+    return () => clearTimeout(timer);
   }, []);
 
   const handleClose = () => {
     setIsOpen(false);
-    // Remember dismissal for this session only
-    sessionStorage.setItem('ramadan_popup_dismissed', 'true');
   };
 
   const handleDonate = () => {
     setIsOpen(false);
-    sessionStorage.setItem('ramadan_popup_dismissed', 'true');
     onDonate();
   };
 
@@ -71,19 +63,12 @@ const RamadanPopup = ({ onDonate }) => {
             Every donation brings us closer to a permanent home for our community.
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col gap-3">
             <Button 
               onClick={handleDonate}
-              className="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white py-6 text-lg font-semibold"
+              className="w-full bg-cyan-600 hover:bg-cyan-700 text-white py-6 text-lg font-semibold"
             >
               Donate Now
-            </Button>
-            <Button 
-              onClick={handleClose}
-              variant="outline"
-              className="flex-1 border-gray-300 py-6 text-lg"
-            >
-              Maybe Later
             </Button>
           </div>
 
