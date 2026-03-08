@@ -96,7 +96,7 @@ class UpdateDonationGoalRequest(BaseModel):
 
 class AddOfflineDonationRequest(BaseModel):
     amount: float
-    source: str  # paypal, launchgood, bank_transfer, cash
+    source: str  # bank_transfer, cash
     note: Optional[str] = None
     date: Optional[str] = None
 

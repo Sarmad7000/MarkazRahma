@@ -39,7 +39,7 @@ const AdminDashboard = () => {
   const [editingPrayer, setEditingPrayer] = useState({});
   const [editingJummah, setEditingJummah] = useState('');
   const [editingGoal, setEditingGoal] = useState({title: '', target_amount: '', description: ''});
-  const [offlineDonation, setOfflineDonation] = useState({amount: '', source: 'paypal', note: ''});
+  const [offlineDonation, setOfflineDonation] = useState({amount: '', source: 'bank_transfer', note: ''});
   const [donationSummary, setDonationSummary] = useState(null);
 
   useEffect(() => {
@@ -335,7 +335,7 @@ const AdminDashboard = () => {
                       <div className="p-4 bg-green-50 rounded-lg border border-green-200">
                         <div className="flex justify-between items-center">
                           <div>
-                            <div className="font-semibold text-gray-900">Website (Stripe)</div>
+                            <div className="font-semibold text-gray-900">Online (Square/Website)</div>
                             <div className="text-sm text-gray-600">{donationSummary.stripe.count} donations</div>
                           </div>
                           <div className="text-2xl font-bold text-green-600">
@@ -344,12 +344,17 @@ const AdminDashboard = () => {
                         </div>
                       </div>
 
-                      {Object.entries(donationSummary.offline).map(([source, data]) => (
-                        data.count > 0 && (
+                      {['bank_transfer', 'cash'].map((source) => {
+                        const data = donationSummary.offline[source];
+                        if (!data || data.count === 0) return null;
+                        
+                        return (
                           <div key={source} className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                             <div className="flex justify-between items-center">
                               <div>
-                                <div className="font-semibold text-gray-900 capitalize">{source.replace('_', ' ')}</div>
+                                <div className="font-semibold text-gray-900 capitalize">
+                                  {source.replace('_', ' ')}
+                                </div>
                                 <div className="text-sm text-gray-600">{data.count} donations</div>
                               </div>
                               <div className="text-2xl font-bold text-blue-600">
@@ -357,8 +362,8 @@ const AdminDashboard = () => {
                               </div>
                             </div>
                           </div>
-                        )
-                      ))}
+                        );
+                      })}
                     </div>
                   </CardContent>
                 </Card>
@@ -446,7 +451,7 @@ const AdminDashboard = () => {
               <CardContent className="space-y-6">
                 <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                   <p className="text-sm text-blue-800">
-                    💡 Use this form to record donations received outside of the website (PayPal, LaunchGood, bank transfers, cash). 
+                    💡 Use this form to record donations received via bank transfer or cash. 
                     These will be added to your total fundraising progress.
                   </p>
                 </div>
@@ -471,8 +476,6 @@ const AdminDashboard = () => {
                       onChange={(e) => setOfflineDonation({...offlineDonation, source: e.target.value})}
                       className="w-full p-2 border rounded-md"
                     >
-                      <option value="paypal">PayPal</option>
-                      <option value="launchgood">LaunchGood</option>
                       <option value="bank_transfer">Bank Transfer</option>
                       <option value="cash">Cash</option>
                     </select>
@@ -484,7 +487,7 @@ const AdminDashboard = () => {
                   <Input
                     value={offlineDonation.note}
                     onChange={(e) => setOfflineDonation({...offlineDonation, note: e.target.value})}
-                    placeholder="e.g., Monthly LaunchGood total, Donor name, etc."
+                    placeholder="e.g., Donor name, reference number, etc."
                   />
                 </div>
 

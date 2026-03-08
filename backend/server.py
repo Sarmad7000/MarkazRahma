@@ -597,8 +597,8 @@ async def get_donation_summary(current_user: dict = Depends(get_current_user)):
         stripe_result = await db.payment_transactions.aggregate(stripe_pipeline).to_list(1)
         stripe_total = stripe_result[0]['total'] if stripe_result else 0
         
-        # Offline donations by source
-        offline_sources = ["paypal", "launchgood", "bank_transfer", "cash"]
+        // Offline donations by source
+        offline_sources = ["bank_transfer", "cash"]
         offline_breakdown = {}
         
         for source in offline_sources:
