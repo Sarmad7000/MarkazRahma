@@ -11,7 +11,7 @@ const HeroSection = ({ mosqueInfo, onDonate }) => {
             <img 
               src="https://customer-assets.emergentagent.com/job_markaz-rahma-1/artifacts/hk0234u7_Untitled%20design%20%2848%29.png" 
               alt="Decorative element" 
-              className="h-8 md:h-12 w-auto mx-auto mb-6"
+              className="h-16 md:h-20 w-auto mx-auto mb-6"
             />
           </div>
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
