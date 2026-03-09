@@ -4,17 +4,17 @@ import { Button } from '../ui/button';
 
 const HeroSection = ({ mosqueInfo, onDonate }) => {
   return (
-    <section className="relative bg-gradient-to-b from-cyan-50 to-white py-20">
+    <section className="relative bg-gradient-to-b from-cyan-50 to-white py-16 md:py-20">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-block mb-6">
+          <div className="inline-block mb-4 md:mb-6">
             <img 
               src="https://customer-assets.emergentagent.com/job_markaz-rahma-1/artifacts/hk0234u7_Untitled%20design%20%2848%29.png" 
               alt="Decorative element" 
-              className="h-16 md:h-20 w-auto mx-auto mb-6"
+              className="h-32 md:h-40 w-auto mx-auto"
             />
           </div>
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 mt-4 md:mt-6">
             {mosqueInfo.fullName}
           </h2>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
