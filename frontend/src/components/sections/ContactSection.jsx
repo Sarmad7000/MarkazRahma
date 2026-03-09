@@ -44,7 +44,7 @@ const ContactSection = ({ mosqueInfo }) => {
             </a>
 
             <a
-              href="https://www.youtube.com/@MarkazAlRahma"
+              href="https://www.youtube.com/@markazal-rahma6441"
               target="_blank"
               rel="noopener noreferrer"
               className="block"
@@ -54,7 +54,7 @@ const ContactSection = ({ mosqueInfo }) => {
                   <Youtube className="h-10 w-10 text-cyan-600 mx-auto mb-4" />
                   <h3 className="font-semibold text-gray-900 mb-2">YouTube</h3>
                   <p className="text-cyan-600 hover:text-cyan-700">
-                    @MarkazAlRahma
+                    Visit Markaz Al-Rahma on YouTube
                   </p>
                 </CardContent>
               </Card>
