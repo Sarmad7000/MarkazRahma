@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { mutate as globalMutate } from 'swr';
 import { Button } from '../components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { toast, Toaster } from 'sonner';
@@ -53,7 +54,7 @@ const AdminDashboard = () => {
   const [announcements, setAnnouncements] = useState([]);
   const [announcementsEnabled, setAnnouncementsEnabled] = useState(true);
 
-  const { popupSettings: livePopupSettings } = usePopupSettings();
+  const { popupSettings: livePopupSettings, mutate: mutatePopupSettings } = usePopupSettings();
 
   const fetchData = useCallback(async () => {
     try {
@@ -178,6 +179,11 @@ const AdminDashboard = () => {
     try {
       await updatePopupSettings(popupSettings);
       toast.success('Popup settings updated successfully');
+      
+      // Invalidate SWR cache globally to force refresh everywhere
+      const API = process.env.REACT_APP_BACKEND_URL;
+      await globalMutate(`${API}/api/popup-settings`);
+      
       fetchData();
     } catch (error) {
       toast.error('Failed to update popup settings');
