@@ -29,22 +29,22 @@ const RamadanPopup = ({ onDonate, popupSettings }) => {
   if (!isOpen || !popupSettings || !popupSettings.enabled) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black bg-opacity-60 backdrop-blur-sm"
         onClick={handleClose}
       />
       
-      {/* Modal - Responsive sizing */}
-      <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-xl lg:max-w-2xl max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in duration-300">
-        {/* Close button */}
+      {/* Modal - Responsive sizing without internal scroll */}
+      <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-xl lg:max-w-2xl animate-in fade-in zoom-in duration-300">
+        {/* Close button - High z-index to stay above everything */}
         <button
           onClick={handleClose}
-          className="sticky top-2 right-2 float-right z-10 bg-white rounded-full p-2 md:p-2 shadow-lg hover:bg-gray-100 transition-colors touch-manipulation"
+          className="absolute -top-3 -right-3 z-[70] bg-white rounded-full p-2 shadow-lg hover:bg-gray-100 transition-colors border-2 border-gray-200"
           aria-label="Close"
         >
-          <X className="h-5 w-5 md:h-5 md:w-5 text-gray-600" />
+          <X className="h-5 w-5 text-gray-600" />
         </button>
 
         {/* Image */}
@@ -52,12 +52,12 @@ const RamadanPopup = ({ onDonate, popupSettings }) => {
           <img 
             src={popupSettings.image_path}
             alt="Support Our Masjid"
-            className="w-full h-auto max-h-[50vh] object-contain"
+            className="w-full h-auto rounded-t-lg"
           />
         </div>
 
         {/* Call to action */}
-        <div className="p-4 md:p-6 bg-gradient-to-br from-cyan-50 to-white">
+        <div className="p-4 md:p-6 bg-gradient-to-br from-cyan-50 to-white rounded-b-lg">
           <h3 className="text-base md:text-xl lg:text-2xl font-bold text-gray-900 mb-2 md:mb-3 text-center">
             {popupSettings.title}
           </h3>
