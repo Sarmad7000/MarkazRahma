@@ -38,10 +38,10 @@ const RamadanPopup = ({ onDonate, popupSettings }) => {
       
       {/* Modal - Much smaller, proportionate sizing */}
       <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-md lg:max-w-lg max-h-[85vh] overflow-hidden animate-in fade-in zoom-in duration-300">
-        {/* Close button - High z-index to stay above everything */}
+        {/* Close button - On top of popup, overlaying content */}
         <button
           onClick={handleClose}
-          className="absolute -top-3 -right-3 z-[70] bg-white rounded-full p-2 shadow-lg hover:bg-gray-100 transition-colors border-2 border-gray-200"
+          className="absolute top-3 right-3 z-[70] bg-white rounded-full p-2 shadow-lg hover:bg-gray-100 transition-colors border-2 border-gray-200"
           aria-label="Close"
         >
           <X className="h-5 w-5 text-gray-600" />
