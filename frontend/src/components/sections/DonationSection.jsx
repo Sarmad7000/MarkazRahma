@@ -1,5 +1,5 @@
 import React from 'react';
-import { Heart } from 'lucide-react';
+import { Heart, Play } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import DonationProgress from '../DonationProgress';
@@ -10,21 +10,60 @@ const DonationSection = ({ donationInfo, donationGoal }) => {
   };
 
   return (
-    <section id="donate" className="py-16 bg-gray-50">
+    <section id="donate" className="py-16 bg-gradient-to-br from-gray-50 to-cyan-50">
       <div className="container mx-auto px-4">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <Heart className="h-12 w-12 text-cyan-600 mx-auto mb-4" />
             <h2 className="text-3xl font-bold text-gray-900 mb-4">{donationInfo.title}</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">{donationInfo.message}</p>
           </div>
 
-          {donationGoal && (
-            <div className="mb-8">
-              <DonationProgress goal={donationGoal} />
-            </div>
-          )}
+          {/* Video and Donation Progress Section */}
+          <div className="grid lg:grid-cols-2 gap-8 mb-8">
+            {/* YouTube Video Embed */}
+            <Card className="shadow-xl overflow-hidden">
+              <div className="relative aspect-video bg-gray-900">
+                <iframe
+                  className="absolute inset-0 w-full h-full"
+                  src="https://www.youtube.com/embed/ADYto8Y1MFk"
+                  title="Mosque Appeal Video"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+              <CardHeader className="bg-gradient-to-r from-cyan-600 to-cyan-700 text-white">
+                <CardTitle className="flex items-center gap-2">
+                  <Play className="h-5 w-5" />
+                  Our Story
+                </CardTitle>
+                <CardDescription className="text-cyan-50">
+                  Watch our appeal for the new mosque
+                </CardDescription>
+              </CardHeader>
+            </Card>
 
+            {/* Donation Progress */}
+            {donationGoal && (
+              <div className="flex flex-col justify-center">
+                <DonationProgress goal={donationGoal} />
+                <div className="mt-6 p-6 bg-white rounded-lg shadow-lg border-2 border-cyan-100">
+                  <h3 className="font-bold text-xl text-gray-900 mb-2">Every Contribution Matters</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">
+                    Help us secure a permanent home for our growing community. Your donation will help establish a lasting place of worship and learning.
+                  </p>
+                  <div className="mt-4 p-3 bg-cyan-50 rounded-lg border border-cyan-200">
+                    <p className="text-xs text-cyan-900 font-medium">
+                      "Whoever builds a mosque for Allah, Allah will build for him a house like it in Paradise."
+                      <span className="block text-cyan-700 mt-1">- Sahih Al-Bukhari 450</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Donation Methods */}
           <div className="grid md:grid-cols-2 gap-8">
             <Card className="shadow-lg hover:shadow-xl transition-shadow">
               <CardHeader className="bg-gradient-to-br from-cyan-600 to-cyan-700 text-white">
