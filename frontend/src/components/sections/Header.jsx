@@ -23,7 +23,7 @@ const Header = ({ mosqueInfo, onDonate }) => {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-6 absolute left-1/2 transform -translate-x-1/2">
             <a href="/#prayer-times" className="text-gray-700 hover:text-cyan-600 transition-colors whitespace-nowrap">Prayer Times</a>
-            <a href="/timetable" className="text-gray-700 hover:text-cyan-600 transition-colors whitespace-nowrap">Timetable</a>
+            <a href="/timetable" className="text-gray-700 hover:text-cyan-600 transition-colors whitespace-nowrap">Prayer Timetable</a>
             <a href="/events" className="text-gray-700 hover:text-cyan-600 transition-colors whitespace-nowrap">Events</a>
             <a href="/#donate" className="text-gray-700 hover:text-cyan-600 transition-colors whitespace-nowrap">Donate</a>
             <a href="/#about" className="text-gray-700 hover:text-cyan-600 transition-colors whitespace-nowrap">About</a>
@@ -64,7 +64,7 @@ const Header = ({ mosqueInfo, onDonate }) => {
                 className="text-gray-700 hover:text-cyan-600 transition-colors py-2 px-4 rounded hover:bg-gray-50"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Timetable
+                Prayer Timetable
               </a>
               <a 
                 href="/events" 

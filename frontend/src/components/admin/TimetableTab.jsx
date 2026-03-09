@@ -44,14 +44,14 @@ const TimetableTab = ({
     <div className="space-y-4 sm:space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg sm:text-xl">Timetable Management</CardTitle>
+          <CardTitle className="text-lg sm:text-xl">Prayer Timetable Management</CardTitle>
           <p className="text-xs sm:text-sm text-gray-600">
-            Upload the weekly timetable image for display on the Timetable page
+            Upload the prayer timetable image for display on the Prayer Timetable page
           </p>
         </CardHeader>
         <CardContent className="space-y-4 sm:space-y-6">
           <div className="space-y-2">
-            <Label className="text-sm sm:text-base">Upload Timetable Image</Label>
+            <Label className="text-sm sm:text-base">Upload Prayer Timetable Image</Label>
             <div className="flex flex-col gap-3 sm:gap-4">
               <Input
                 type="file"
@@ -68,11 +68,11 @@ const TimetableTab = ({
 
           {timetableImage && (
             <div className="space-y-2">
-              <Label className="text-sm sm:text-base">Current Timetable Preview</Label>
+              <Label className="text-sm sm:text-base">Current Prayer Timetable Preview</Label>
               <div className="border rounded-lg p-2 sm:p-4 bg-gray-50">
                 <img
                   src={timetableImage}
-                  alt="Timetable preview"
+                  alt="Prayer Timetable preview"
                   className="w-full h-auto max-h-64 sm:max-h-96 object-contain rounded"
                 />
               </div>
@@ -85,14 +85,14 @@ const TimetableTab = ({
             disabled={!timetableImage}
           >
             <Save className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
-            Save Timetable
+            Save Prayer Timetable
           </Button>
 
           {!timetableImage && (
             <div className="flex items-center justify-center p-6 sm:p-8 border-2 border-dashed border-gray-300 rounded-lg">
               <div className="text-center">
                 <ImageIcon className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-2" />
-                <p className="text-sm sm:text-base text-gray-600">No timetable image uploaded</p>
+                <p className="text-sm sm:text-base text-gray-600">No prayer timetable image uploaded</p>
               </div>
             </div>
           )}

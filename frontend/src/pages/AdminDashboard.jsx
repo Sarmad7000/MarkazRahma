@@ -359,7 +359,7 @@ const AdminDashboard = () => {
               <TabsTrigger value="offline" className="px-3 sm:px-6 md:px-8 text-xs sm:text-sm whitespace-nowrap">Add Donation</TabsTrigger>
               <TabsTrigger value="popup" className="px-3 sm:px-6 md:px-8 text-xs sm:text-sm whitespace-nowrap">Popup</TabsTrigger>
               <TabsTrigger value="announcements" className="px-3 sm:px-6 md:px-8 text-xs sm:text-sm whitespace-nowrap">Announcements</TabsTrigger>
-              <TabsTrigger value="timetable" className="px-3 sm:px-6 md:px-8 text-xs sm:text-sm whitespace-nowrap">Timetable</TabsTrigger>
+              <TabsTrigger value="timetable" className="px-3 sm:px-6 md:px-8 text-xs sm:text-sm whitespace-nowrap">Prayer Timetable</TabsTrigger>
               <TabsTrigger value="events" className="px-3 sm:px-6 md:px-8 text-xs sm:text-sm whitespace-nowrap">Events</TabsTrigger>
               <TabsTrigger value="settings" className="px-3 sm:px-6 md:px-8 text-xs sm:text-sm whitespace-nowrap">Settings</TabsTrigger>
             </TabsList>

@@ -52,10 +52,10 @@ const Timetable = () => {
           <div className="text-center mb-8">
             <Calendar className="h-12 w-12 text-cyan-600 mx-auto mb-4" />
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
-              Monthly Timetable
+              Prayer Timetable
             </h1>
             <p className="text-lg text-gray-600">
-              View our monthly prayer times schedule
+              View our prayer times schedule
             </p>
           </div>
 
@@ -67,7 +67,7 @@ const Timetable = () => {
             <Card className="overflow-hidden shadow-lg">
               <img
                 src={timetable.image_path}
-                alt="Timetable"
+                alt="Prayer Timetable"
                 className="w-full h-auto"
               />
             </Card>
@@ -75,10 +75,10 @@ const Timetable = () => {
             <Card className="p-12 text-center">
               <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-700 mb-2">
-                No Timetable Available
+                No Prayer Timetable Available
               </h3>
               <p className="text-gray-500">
-                The timetable will be available soon. Please check back later.
+                The prayer timetable will be available soon. Please check back later.
               </p>
             </Card>
           )}
