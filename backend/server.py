@@ -576,7 +576,7 @@ async def update_popup_settings(
             upsert=True
         )
         
-        logger.info(f"Popup settings updated by {current_user['username']}")
+        logger.info(f"Popup settings updated by {current_user.get('sub', 'admin')}")
         return {"message": "Popup settings updated successfully", "settings": current_settings}
         
     except Exception as e:
@@ -645,7 +645,7 @@ async def create_announcement(
         
         await db.announcements.insert_one(announcement.dict())
         
-        logger.info(f"Announcement created by {current_user['username']}")
+        logger.info(f"Announcement created by {current_user.get('sub', 'admin')}")
         return {"message": "Announcement created successfully", "announcement": announcement}
         
     except Exception as e:
@@ -674,7 +674,7 @@ async def update_announcement(
             {"$set": update_data}
         )
         
-        logger.info(f"Announcement {announcement_id} updated by {current_user['username']}")
+        logger.info(f"Announcement {announcement_id} updated by {current_user.get('sub', 'admin')}")
         return {"message": "Announcement updated successfully"}
         
     except HTTPException:
@@ -695,7 +695,7 @@ async def delete_announcement(
         if result.deleted_count == 0:
             raise HTTPException(status_code=404, detail="Announcement not found")
         
-        logger.info(f"Announcement {announcement_id} deleted by {current_user['username']}")
+        logger.info(f"Announcement {announcement_id} deleted by {current_user.get('sub', 'admin')}")
         return {"message": "Announcement deleted successfully"}
         
     except HTTPException:
@@ -717,7 +717,7 @@ async def toggle_announcements(
             upsert=True
         )
         
-        logger.info(f"Announcements toggled to {enabled} by {current_user['username']}")
+        logger.info(f"Announcements toggled to {enabled} by {current_user.get('sub', 'admin')}")
         return {"message": f"Announcements {'enabled' if enabled else 'disabled'} successfully"}
         
     except Exception as e:
@@ -753,7 +753,7 @@ async def upload_image(
         # Create data URL with proper mime type
         image_data_url = f"data:{file.content_type};base64,{base64_image}"
         
-        logger.info(f"Image uploaded by {current_user['username']} - Size: {file_size_mb:.2f}MB")
+        logger.info(f"Image uploaded by {current_user.get('sub', 'admin')} - Size: {file_size_mb:.2f}MB")
         return {
             "message": "Image uploaded successfully",
             "image_path": image_data_url
