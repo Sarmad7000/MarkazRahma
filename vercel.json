@@ -13,18 +13,61 @@
       }
     }
   ],
-  "rewrites": [
+  "routes": [
     {
-      "source": "/api/(.*)",
-      "destination": "/api/index.py"
+      "src": "/api/(.*)",
+      "dest": "/api/index.py"
     },
     {
-      "source": "/static/(.*)",
-      "destination": "/frontend/build/static/$1"
+      "src": "/static/(.*)",
+      "headers": {
+        "cache-control": "public, max-age=31536000, immutable"
+      },
+      "dest": "/frontend/build/static/$1"
     },
     {
-      "source": "/(.*)",
-      "destination": "/frontend/build/index.html"
+      "src": "/favicon.ico",
+      "dest": "/frontend/build/favicon.ico"
+    },
+    {
+      "src": "/manifest.json",
+      "dest": "/frontend/build/manifest.json"
+    },
+    {
+      "src": "/robots.txt",
+      "dest": "/frontend/build/robots.txt"
+    },
+    {
+      "src": "/asset-manifest.json",
+      "dest": "/frontend/build/asset-manifest.json"
+    },
+    {
+      "src": "/logo(.*)",
+      "dest": "/frontend/build/logo$1"
+    },
+    {
+      "src": "/timetable",
+      "dest": "/frontend/build/index.html"
+    },
+    {
+      "src": "/events",
+      "dest": "/frontend/build/index.html"
+    },
+    {
+      "src": "/admin/login",
+      "dest": "/frontend/build/index.html"
+    },
+    {
+      "src": "/admin/dashboard",
+      "dest": "/frontend/build/index.html"
+    },
+    {
+      "src": "/",
+      "dest": "/frontend/build/index.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/frontend/build/index.html"
     }
   ]
 }
