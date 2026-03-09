@@ -35,6 +35,18 @@
       "dest": "/frontend/build/logo$1"
     },
     {
+      "src": "/timetable",
+      "dest": "/frontend/build/index.html"
+    },
+    {
+      "src": "/events",
+      "dest": "/frontend/build/index.html"
+    },
+    {
+      "src": "/admin/(.*)",
+      "dest": "/frontend/build/index.html"
+    },
+    {
       "src": "/(.*)",
       "dest": "/frontend/build/index.html"
     }
