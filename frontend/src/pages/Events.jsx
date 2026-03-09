@@ -68,11 +68,11 @@ const Events = () => {
               {events.map((event) => (
                 <Card key={event.id} className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
                   {event.image_path && (
-                    <div className="aspect-video overflow-hidden bg-gray-100">
+                    <div className="w-full bg-gray-100 flex items-center justify-center p-4">
                       <img
                         src={event.image_path}
                         alt={event.title}
-                        className="w-full h-full object-cover"
+                        className="w-full h-auto object-contain max-h-96"
                       />
                     </div>
                   )}

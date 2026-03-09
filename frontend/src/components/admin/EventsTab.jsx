@@ -216,7 +216,9 @@ const EventsTab = ({
                   ) : (
                     <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                       {event.image_path && (
-                        <img src={event.image_path} alt={event.title} className="w-full sm:w-24 md:w-32 h-20 sm:h-24 object-cover rounded" />
+                        <div className="w-full sm:w-32 md:w-40 bg-gray-50 rounded border p-2 flex items-center justify-center">
+                          <img src={event.image_path} alt={event.title} className="w-full h-auto object-contain max-h-32" />
+                        </div>
                       )}
                       <div className="flex-1 min-w-0">
                         <h4 className={`font-semibold mb-1 text-sm sm:text-base ${event.enabled ? '' : 'line-through'}`}>{event.title}</h4>
