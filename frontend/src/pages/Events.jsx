@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calendar, Loader2 } from 'lucide-react';
+import { ArrowLeft, Calendar, Loader2, X } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import Header from '../components/sections/Header';
@@ -13,6 +13,7 @@ const Events = () => {
   const navigate = useNavigate();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedImage, setSelectedImage] = useState(null);
 
   useEffect(() => {
     fetchEvents();
@@ -32,6 +33,14 @@ const Events = () => {
 
   const handleDonate = () => {
     window.open('https://checkout.square.site/merchant/MLSD6EY5CMY2P/checkout/HXF33WVBEFWIA65YBXUQST3B?src=sheet', '_blank');
+  };
+
+  const openImageModal = (image) => {
+    setSelectedImage(image);
+  };
+
+  const closeImageModal = () => {
+    setSelectedImage(null);
   };
 
   return (
@@ -68,7 +77,10 @@ const Events = () => {
               {events.map((event) => (
                 <Card key={event.id} className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
                   {event.image_path && (
-                    <div className="w-full bg-gray-100 flex items-center justify-center p-4">
+                    <div 
+                      className="w-full bg-gray-100 flex items-center justify-center p-4 cursor-pointer hover:bg-gray-200 transition-colors"
+                      onClick={() => openImageModal({ src: event.image_path, title: event.title })}
+                    >
                       <img
                         src={event.image_path}
                         alt={event.title}
@@ -100,6 +112,36 @@ const Events = () => {
           )}
         </div>
       </div>
+
+      {/* Image Lightbox Modal */}
+      {selectedImage && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4"
+          onClick={closeImageModal}
+        >
+          <button
+            onClick={closeImageModal}
+            className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors z-10"
+          >
+            <X className="h-8 w-8" />
+          </button>
+          <div 
+            className="max-w-7xl max-h-full w-full h-full flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={selectedImage.src}
+              alt={selectedImage.title}
+              className="max-w-full max-h-full object-contain"
+            />
+          </div>
+          {selectedImage.title && (
+            <div className="absolute bottom-4 left-0 right-0 text-center text-white text-lg font-semibold px-4">
+              {selectedImage.title}
+            </div>
+          )}
+        </div>
+      )}
 
       <Footer mosqueInfo={mosqueInfo} />
     </div>
