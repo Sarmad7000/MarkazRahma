@@ -9,7 +9,7 @@ const Header = ({ mosqueInfo, onDonate }) => {
     <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
       <div className="container mx-auto px-3 md:px-4 py-2 md:py-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 w-auto md:w-64">
+          <div className="flex items-center gap-3 md:gap-4 w-auto md:w-64">
             <img 
               src="https://customer-assets.emergentagent.com/job_markaz-rahma-1/artifacts/q7pgbb1k_Untitled%20design%20%2848%29.png" 
               alt="Markaz Al-Rahma Logo" 

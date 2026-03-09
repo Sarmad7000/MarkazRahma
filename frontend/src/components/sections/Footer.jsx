@@ -9,11 +9,11 @@ const Footer = ({ mosqueInfo }) => {
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto text-center">
           <div className="mb-6">
-            <div className="h-16 w-auto mx-auto mb-4 flex justify-center items-center bg-white rounded-lg p-2" style={{ width: 'fit-content' }}>
+            <div className="h-20 w-auto mx-auto mb-4 flex justify-center items-center bg-white rounded-lg p-3" style={{ width: 'fit-content' }}>
               <img 
-                src="https://customer-assets.emergentagent.com/job_markaz-rahma-1/artifacts/s5521pmg_Untitled%20design.png" 
+                src="https://customer-assets.emergentagent.com/job_markaz-rahma-1/artifacts/zuluigci_Untitled%20design%20%2849%29.png" 
                 alt="Markaz Al-Rahma Logo" 
-                className="h-14 w-auto"
+                className="h-16 w-auto"
               />
             </div>
             <h3 className="text-2xl font-bold mb-2">{mosqueInfo.name}</h3>
