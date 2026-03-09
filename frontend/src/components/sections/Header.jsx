@@ -11,7 +11,7 @@ const Header = ({ mosqueInfo, onDonate }) => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 w-auto md:w-64">
             <img 
-              src="https://customer-assets.emergentagent.com/job_markaz-rahma-1/artifacts/s5521pmg_Untitled%20design.png" 
+              src="https://customer-assets.emergentagent.com/job_markaz-rahma-1/artifacts/q7pgbb1k_Untitled%20design%20%2848%29.png" 
               alt="Markaz Al-Rahma Logo" 
               className="h-6 md:h-10 w-auto"
             />
