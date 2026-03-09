@@ -36,8 +36,8 @@ const RamadanPopup = ({ onDonate, popupSettings }) => {
         onClick={handleClose}
       />
       
-      {/* Modal - Responsive sizing without internal scroll */}
-      <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-xl lg:max-w-2xl animate-in fade-in zoom-in duration-300">
+      {/* Modal - Much smaller, proportionate sizing */}
+      <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-md lg:max-w-lg max-h-[85vh] overflow-hidden animate-in fade-in zoom-in duration-300">
         {/* Close button - High z-index to stay above everything */}
         <button
           onClick={handleClose}
@@ -47,36 +47,37 @@ const RamadanPopup = ({ onDonate, popupSettings }) => {
           <X className="h-5 w-5 text-gray-600" />
         </button>
 
-        {/* Image */}
-        <div className="relative">
-          <img 
-            src={popupSettings.image_path}
-            alt="Support Our Masjid"
-            className="w-full h-auto rounded-t-lg"
-          />
-        </div>
+        {/* Scrollable content */}
+        <div className="overflow-y-auto max-h-[85vh]">
+          {/* Image */}
+          <div className="relative">
+            <img 
+              src={popupSettings.image_path}
+              alt="Support Our Masjid"
+              className="w-full h-auto rounded-t-lg"
+            />
+          </div>
 
-        {/* Call to action */}
-        <div className="p-4 md:p-6 bg-gradient-to-br from-cyan-50 to-white rounded-b-lg">
-          <h3 className="text-base md:text-xl lg:text-2xl font-bold text-gray-900 mb-2 md:mb-3 text-center">
-            {popupSettings.title}
-          </h3>
-          <p className="text-xs md:text-sm lg:text-base text-gray-700 mb-3 md:mb-4 text-center">
-            {popupSettings.description}
-          </p>
-          
-          <div className="flex flex-col gap-2">
+          {/* Call to action */}
+          <div className="p-3 md:p-5 bg-gradient-to-br from-cyan-50 to-white rounded-b-lg">
+            <h3 className="text-sm md:text-lg lg:text-xl font-bold text-gray-900 mb-2 text-center">
+              {popupSettings.title}
+            </h3>
+            <p className="text-xs md:text-sm text-gray-700 mb-3 text-center leading-snug">
+              {popupSettings.description}
+            </p>
+            
             <Button 
               onClick={handleDonate}
-              className="w-full bg-cyan-600 hover:bg-cyan-700 text-white py-3 md:py-4 text-sm md:text-base font-semibold"
+              className="w-full bg-cyan-600 hover:bg-cyan-700 text-white py-2.5 md:py-3 text-sm font-semibold"
             >
               Donate Now
             </Button>
-          </div>
 
-          <p className="text-[10px] md:text-xs text-gray-500 text-center mt-2 md:mt-3">
-            {popupSettings.citation}
-          </p>
+            <p className="text-[9px] md:text-[10px] text-gray-500 text-center mt-2 leading-tight">
+              {popupSettings.citation}
+            </p>
+          </div>
         </div>
       </div>
     </div>
