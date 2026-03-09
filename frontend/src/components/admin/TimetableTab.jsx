@@ -41,39 +41,39 @@ const TimetableTab = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Timetable Management</CardTitle>
-          <p className="text-sm text-gray-600">
+          <CardTitle className="text-lg sm:text-xl">Timetable Management</CardTitle>
+          <p className="text-xs sm:text-sm text-gray-600">
             Upload the weekly timetable image for display on the Timetable page
           </p>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4 sm:space-y-6">
           <div className="space-y-2">
-            <Label>Upload Timetable Image</Label>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <Label className="text-sm sm:text-base">Upload Timetable Image</Label>
+            <div className="flex flex-col gap-3 sm:gap-4">
               <Input
                 type="file"
                 accept="image/*"
                 onChange={handleFileChange}
                 disabled={uploading}
-                className="flex-1"
+                className="text-xs sm:text-sm"
               />
             </div>
             {uploading && (
-              <p className="text-sm text-cyan-600">Uploading...</p>
+              <p className="text-xs sm:text-sm text-cyan-600">Uploading...</p>
             )}
           </div>
 
           {timetableImage && (
             <div className="space-y-2">
-              <Label>Current Timetable Preview</Label>
-              <div className="border rounded-lg p-4 bg-gray-50">
+              <Label className="text-sm sm:text-base">Current Timetable Preview</Label>
+              <div className="border rounded-lg p-2 sm:p-4 bg-gray-50">
                 <img
                   src={timetableImage}
                   alt="Timetable preview"
-                  className="w-full h-auto max-h-96 object-contain rounded"
+                  className="w-full h-auto max-h-64 sm:max-h-96 object-contain rounded"
                 />
               </div>
             </div>
@@ -81,18 +81,18 @@ const TimetableTab = ({
 
           <Button 
             onClick={handleUpdateTimetable} 
-            className="w-full bg-cyan-600 hover:bg-cyan-700"
+            className="w-full bg-cyan-600 hover:bg-cyan-700 text-sm sm:text-base"
             disabled={!timetableImage}
           >
-            <Save className="h-4 w-4 mr-2" />
+            <Save className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
             Save Timetable
           </Button>
 
           {!timetableImage && (
-            <div className="flex items-center justify-center p-8 border-2 border-dashed border-gray-300 rounded-lg">
+            <div className="flex items-center justify-center p-6 sm:p-8 border-2 border-dashed border-gray-300 rounded-lg">
               <div className="text-center">
-                <ImageIcon className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                <p className="text-gray-600">No timetable image uploaded</p>
+                <ImageIcon className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-2" />
+                <p className="text-sm sm:text-base text-gray-600">No timetable image uploaded</p>
               </div>
             </div>
           )}

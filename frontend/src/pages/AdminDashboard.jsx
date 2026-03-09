@@ -20,7 +20,13 @@ import {
   createAnnouncement,
   updateAnnouncement,
   deleteAnnouncement,
-  toggleAnnouncementsSystem
+  toggleAnnouncementsSystem,
+  getTimetable,
+  updateTimetable,
+  getEventsAdmin,
+  createEvent,
+  updateEvent,
+  deleteEvent
 } from '../services/adminApi';
 import { getPrayerTimes, getDonationGoal, usePopupSettings } from '../services/api';
 import { LogOut, Loader2 } from 'lucide-react';
@@ -31,6 +37,8 @@ import AddDonationTab from '../components/admin/AddDonationTab';
 import SettingsTab from '../components/admin/SettingsTab';
 import PopupSettingsTab from '../components/admin/PopupSettingsTab';
 import AnnouncementsTab from '../components/admin/AnnouncementsTab';
+import TimetableTab from '../components/admin/TimetableTab';
+import EventsTab from '../components/admin/EventsTab';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -53,19 +61,23 @@ const AdminDashboard = () => {
   });
   const [announcements, setAnnouncements] = useState([]);
   const [announcementsEnabled, setAnnouncementsEnabled] = useState(true);
+  const [timetableImage, setTimetableImage] = useState('');
+  const [events, setEvents] = useState([]);
 
   const { popupSettings: livePopupSettings, mutate: mutatePopupSettings } = usePopupSettings();
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const [prayerData, donationData, statsData, goalData, summaryData, announcementsData] = await Promise.all([
+      const [prayerData, donationData, statsData, goalData, summaryData, announcementsData, timetableData, eventsData] = await Promise.all([
         getPrayerTimes(),
         getDonationHistory(),
         getDonationStats(),
         getDonationGoal(),
         getDonationSummary(),
-        getAnnouncementsAdmin()
+        getAnnouncementsAdmin(),
+        getTimetable().catch(() => ({ image_path: '' })),
+        getEventsAdmin().catch(() => ({ events: [] }))
       ]);
 
       setPrayerTimes(prayerData);
@@ -74,6 +86,8 @@ const AdminDashboard = () => {
       setGoal(goalData);
       setDonationSummary(summaryData);
       setAnnouncements(announcementsData.announcements || []);
+      setTimetableImage(timetableData.image_path || '');
+      setEvents(eventsData.events || []);
 
       // Initialize popup settings from live data
       if (livePopupSettings) {
@@ -244,6 +258,52 @@ const AdminDashboard = () => {
     }
   };
 
+  // Timetable Handlers
+  const handleUpdateTimetable = async () => {
+    try {
+      await updateTimetable(timetableImage);
+      toast.success('Timetable updated successfully');
+      fetchData();
+    } catch (error) {
+      toast.error('Failed to update timetable');
+    }
+  };
+
+  // Events Handlers
+  const handleCreateEvent = async (eventData) => {
+    try {
+      await createEvent(eventData);
+      toast.success('Event created successfully');
+      fetchData();
+    } catch (error) {
+      toast.error('Failed to create event');
+    }
+  };
+
+  const handleUpdateEvent = async (id, data) => {
+    try {
+      await updateEvent(id, data);
+      toast.success('Event updated successfully');
+      fetchData();
+    } catch (error) {
+      toast.error('Failed to update event');
+    }
+  };
+
+  const handleDeleteEvent = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this event?')) {
+      return;
+    }
+    
+    try {
+      await deleteEvent(id);
+      toast.success('Event deleted successfully');
+      fetchData();
+    } catch (error) {
+      toast.error('Failed to delete event');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -261,25 +321,25 @@ const AdminDashboard = () => {
 
       {/* Header */}
       <header className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <img 
                 src="https://customer-assets.emergentagent.com/job_markaz-rahma-1/artifacts/s5521pmg_Untitled%20design.png" 
                 alt="Logo" 
-                className="h-10 w-auto"
+                className="h-8 sm:h-10 w-auto flex-shrink-0"
               />
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">Admin Dashboard</h1>
+              <div className="min-w-0">
+                <h1 className="text-sm sm:text-lg md:text-xl font-bold text-gray-900 truncate">Admin Dashboard</h1>
               </div>
             </div>
-            <div className="flex items-center gap-4">
-              <Button variant="outline" onClick={() => navigate('/')}>
+            <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+              <Button variant="outline" onClick={() => navigate('/')} className="hidden sm:flex">
                 View Website
               </Button>
-              <Button variant="outline" onClick={handleLogout} className="flex items-center gap-2">
-                <LogOut className="h-4 w-4" />
-                Logout
+              <Button variant="outline" onClick={handleLogout} className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-4">
+                <LogOut className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Logout</span>
               </Button>
             </div>
           </div>
@@ -287,19 +347,21 @@ const AdminDashboard = () => {
       </header>
 
       {/* Stats Cards */}
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 md:py-8">
         <AdminStatsCards stats={stats} />
 
         {/* Tabs */}
-        <Tabs defaultValue="prayers" className="space-y-6">
-          <div className="flex justify-center w-full">
-            <TabsList className="inline-flex">
-              <TabsTrigger value="prayers" className="px-8">Prayer Times</TabsTrigger>
-              <TabsTrigger value="donations" className="px-8">Donations</TabsTrigger>
-              <TabsTrigger value="offline" className="px-8">Add Donation</TabsTrigger>
-              <TabsTrigger value="popup" className="px-8">Popup Settings</TabsTrigger>
-              <TabsTrigger value="announcements" className="px-8">Announcements</TabsTrigger>
-              <TabsTrigger value="settings" className="px-8">Settings</TabsTrigger>
+        <Tabs defaultValue="prayers" className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
+          <div className="w-full overflow-x-auto">
+            <TabsList className="inline-flex w-full md:w-auto min-w-full md:min-w-0 justify-start md:justify-center">
+              <TabsTrigger value="prayers" className="px-3 sm:px-6 md:px-8 text-xs sm:text-sm whitespace-nowrap">Prayer Times</TabsTrigger>
+              <TabsTrigger value="donations" className="px-3 sm:px-6 md:px-8 text-xs sm:text-sm whitespace-nowrap">Donations</TabsTrigger>
+              <TabsTrigger value="offline" className="px-3 sm:px-6 md:px-8 text-xs sm:text-sm whitespace-nowrap">Add Donation</TabsTrigger>
+              <TabsTrigger value="popup" className="px-3 sm:px-6 md:px-8 text-xs sm:text-sm whitespace-nowrap">Popup</TabsTrigger>
+              <TabsTrigger value="announcements" className="px-3 sm:px-6 md:px-8 text-xs sm:text-sm whitespace-nowrap">Announcements</TabsTrigger>
+              <TabsTrigger value="timetable" className="px-3 sm:px-6 md:px-8 text-xs sm:text-sm whitespace-nowrap">Timetable</TabsTrigger>
+              <TabsTrigger value="events" className="px-3 sm:px-6 md:px-8 text-xs sm:text-sm whitespace-nowrap">Events</TabsTrigger>
+              <TabsTrigger value="settings" className="px-3 sm:px-6 md:px-8 text-xs sm:text-sm whitespace-nowrap">Settings</TabsTrigger>
             </TabsList>
           </div>
 
@@ -353,6 +415,27 @@ const AdminDashboard = () => {
               handleCreateAnnouncement={handleCreateAnnouncement}
               handleUpdateAnnouncement={handleUpdateAnnouncement}
               handleDeleteAnnouncement={handleDeleteAnnouncement}
+            />
+          </TabsContent>
+
+          {/* Timetable Tab */}
+          <TabsContent value="timetable">
+            <TimetableTab 
+              timetableImage={timetableImage}
+              setTimetableImage={setTimetableImage}
+              handleUpdateTimetable={handleUpdateTimetable}
+              handleUploadImage={handleUploadImage}
+            />
+          </TabsContent>
+
+          {/* Events Tab */}
+          <TabsContent value="events">
+            <EventsTab 
+              events={events}
+              handleCreateEvent={handleCreateEvent}
+              handleUpdateEvent={handleUpdateEvent}
+              handleDeleteEvent={handleDeleteEvent}
+              handleUploadImage={handleUploadImage}
             />
           </TabsContent>
 

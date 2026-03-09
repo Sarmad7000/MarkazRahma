@@ -1,7 +1,3 @@
-#====================================================================================================
-# START - Testing Protocol - DO NOT EDIT OR REMOVE THIS SECTION
-#====================================================================================================
-
 # THIS SECTION CONTAINS CRITICAL TESTING INSTRUCTIONS FOR BOTH AGENTS
 # BOTH MAIN_AGENT AND TESTING_AGENT MUST PRESERVE THIS ENTIRE BLOCK
 
@@ -101,3 +97,232 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: "Build a website for Markaz Al-Rahma mosque in Colindale, London. The site should display prayer times, encourage donations, and allow administrators to manage content. Recently added Timetable and Events pages with full admin management capabilities."
+
+backend:
+  - task: "Timetable API - GET /api/timetable"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "API endpoint implemented. Returns timetable image path from MongoDB. Needs testing."
+
+  - task: "Timetable API - PUT /api/admin/timetable"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "API endpoint implemented. Updates timetable image with base64 storage. Needs testing."
+
+  - task: "Events API - GET /api/events"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "API endpoint implemented. Returns list of enabled events. Needs testing."
+
+  - task: "Events API - GET /api/admin/events"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "API endpoint implemented. Returns all events for admin. Needs testing."
+
+  - task: "Events API - POST /api/admin/events"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "API endpoint implemented. Creates new event with base64 image storage. Needs testing."
+
+  - task: "Events API - PUT /api/admin/events/{event_id}"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "API endpoint implemented. Updates existing event. Needs testing."
+
+  - task: "Events API - DELETE /api/admin/events/{event_id}"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "API endpoint implemented. Deletes event by ID. Needs testing."
+
+frontend:
+  - task: "Timetable Public Page"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Timetable.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Timetable page created with route /timetable. Displays uploaded timetable image. Needs testing."
+
+  - task: "Events Public Page"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Events.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Events page created with route /events. Displays list of enabled events. Needs testing."
+
+  - task: "Admin Dashboard - Timetable Tab Integration"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/AdminDashboard.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Integrated TimetableTab component into AdminDashboard. Added state management and handlers for timetable operations. Mobile optimized. Needs testing."
+
+  - task: "Admin Dashboard - Events Tab Integration"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/AdminDashboard.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Integrated EventsTab component into AdminDashboard. Added state management and handlers for CRUD operations on events. Mobile optimized. Needs testing."
+
+  - task: "Admin Dashboard - Mobile Optimization"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/AdminDashboard.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Optimized admin dashboard for mobile devices. Made TabsList scrollable, reduced header size, optimized spacing. Applied responsive classes throughout TimetableTab and EventsTab components. Needs testing on mobile viewport."
+
+  - task: "Timetable Admin Tab Component"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/components/admin/TimetableTab.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "TimetableTab component with image upload, preview, and save functionality. Mobile responsive. Needs testing."
+
+  - task: "Events Admin Tab Component"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/components/admin/EventsTab.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "EventsTab component with full CRUD operations, image uploads, enable/disable toggle. Mobile responsive. Needs testing."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: true
+
+test_plan:
+  current_focus:
+    - "Timetable API - GET /api/timetable"
+    - "Timetable API - PUT /api/admin/timetable"
+    - "Events API - GET /api/events"
+    - "Events API - POST /api/admin/events"
+    - "Events API - PUT /api/admin/events/{event_id}"
+    - "Events API - DELETE /api/admin/events/{event_id}"
+    - "Timetable Public Page"
+    - "Events Public Page"
+    - "Admin Dashboard - Timetable Tab Integration"
+    - "Admin Dashboard - Events Tab Integration"
+    - "Admin Dashboard - Mobile Optimization"
+  stuck_tasks: []
+  test_all: true
+  test_priority: "sequential"
+
+agent_communication:
+  - agent: "main"
+    message: "Completed P0 (Admin Dashboard Integration) and P1 (Mobile Optimization). All new features implemented:
+    
+    Backend:
+    - Timetable API endpoints (GET, PUT) for managing timetable images
+    - Events API endpoints (GET, POST, PUT, DELETE) for full CRUD operations
+    - All endpoints use base64 image storage for Vercel compatibility
+    
+    Frontend:
+    - Created /timetable and /events public pages
+    - Integrated TimetableTab and EventsTab into AdminDashboard
+    - Added proper state management and event handlers
+    - Optimized entire admin dashboard for mobile (responsive TabsList, header, forms, buttons, cards)
+    - Applied mobile-first responsive design to TimetableTab and EventsTab
+    
+    Testing requirements:
+    1. Backend: Test all API endpoints with curl (login, timetable CRUD, events CRUD)
+    2. Frontend: Test admin dashboard tabs (timetable upload, events CRUD) on desktop
+    3. Frontend: Test mobile responsiveness on mobile viewport (375px width)
+    4. E2E: Test complete flow from admin login -> upload timetable -> create event -> view public pages
+    
+    Admin credentials:
+    - URL: /admin/login
+    - Username: MarkazRahma2026
+    - Password: Bismillah20!
+    
+    Known considerations:
+    - Image uploads use base64 encoding and are stored in MongoDB
+    - File size limit is 5MB
+    - All API routes prefixed with /api for Kubernetes ingress
+    
+    Please test comprehensively and report any issues found."
