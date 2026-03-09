@@ -13,13 +13,11 @@
       }
     }
   ],
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/api/index.py"
-    }
-  ],
   "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/index.py"
+    },
     {
       "src": "/static/(.*)",
       "dest": "/frontend/build/static/$1"
@@ -35,9 +33,6 @@
     {
       "src": "/logo(.*)",
       "dest": "/frontend/build/logo$1"
-    },
-    {
-      "handle": "filesystem"
     },
     {
       "src": "/(.*)",
