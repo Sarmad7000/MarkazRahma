@@ -45,7 +45,7 @@ const DonationSection = ({ donationInfo, donationGoal }) => {
 
             {/* Donation Progress */}
             {donationGoal && (
-              <div>
+              <div className="h-full flex items-center">
                 <DonationProgress goal={donationGoal} />
               </div>
             )}
