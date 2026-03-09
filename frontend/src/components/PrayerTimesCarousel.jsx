@@ -5,13 +5,13 @@ import { Card } from './ui/card';
 const PrayerTimesCarousel = ({ prayerTimes, formatTime, getNextPrayer, announcements = [], announcementsEnabled = false }) => {
   const [currentAnnouncementIndex, setCurrentAnnouncementIndex] = useState(0);
 
-  // Auto-rotate announcements every 10 seconds
+  // Auto-rotate announcements every 5 seconds if there's more than one
   useEffect(() => {
-    if (!announcementsEnabled || !announcements.length) return;
+    if (!announcementsEnabled || announcements.length <= 1) return;
     
     const interval = setInterval(() => {
       setCurrentAnnouncementIndex((prev) => (prev + 1) % announcements.length);
-    }, 10000);
+    }, 5000);
 
     return () => clearInterval(interval);
   }, [announcements.length, announcementsEnabled]);

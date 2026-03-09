@@ -11,7 +11,7 @@ const HeroSection = ({ mosqueInfo, onDonate }) => {
             <div className="w-20 h-1 bg-cyan-600 mx-auto mb-6"></div>
           </div>
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-            Welcome to {mosqueInfo.fullName}
+            {mosqueInfo.fullName}
           </h2>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
             {mosqueInfo.description}
