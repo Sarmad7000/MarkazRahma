@@ -12,7 +12,7 @@ const LocationSection = ({ mosqueInfo }) => {
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Visit Us</h2>
             <p className="text-lg text-gray-600">
               <a 
-                href="https://share.google/0PAArCw19mQdSIzvG" 
+                href="https://share.google/r2zmA7OWmy1pDCzB4" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-cyan-600 hover:text-cyan-700 hover:underline"

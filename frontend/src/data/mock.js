@@ -73,7 +73,7 @@ export const aboutContent = {
   values: [
     {
       title: "Creed",
-      description: "Adhering strictly to the Quran and authentic Sunnah under the understanding of the salaf"
+      description: "Adhering strictly to the Quran and authentic Sunnah under the understanding of the Salaf"
     },
     {
       title: "Community",

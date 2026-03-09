@@ -23,33 +23,33 @@ const PrayerTimesCarousel = ({ prayerTimes, formatTime, getNextPrayer, announcem
 
   return (
     <div className="bg-gradient-to-r from-cyan-600 to-cyan-700 shadow-md">
-      <div className="container mx-auto px-4 py-4">
+      <div className="container mx-auto px-2 md:px-4 py-3 md:py-4">
         {/* Prayer Times Row */}
-        <div className="flex items-center justify-center gap-3 md:gap-6 overflow-x-auto pb-2">
+        <div className="flex items-center justify-center gap-1 md:gap-6 overflow-x-auto pb-2">
           {prayerTimes.prayers.map((prayer, index) => {
             const isNext = prayer.name === nextPrayer;
             return (
               <div
                 key={index}
-                className={`flex flex-col items-center min-w-[80px] md:min-w-[100px] ${
-                  isNext ? 'scale-110' : ''
+                className={`flex flex-col items-center min-w-[70px] md:min-w-[100px] ${
+                  isNext ? 'scale-105 md:scale-110' : ''
                 } transition-all`}
               >
-                <div className="flex items-center gap-1 mb-1">
-                  {isNext && <Clock className="h-3 w-3 text-yellow-300" />}
+                <div className="flex items-center gap-1 mb-0.5 md:mb-1">
+                  {isNext && <Clock className="h-2.5 w-2.5 md:h-3 md:w-3 text-yellow-300" />}
                   <span className={`text-xs md:text-sm font-semibold ${isNext ? 'text-yellow-300' : 'text-white'}`}>
                     {prayer.name}
                   </span>
                 </div>
                 <div className="text-center">
-                  <div className="text-[10px] md:text-xs text-cyan-100">Adhan</div>
-                  <div className={`font-mono text-sm md:text-base font-bold ${isNext ? 'text-yellow-300' : 'text-white'}`}>
+                  <div className="text-[9px] md:text-xs text-cyan-100">Adhan</div>
+                  <div className={`font-mono text-xs md:text-base font-bold ${isNext ? 'text-yellow-300' : 'text-white'}`}>
                     {formatTime(prayer.adhan)}
                   </div>
                 </div>
-                <div className="text-center mt-1">
-                  <div className="text-[10px] md:text-xs text-cyan-100">Iqamah</div>
-                  <div className={`font-mono text-sm md:text-base font-bold ${isNext ? 'text-yellow-300' : 'text-cyan-100'}`}>
+                <div className="text-center mt-0.5 md:mt-1">
+                  <div className="text-[9px] md:text-xs text-cyan-100">Iqamah</div>
+                  <div className={`font-mono text-xs md:text-base font-bold ${isNext ? 'text-yellow-300' : 'text-cyan-100'}`}>
                     {formatTime(prayer.iqamah)}
                   </div>
                 </div>
@@ -60,19 +60,19 @@ const PrayerTimesCarousel = ({ prayerTimes, formatTime, getNextPrayer, announcem
 
         {/* Announcements Section */}
         {announcementsEnabled && activeAnnouncements.length > 0 && (
-          <div className="mt-3 pt-3 border-t border-cyan-500">
-            <div className="flex items-center justify-center gap-3">
+          <div className="mt-2 md:mt-3 pt-2 md:pt-3 border-t border-cyan-500">
+            <div className="flex items-center justify-center gap-2 md:gap-3">
               {activeAnnouncements.length > 1 && (
                 <button
                   onClick={() => setCurrentAnnouncementIndex((prev) => (prev - 1 + activeAnnouncements.length) % activeAnnouncements.length)}
                   className="text-white hover:text-yellow-300 transition-colors"
                   aria-label="Previous announcement"
                 >
-                  <ChevronLeft className="h-5 w-5" />
+                  <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
                 </button>
               )}
               <div className="flex-1 text-center">
-                <p className="text-white text-sm md:text-base font-medium">
+                <p className="text-white text-xs md:text-base font-medium px-2">
                   📢 {activeAnnouncements[currentAnnouncementIndex]?.text}
                 </p>
               </div>
@@ -82,7 +82,7 @@ const PrayerTimesCarousel = ({ prayerTimes, formatTime, getNextPrayer, announcem
                   className="text-white hover:text-yellow-300 transition-colors"
                   aria-label="Next announcement"
                 >
-                  <ChevronRight className="h-5 w-5" />
+                  <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />
                 </button>
               )}
             </div>
@@ -92,10 +92,10 @@ const PrayerTimesCarousel = ({ prayerTimes, formatTime, getNextPrayer, announcem
                   <button
                     key={index}
                     onClick={() => setCurrentAnnouncementIndex(index)}
-                    className={`h-2 rounded-full transition-all ${
+                    className={`h-1.5 md:h-2 rounded-full transition-all ${
                       index === currentAnnouncementIndex
-                        ? 'w-6 bg-yellow-300'
-                        : 'w-2 bg-cyan-400 hover:bg-cyan-300'
+                        ? 'w-4 md:w-6 bg-yellow-300'
+                        : 'w-1.5 md:w-2 bg-cyan-400 hover:bg-cyan-300'
                     }`}
                     aria-label={`Go to announcement ${index + 1}`}
                   />

@@ -30,35 +30,35 @@ const PrayerTimesSection = ({ prayerTimes, getNextPrayer, formatTime }) => {
                   return (
                     <div 
                       key={index} 
-                      className={`flex items-center justify-between p-4 rounded-lg transition-all ${
+                      className={`flex items-center justify-between p-3 md:p-4 rounded-lg transition-all ${
                         isNext 
                           ? 'bg-cyan-50 border-2 border-cyan-500 shadow-md' 
                           : 'bg-gray-50 hover:bg-cyan-50'
                       }`}
                     >
-                      <div className="flex items-center gap-3">
-                        <Clock className={`h-5 w-5 ${isNext ? 'text-cyan-700' : 'text-cyan-600'}`} />
-                        <div>
-                          <span className={`font-semibold text-lg ${isNext ? 'text-cyan-700' : 'text-gray-900'}`}>
+                      <div className="flex items-center gap-2 md:gap-3">
+                        <Clock className={`h-4 w-4 md:h-5 md:w-5 ${isNext ? 'text-cyan-700' : 'text-cyan-600'}`} />
+                        <div className="flex items-center gap-2">
+                          <span className={`font-semibold text-base md:text-lg ${isNext ? 'text-cyan-700' : 'text-gray-900'}`}>
                             {prayer.name}
                           </span>
                           {isNext && (
-                            <span className="ml-2 text-xs bg-cyan-600 text-white px-2 py-1 rounded-full">
+                            <span className="text-[10px] md:text-xs bg-cyan-600 text-white px-1.5 md:px-2 py-0.5 md:py-1 rounded-full whitespace-nowrap">
                               Next
                             </span>
                           )}
                         </div>
                       </div>
-                      <div className="flex gap-8">
+                      <div className="flex gap-4 md:gap-8">
                         <div className="text-right">
-                          <div className="text-xs text-gray-500 mb-1">Adhan</div>
-                          <div className={`font-mono text-lg font-semibold ${isNext ? 'text-cyan-700' : 'text-gray-900'}`}>
+                          <div className="text-[10px] md:text-xs text-gray-500 mb-0.5 md:mb-1">Adhan</div>
+                          <div className={`font-mono text-sm md:text-lg font-semibold ${isNext ? 'text-cyan-700' : 'text-gray-900'}`}>
                             {formatTime(prayer.adhan)}
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-xs text-gray-500 mb-1">Iqamah</div>
-                          <div className={`font-mono text-lg font-semibold ${isNext ? 'text-cyan-700' : 'text-cyan-600'}`}>
+                          <div className="text-[10px] md:text-xs text-gray-500 mb-0.5 md:mb-1">Iqamah</div>
+                          <div className={`font-mono text-sm md:text-lg font-semibold ${isNext ? 'text-cyan-700' : 'text-cyan-600'}`}>
                             {formatTime(prayer.iqamah)}
                           </div>
                         </div>
