@@ -8,7 +8,11 @@ const HeroSection = ({ mosqueInfo, onDonate }) => {
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto text-center">
           <div className="inline-block mb-6">
-            <div className="w-20 h-1 bg-cyan-600 mx-auto mb-6"></div>
+            <img 
+              src="https://customer-assets.emergentagent.com/job_markaz-rahma-1/artifacts/hk0234u7_Untitled%20design%20%2848%29.png" 
+              alt="Decorative element" 
+              className="h-8 md:h-12 w-auto mx-auto mb-6"
+            />
           </div>
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
             {mosqueInfo.fullName}
