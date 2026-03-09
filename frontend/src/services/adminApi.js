@@ -311,3 +311,102 @@ export const toggleAnnouncementsSystem = async (enabled) => {
     throw error;
   }
 };
+
+// Timetable API
+export const getTimetable = async () => {
+  try {
+    const response = await axios.get(`${API}/timetable`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching timetable:', error);
+    throw error;
+  }
+};
+
+export const updateTimetable = async (imagePath) => {
+  try {
+    const token = getAuthToken();
+    const response = await axios.put(
+      `${API}/admin/timetable`,
+      { image_path: imagePath },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error updating timetable:', error);
+    throw error;
+  }
+};
+
+// Events API
+export const getEventsAdmin = async () => {
+  try {
+    const token = getAuthToken();
+    const response = await axios.get(`${API}/admin/events`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching events:', error);
+    throw error;
+  }
+};
+
+export const createEvent = async (eventData) => {
+  try {
+    const token = getAuthToken();
+    const response = await axios.post(
+      `${API}/admin/events`,
+      eventData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error creating event:', error);
+    throw error;
+  }
+};
+
+export const updateEvent = async (id, data) => {
+  try {
+    const token = getAuthToken();
+    const response = await axios.put(
+      `${API}/admin/events/${id}`,
+      data,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error updating event:', error);
+    throw error;
+  }
+};
+
+export const deleteEvent = async (id) => {
+  try {
+    const token = getAuthToken();
+    const response = await axios.delete(`${API}/admin/events/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting event:', error);
+    throw error;
+  }
+};

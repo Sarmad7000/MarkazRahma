@@ -52,10 +52,10 @@ const Timetable = () => {
           <div className="text-center mb-8">
             <Calendar className="h-12 w-12 text-cyan-600 mx-auto mb-4" />
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
-              Weekly Timetable
+              Monthly Timetable
             </h1>
             <p className="text-lg text-gray-600">
-              View our complete schedule of classes and activities
+              View our monthly prayer times schedule
             </p>
           </div>
 
