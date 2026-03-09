@@ -192,7 +192,9 @@ export const updatePopupSettings = async (settings) => {
     return response.data;
   } catch (error) {
     console.error('Error updating popup settings:', error);
-    throw error;
+    console.error('Error response:', error.response?.data);
+    console.error('Error status:', error.response?.status);
+    throw new Error(error.response?.data?.detail || 'Failed to update popup settings');
   }
 };
 
@@ -215,7 +217,9 @@ export const uploadPopupImage = async (file) => {
     return response.data;
   } catch (error) {
     console.error('Error uploading image:', error);
-    throw error;
+    console.error('Error response:', error.response?.data);
+    console.error('Error status:', error.response?.status);
+    throw new Error(error.response?.data?.detail || 'Failed to upload image');
   }
 };
 
