@@ -17,7 +17,7 @@ const LocationSection = ({ mosqueInfo }) => {
                 rel="noopener noreferrer"
                 className="text-cyan-600 hover:text-cyan-700 hover:underline"
               >
-                Markaz Al Rahma Mosque
+                {mosqueInfo.location.address}
               </a>
             </p>
           </div>

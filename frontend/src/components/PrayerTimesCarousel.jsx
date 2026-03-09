@@ -60,7 +60,7 @@ const PrayerTimesCarousel = ({ prayerTimes, formatTime, getNextPrayer, announcem
 
         {/* Announcements Section - Both Mobile and Desktop */}
         {announcementsEnabled && activeAnnouncements.length > 0 && (
-          <div className={`${announcementsEnabled && activeAnnouncements.length > 0 ? 'md:mt-0' : ''} mt-2 md:pt-0 pt-2 ${announcementsEnabled && activeAnnouncements.length > 0 ? '' : 'md:border-t-0'} border-t border-cyan-500`}>
+          <div className="md:border-t-0 border-t border-cyan-500 md:pt-0 pt-2">
             <div className="flex items-center justify-center gap-2 md:gap-3">
               {activeAnnouncements.length > 1 && (
                 <button
