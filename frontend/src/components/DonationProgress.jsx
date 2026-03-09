@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Progress } from '../components/ui/progress';
 import { TrendingUp } from 'lucide-react';
 
-const DonationProgress = ({ goal }) => {
+const DonationProgress = ({ goal, className = '' }) => {
   if (!goal) return null;
 
   const formatCurrency = (amount, currency) => {
@@ -16,14 +16,14 @@ const DonationProgress = ({ goal }) => {
   };
 
   return (
-    <Card className="shadow-lg border-l-4 border-l-cyan-600">
+    <Card className={`shadow-lg border-l-4 border-l-cyan-600 flex flex-col ${className}`}>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-cyan-600">
           <TrendingUp className="h-5 w-5" />
           {goal.title}
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 flex flex-col justify-between">
         <div className="space-y-4">
           <p className="text-sm text-gray-600">{goal.description}</p>
           

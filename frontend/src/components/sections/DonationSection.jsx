@@ -45,8 +45,8 @@ const DonationSection = ({ donationInfo, donationGoal }) => {
 
             {/* Donation Progress */}
             {donationGoal && (
-              <div className="h-full flex items-center">
-                <DonationProgress goal={donationGoal} />
+              <div className="h-full">
+                <DonationProgress goal={donationGoal} className="h-full" />
               </div>
             )}
           </div>
