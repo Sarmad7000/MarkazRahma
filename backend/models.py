@@ -109,3 +109,44 @@ class AdminLoginResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     username: str
+
+# Popup Settings Models
+class PopupSettings(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    title: str
+    description: str
+    citation: str
+    image_path: str
+    enabled: bool = True
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class UpdatePopupSettingsRequest(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    citation: Optional[str] = None
+    image_path: Optional[str] = None
+    enabled: Optional[bool] = None
+
+# Announcement Models
+class Announcement(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    text: str
+    order: int = 0
+    enabled: bool = True
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class CreateAnnouncementRequest(BaseModel):
+    text: str
+    order: Optional[int] = 0
+
+class UpdateAnnouncementRequest(BaseModel):
+    text: Optional[str] = None
+    order: Optional[int] = None
+    enabled: Optional[bool] = None
+
+# Site Settings Models
+class SiteSettings(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    announcements_enabled: bool = True
+    updated_at: datetime = Field(default_factory=datetime.utcnow)

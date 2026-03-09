@@ -2,17 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '../components/ui/button';
 
-const RamadanPopup = ({ onDonate }) => {
+const RamadanPopup = ({ onDonate, popupSettings }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
+    // Only show popup if enabled in settings
+    if (!popupSettings || !popupSettings.enabled) return;
+    
     // Show popup after 1 second delay on every page load
     const timer = setTimeout(() => {
       setIsOpen(true);
     }, 1000);
     
     return () => clearTimeout(timer);
-  }, []);
+  }, [popupSettings]);
 
   const handleClose = () => {
     setIsOpen(false);
@@ -23,7 +26,7 @@ const RamadanPopup = ({ onDonate }) => {
     onDonate();
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !popupSettings || !popupSettings.enabled) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -47,8 +50,8 @@ const RamadanPopup = ({ onDonate }) => {
         {/* Image */}
         <div className="relative">
           <img 
-            src="https://customer-assets.emergentagent.com/job_markaz-rahma-1/artifacts/1w25b3eq_OUR%20LAST%20RAMADAN%20IN%20COLINDALE%20%282%29.png"
-            alt="Road to 100K - Support Our Masjid"
+            src={popupSettings.image_path}
+            alt="Support Our Masjid"
             className="w-full h-auto"
           />
         </div>
@@ -56,11 +59,10 @@ const RamadanPopup = ({ onDonate }) => {
         {/* Call to action */}
         <div className="p-4 md:p-6 bg-gradient-to-br from-cyan-50 to-white">
           <h3 className="text-lg md:text-2xl font-bold text-gray-900 mb-2 md:mb-3 text-center">
-            Our Last Ramadan in Colindale
+            {popupSettings.title}
           </h3>
           <p className="text-sm md:text-base text-gray-700 mb-4 md:mb-6 text-center">
-            Help us reach our goal of £100,000 to relocate before Ramadan ends. 
-            Every donation brings us closer to a permanent home for our community.
+            {popupSettings.description}
           </p>
           
           <div className="flex flex-col gap-3">
@@ -73,9 +75,7 @@ const RamadanPopup = ({ onDonate }) => {
           </div>
 
           <p className="text-xs md:text-xs text-gray-500 text-center mt-3 md:mt-4">
-            "Whoever builds a mosque for Allah, Allah will build for him a house like it in Paradise."
-            <br />
-            <span className="text-gray-400">- Sahih Al-Bukhari 450, Sahih Muslim 533</span>
+            {popupSettings.citation}
           </p>
         </div>
       </div>

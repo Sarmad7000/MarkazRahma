@@ -56,6 +56,55 @@ export const useDonationGoal = () => {
   };
 };
 
+// Custom hook for announcements with SWR
+export const useAnnouncements = () => {
+  const { data, error, isLoading, mutate } = useSWR(
+    `${API}/announcements`,
+    fetcher,
+    {
+      refreshInterval: 300000, // Refresh every 5 minutes
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+      dedupingInterval: 30000,
+      onError: (err) => {
+        console.error('Error fetching announcements:', err);
+      }
+    }
+  );
+
+  return {
+    announcements: data?.announcements || [],
+    announcementsEnabled: data?.announcements_enabled || false,
+    isLoading,
+    isError: error,
+    mutate
+  };
+};
+
+// Custom hook for popup settings with SWR
+export const usePopupSettings = () => {
+  const { data, error, isLoading, mutate } = useSWR(
+    `${API}/popup-settings`,
+    fetcher,
+    {
+      refreshInterval: 300000, // Refresh every 5 minutes
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+      dedupingInterval: 30000,
+      onError: (err) => {
+        console.error('Error fetching popup settings:', err);
+      }
+    }
+  );
+
+  return {
+    popupSettings: data,
+    isLoading,
+    isError: error,
+    mutate
+  };
+};
+
 // Original API functions (still available for manual calls)
 export const getPrayerTimes = async () => {
   try {

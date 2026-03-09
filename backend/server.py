@@ -7,13 +7,15 @@ import logging
 from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Optional, List
+import uuid
 
 from models import (
     PrayerTimes, UpdateIqamahRequest, UpdateJummahRequest,
     DonationRequest, DonationResponse,
     PaymentTransaction, CheckoutStatusResponse, DonationGoal, DonationGoalResponse,
     UpdateDonationGoalRequest, AdminLoginRequest, AdminLoginResponse, DonationHistoryItem,
-    AddOfflineDonationRequest
+    AddOfflineDonationRequest, PopupSettings, UpdatePopupSettingsRequest,
+    Announcement, CreateAnnouncementRequest, UpdateAnnouncementRequest, SiteSettings
 )
 from services.prayer_service import prayer_service
 from auth import authenticate_admin, create_access_token, get_current_user
@@ -513,6 +515,257 @@ async def get_donation_summary(current_user: dict = Depends(get_current_user)):
     except Exception as e:
         logger.error(f"Error fetching donation summary: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch donation summary")
+
+# ============== POPUP SETTINGS ENDPOINTS ==============
+
+@api_router.get("/popup-settings")
+async def get_popup_settings():
+    """Get current popup settings"""
+    try:
+        settings = await db.popup_settings.find_one({}, {"_id": 0})
+        
+        # Return default settings if none exist
+        if not settings:
+            default_settings = {
+                "title": "Our Last Ramadan in Colindale",
+                "description": "Help us reach our goal of £100,000 to relocate before Ramadan ends. Every donation brings us closer to a permanent home for our community.",
+                "citation": '"Whoever builds a mosque for Allah, Allah will build for him a house like it in Paradise."\n- Sahih Al-Bukhari 450, Sahih Muslim 533',
+                "image_path": "https://customer-assets.emergentagent.com/job_markaz-rahma-1/artifacts/1w25b3eq_OUR%20LAST%20RAMADAN%20IN%20COLINDALE%20%282%29.png",
+                "enabled": True
+            }
+            return default_settings
+        
+        return settings
+        
+    except Exception as e:
+        logger.error(f"Error fetching popup settings: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch popup settings")
+
+@api_router.put("/admin/popup-settings")
+async def update_popup_settings(
+    request: UpdatePopupSettingsRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Update popup settings (Admin only)"""
+    try:
+        # Get current settings
+        current_settings = await db.popup_settings.find_one({}, {"_id": 0})
+        
+        if not current_settings:
+            # Create default settings if none exist
+            current_settings = {
+                "id": str(uuid.uuid4()),
+                "title": "Our Last Ramadan in Colindale",
+                "description": "Help us reach our goal of £100,000 to relocate before Ramadan ends.",
+                "citation": "Sahih Al-Bukhari 450, Sahih Muslim 533",
+                "image_path": "https://customer-assets.emergentagent.com/job_markaz-rahma-1/artifacts/1w25b3eq_OUR%20LAST%20RAMADAN%20IN%20COLINDALE%20%282%29.png",
+                "enabled": True,
+                "updated_at": datetime.utcnow()
+            }
+        
+        # Update fields
+        update_data = request.dict(exclude_unset=True)
+        update_data["updated_at"] = datetime.utcnow()
+        
+        current_settings.update(update_data)
+        
+        # Save to database
+        await db.popup_settings.update_one(
+            {},
+            {"$set": current_settings},
+            upsert=True
+        )
+        
+        logger.info(f"Popup settings updated by {current_user['username']}")
+        return {"message": "Popup settings updated successfully", "settings": current_settings}
+        
+    except Exception as e:
+        logger.error(f"Error updating popup settings: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update popup settings")
+
+# ============== ANNOUNCEMENTS ENDPOINTS ==============
+
+@api_router.get("/announcements")
+async def get_announcements():
+    """Get all active announcements"""
+    try:
+        # Get site settings for announcements_enabled flag
+        site_settings = await db.site_settings.find_one({}, {"_id": 0})
+        announcements_enabled = site_settings.get("announcements_enabled", True) if site_settings else True
+        
+        # Get announcements sorted by order
+        cursor = db.announcements.find({}).sort("order", 1)
+        announcements_raw = await cursor.to_list(100)
+        
+        # Remove _id from each announcement
+        announcements = []
+        for ann in announcements_raw:
+            ann_dict = dict(ann)
+            ann_dict.pop('_id', None)
+            announcements.append(ann_dict)
+        
+        logger.info(f"Fetched {len(announcements)} announcements, enabled: {announcements_enabled}")
+        
+        return {
+            "announcements": announcements,
+            "announcements_enabled": announcements_enabled
+        }
+        
+    except Exception as e:
+        logger.error(f"Error fetching announcements: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch announcements")
+
+@api_router.get("/admin/announcements")
+async def get_all_announcements_admin(current_user: dict = Depends(get_current_user)):
+    """Get all announcements (Admin only)"""
+    try:
+        announcements = await db.announcements.find(
+            {},
+            {"_id": 0}
+        ).sort("order", 1).to_list(100)
+        
+        return {"announcements": announcements}
+        
+    except Exception as e:
+        logger.error(f"Error fetching announcements: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch announcements")
+
+@api_router.post("/admin/announcements")
+async def create_announcement(
+    request: CreateAnnouncementRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Create a new announcement (Admin only)"""
+    try:
+        announcement = Announcement(
+            text=request.text,
+            order=request.order,
+            enabled=True
+        )
+        
+        await db.announcements.insert_one(announcement.dict())
+        
+        logger.info(f"Announcement created by {current_user['username']}")
+        return {"message": "Announcement created successfully", "announcement": announcement}
+        
+    except Exception as e:
+        logger.error(f"Error creating announcement: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create announcement")
+
+@api_router.put("/admin/announcements/{announcement_id}")
+async def update_announcement(
+    announcement_id: str,
+    request: UpdateAnnouncementRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Update an announcement (Admin only)"""
+    try:
+        # Check if announcement exists
+        existing = await db.announcements.find_one({"id": announcement_id}, {"_id": 0})
+        if not existing:
+            raise HTTPException(status_code=404, detail="Announcement not found")
+        
+        # Update fields
+        update_data = request.dict(exclude_unset=True)
+        update_data["updated_at"] = datetime.utcnow()
+        
+        await db.announcements.update_one(
+            {"id": announcement_id},
+            {"$set": update_data}
+        )
+        
+        logger.info(f"Announcement {announcement_id} updated by {current_user['username']}")
+        return {"message": "Announcement updated successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating announcement: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update announcement")
+
+@api_router.delete("/admin/announcements/{announcement_id}")
+async def delete_announcement(
+    announcement_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Delete an announcement (Admin only)"""
+    try:
+        result = await db.announcements.delete_one({"id": announcement_id})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Announcement not found")
+        
+        logger.info(f"Announcement {announcement_id} deleted by {current_user['username']}")
+        return {"message": "Announcement deleted successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting announcement: {e}")
+        raise HTTPException(status_code=500, detail="Failed to delete announcement")
+
+@api_router.put("/admin/announcements-toggle")
+async def toggle_announcements(
+    enabled: bool,
+    current_user: dict = Depends(get_current_user)
+):
+    """Toggle announcements system on/off (Admin only)"""
+    try:
+        await db.site_settings.update_one(
+            {},
+            {"$set": {"announcements_enabled": enabled, "updated_at": datetime.utcnow()}},
+            upsert=True
+        )
+        
+        logger.info(f"Announcements toggled to {enabled} by {current_user['username']}")
+        return {"message": f"Announcements {'enabled' if enabled else 'disabled'} successfully"}
+        
+    except Exception as e:
+        logger.error(f"Error toggling announcements: {e}")
+        raise HTTPException(status_code=500, detail="Failed to toggle announcements")
+
+# ============== IMAGE UPLOAD ENDPOINT ==============
+
+from fastapi import UploadFile, File
+import uuid as uuid_lib
+import shutil
+
+@api_router.post("/admin/upload-image")
+async def upload_image(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
+    """Upload an image for popup (Admin only)"""
+    try:
+        # Validate file type
+        allowed_types = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+        if file.content_type not in allowed_types:
+            raise HTTPException(status_code=400, detail="Invalid file type. Only JPEG, PNG, and WebP are allowed.")
+        
+        # Generate unique filename
+        file_extension = file.filename.split(".")[-1]
+        unique_filename = f"{uuid_lib.uuid4()}.{file_extension}"
+        
+        # Save to uploads directory
+        upload_dir = Path("/app/frontend/public/uploads")
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        
+        file_path = upload_dir / unique_filename
+        
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        
+        # Return the public URL path
+        image_url = f"/uploads/{unique_filename}"
+        
+        logger.info(f"Image uploaded by {current_user['username']}: {image_url}")
+        return {"message": "Image uploaded successfully", "image_path": image_url}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error uploading image: {e}")
+        raise HTTPException(status_code=500, detail="Failed to upload image")
 
 # Include the router in the main app
 app.include_router(api_router)

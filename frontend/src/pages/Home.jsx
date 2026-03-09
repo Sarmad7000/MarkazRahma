@@ -4,6 +4,7 @@ import { Button } from '../components/ui/button';
 import { toast, Toaster } from 'sonner';
 import DonationModal from '../components/DonationModal';
 import RamadanPopup from '../components/RamadanPopup';
+import PrayerTimesCarousel from '../components/PrayerTimesCarousel';
 import Header from '../components/sections/Header';
 import HeroSection from '../components/sections/HeroSection';
 import PrayerTimesSection from '../components/sections/PrayerTimesSection';
@@ -12,7 +13,7 @@ import AboutSection from '../components/sections/AboutSection';
 import LocationSection from '../components/sections/LocationSection';
 import ContactSection from '../components/sections/ContactSection';
 import Footer from '../components/sections/Footer';
-import { usePrayerTimes, useDonationGoal, getDonationStatus } from '../services/api';
+import { usePrayerTimes, useDonationGoal, useAnnouncements, usePopupSettings, getDonationStatus } from '../services/api';
 import { mosqueInfo, donationInfo, aboutContent } from '../data/mock';
 
 const Home = () => {
@@ -22,6 +23,8 @@ const Home = () => {
   // Use SWR hooks for automatic caching and revalidation
   const { prayerTimes, isLoading: prayerLoading, isError: prayerError } = usePrayerTimes();
   const { donationGoal, isLoading: goalLoading, isError: goalError } = useDonationGoal();
+  const { announcements, announcementsEnabled } = useAnnouncements();
+  const { popupSettings } = usePopupSettings();
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -149,10 +152,19 @@ const Home = () => {
       <Toaster position="top-center" richColors />
       
       {/* Ramadan Fundraising Popup */}
-      <RamadanPopup onDonate={handleDonate} />
+      <RamadanPopup onDonate={handleDonate} popupSettings={popupSettings} />
 
       {/* Header */}
       <Header mosqueInfo={mosqueInfo} onDonate={handleDonate} />
+
+      {/* Prayer Times Carousel (just under header) */}
+      <PrayerTimesCarousel 
+        prayerTimes={prayerTimes} 
+        formatTime={formatTime}
+        getNextPrayer={getNextPrayer}
+        announcements={announcements}
+        announcementsEnabled={announcementsEnabled}
+      />
 
       {/* Hero Section */}
       <HeroSection mosqueInfo={mosqueInfo} onDonate={handleDonate} />

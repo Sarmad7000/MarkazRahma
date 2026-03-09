@@ -12,15 +12,24 @@ import {
   updateJummahTimes,
   updateDonationGoal,
   addOfflineDonation,
-  getDonationSummary
+  getDonationSummary,
+  updatePopupSettings,
+  uploadPopupImage,
+  getAnnouncementsAdmin,
+  createAnnouncement,
+  updateAnnouncement,
+  deleteAnnouncement,
+  toggleAnnouncementsSystem
 } from '../services/adminApi';
-import { getPrayerTimes, getDonationGoal } from '../services/api';
+import { getPrayerTimes, getDonationGoal, usePopupSettings } from '../services/api';
 import { LogOut, Loader2 } from 'lucide-react';
 import AdminStatsCards from '../components/admin/AdminStatsCards';
 import PrayerTimesTab from '../components/admin/PrayerTimesTab';
 import DonationsTab from '../components/admin/DonationsTab';
 import AddDonationTab from '../components/admin/AddDonationTab';
 import SettingsTab from '../components/admin/SettingsTab';
+import PopupSettingsTab from '../components/admin/PopupSettingsTab';
+import AnnouncementsTab from '../components/admin/AnnouncementsTab';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -34,16 +43,28 @@ const AdminDashboard = () => {
   const [editingGoal, setEditingGoal] = useState({title: '', target_amount: '', description: ''});
   const [offlineDonation, setOfflineDonation] = useState({amount: '', source: 'bank_transfer', note: ''});
   const [donationSummary, setDonationSummary] = useState(null);
+  const [popupSettings, setPopupSettings] = useState({
+    title: '',
+    description: '',
+    citation: '',
+    image_path: '',
+    enabled: true
+  });
+  const [announcements, setAnnouncements] = useState([]);
+  const [announcementsEnabled, setAnnouncementsEnabled] = useState(true);
+
+  const { popupSettings: livePopupSettings } = usePopupSettings();
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const [prayerData, donationData, statsData, goalData, summaryData] = await Promise.all([
+      const [prayerData, donationData, statsData, goalData, summaryData, announcementsData] = await Promise.all([
         getPrayerTimes(),
         getDonationHistory(),
         getDonationStats(),
         getDonationGoal(),
-        getDonationSummary()
+        getDonationSummary(),
+        getAnnouncementsAdmin()
       ]);
 
       setPrayerTimes(prayerData);
@@ -51,6 +72,12 @@ const AdminDashboard = () => {
       setStats(statsData);
       setGoal(goalData);
       setDonationSummary(summaryData);
+      setAnnouncements(announcementsData.announcements || []);
+
+      // Initialize popup settings from live data
+      if (livePopupSettings) {
+        setPopupSettings(livePopupSettings);
+      }
 
       // Initialize editing states
       const initialEditing = {};
@@ -74,7 +101,7 @@ const AdminDashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [navigate]);
+  }, [navigate, livePopupSettings]);
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -146,6 +173,71 @@ const AdminDashboard = () => {
     }
   };
 
+  // Popup Settings Handlers
+  const handleUpdatePopupSettings = async () => {
+    try {
+      await updatePopupSettings(popupSettings);
+      toast.success('Popup settings updated successfully');
+      fetchData();
+    } catch (error) {
+      toast.error('Failed to update popup settings');
+    }
+  };
+
+  const handleUploadImage = async (file) => {
+    try {
+      const result = await uploadPopupImage(file);
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  // Announcements Handlers
+  const handleToggleAnnouncementsSystem = async (enabled) => {
+    try {
+      await toggleAnnouncementsSystem(enabled);
+      setAnnouncementsEnabled(enabled);
+      toast.success(`Announcements ${enabled ? 'enabled' : 'disabled'} successfully`);
+    } catch (error) {
+      toast.error('Failed to toggle announcements');
+    }
+  };
+
+  const handleCreateAnnouncement = async (text) => {
+    try {
+      await createAnnouncement(text, announcements.length);
+      toast.success('Announcement created successfully');
+      fetchData();
+    } catch (error) {
+      toast.error('Failed to create announcement');
+    }
+  };
+
+  const handleUpdateAnnouncement = async (id, data) => {
+    try {
+      await updateAnnouncement(id, data);
+      toast.success('Announcement updated successfully');
+      fetchData();
+    } catch (error) {
+      toast.error('Failed to update announcement');
+    }
+  };
+
+  const handleDeleteAnnouncement = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this announcement?')) {
+      return;
+    }
+    
+    try {
+      await deleteAnnouncement(id);
+      toast.success('Announcement deleted successfully');
+      fetchData();
+    } catch (error) {
+      toast.error('Failed to delete announcement');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -199,6 +291,8 @@ const AdminDashboard = () => {
               <TabsTrigger value="prayers" className="px-8">Prayer Times</TabsTrigger>
               <TabsTrigger value="donations" className="px-8">Donations</TabsTrigger>
               <TabsTrigger value="offline" className="px-8">Add Donation</TabsTrigger>
+              <TabsTrigger value="popup" className="px-8">Popup Settings</TabsTrigger>
+              <TabsTrigger value="announcements" className="px-8">Announcements</TabsTrigger>
               <TabsTrigger value="settings" className="px-8">Settings</TabsTrigger>
             </TabsList>
           </div>
@@ -231,6 +325,28 @@ const AdminDashboard = () => {
               setOfflineDonation={setOfflineDonation}
               handleAddOfflineDonation={handleAddOfflineDonation}
               goal={goal}
+            />
+          </TabsContent>
+
+          {/* Popup Settings Tab */}
+          <TabsContent value="popup">
+            <PopupSettingsTab 
+              popupSettings={popupSettings}
+              setPopupSettings={setPopupSettings}
+              handleUpdatePopupSettings={handleUpdatePopupSettings}
+              handleUploadImage={handleUploadImage}
+            />
+          </TabsContent>
+
+          {/* Announcements Tab */}
+          <TabsContent value="announcements">
+            <AnnouncementsTab 
+              announcements={announcements}
+              announcementsEnabled={announcementsEnabled}
+              handleToggleAnnouncementsSystem={handleToggleAnnouncementsSystem}
+              handleCreateAnnouncement={handleCreateAnnouncement}
+              handleUpdateAnnouncement={handleUpdateAnnouncement}
+              handleDeleteAnnouncement={handleDeleteAnnouncement}
             />
           </TabsContent>
 

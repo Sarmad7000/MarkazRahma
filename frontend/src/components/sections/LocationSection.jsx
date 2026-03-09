@@ -10,7 +10,16 @@ const LocationSection = ({ mosqueInfo }) => {
           <div className="text-center mb-12">
             <MapPin className="h-12 w-12 text-cyan-600 mx-auto mb-4" />
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Visit Us</h2>
-            <p className="text-lg text-gray-600">{mosqueInfo.location.address}</p>
+            <p className="text-lg text-gray-600">
+              <a 
+                href="https://share.google/0PAArCw19mQdSIzvG" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-cyan-600 hover:text-cyan-700 hover:underline"
+              >
+                {mosqueInfo.location.address}
+              </a>
+            </p>
           </div>
 
           <Card className="shadow-lg overflow-hidden">
