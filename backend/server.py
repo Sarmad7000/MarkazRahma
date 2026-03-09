@@ -15,7 +15,8 @@ from models import (
     PaymentTransaction, CheckoutStatusResponse, DonationGoal, DonationGoalResponse,
     UpdateDonationGoalRequest, AdminLoginRequest, AdminLoginResponse, DonationHistoryItem,
     AddOfflineDonationRequest, PopupSettings, UpdatePopupSettingsRequest,
-    Announcement, CreateAnnouncementRequest, UpdateAnnouncementRequest, SiteSettings
+    Announcement, CreateAnnouncementRequest, UpdateAnnouncementRequest, SiteSettings,
+    TimetableSettings, UpdateTimetableRequest, Event, CreateEventRequest, UpdateEventRequest
 )
 from services.prayer_service import prayer_service
 from auth import authenticate_admin, create_access_token, get_current_user
@@ -723,6 +724,155 @@ async def toggle_announcements(
     except Exception as e:
         logger.error(f"Error toggling announcements: {e}")
         raise HTTPException(status_code=500, detail="Failed to toggle announcements")
+
+# ============== TIMETABLE ENDPOINTS ==============
+
+@api_router.get("/timetable")
+async def get_timetable():
+    """Get timetable image"""
+    try:
+        timetable = await db.timetable_settings.find_one({}, {"_id": 0})
+        
+        if not timetable:
+            return {"image_path": None}
+        
+        return timetable
+        
+    except Exception as e:
+        logger.error(f"Error fetching timetable: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch timetable")
+
+@api_router.put("/admin/timetable")
+async def update_timetable(
+    request: UpdateTimetableRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Update timetable image (Admin only)"""
+    try:
+        timetable_data = {
+            "id": str(uuid.uuid4()),
+            "image_path": request.image_path,
+            "updated_at": datetime.utcnow()
+        }
+        
+        await db.timetable_settings.update_one(
+            {},
+            {"$set": timetable_data},
+            upsert=True
+        )
+        
+        logger.info(f"Timetable updated by {current_user.get('sub', 'admin')}")
+        return {"message": "Timetable updated successfully"}
+        
+    except Exception as e:
+        logger.error(f"Error updating timetable: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update timetable")
+
+# ============== EVENTS ENDPOINTS ==============
+
+@api_router.get("/events")
+async def get_events():
+    """Get all active events"""
+    try:
+        events = await db.events.find(
+            {"enabled": True},
+            {"_id": 0}
+        ).sort("order", 1).to_list(100)
+        
+        return {"events": events}
+        
+    except Exception as e:
+        logger.error(f"Error fetching events: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch events")
+
+@api_router.get("/admin/events")
+async def get_all_events_admin(current_user: dict = Depends(get_current_user)):
+    """Get all events (Admin only)"""
+    try:
+        events = await db.events.find(
+            {},
+            {"_id": 0}
+        ).sort("order", 1).to_list(100)
+        
+        return {"events": events}
+        
+    except Exception as e:
+        logger.error(f"Error fetching events: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch events")
+
+@api_router.post("/admin/events")
+async def create_event(
+    request: CreateEventRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Create a new event (Admin only)"""
+    try:
+        event = Event(
+            title=request.title,
+            description=request.description,
+            image_path=request.image_path,
+            order=request.order,
+            enabled=True
+        )
+        
+        await db.events.insert_one(event.dict())
+        
+        logger.info(f"Event created by {current_user.get('sub', 'admin')}")
+        return {"message": "Event created successfully", "event": event}
+        
+    except Exception as e:
+        logger.error(f"Error creating event: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create event")
+
+@api_router.put("/admin/events/{event_id}")
+async def update_event(
+    event_id: str,
+    request: UpdateEventRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Update an event (Admin only)"""
+    try:
+        existing = await db.events.find_one({"id": event_id}, {"_id": 0})
+        if not existing:
+            raise HTTPException(status_code=404, detail="Event not found")
+        
+        update_data = request.dict(exclude_unset=True)
+        update_data["updated_at"] = datetime.utcnow()
+        
+        await db.events.update_one(
+            {"id": event_id},
+            {"$set": update_data}
+        )
+        
+        logger.info(f"Event {event_id} updated by {current_user.get('sub', 'admin')}")
+        return {"message": "Event updated successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating event: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update event")
+
+@api_router.delete("/admin/events/{event_id}")
+async def delete_event(
+    event_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Delete an event (Admin only)"""
+    try:
+        result = await db.events.delete_one({"id": event_id})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Event not found")
+        
+        logger.info(f"Event {event_id} deleted by {current_user.get('sub', 'admin')}")
+        return {"message": "Event deleted successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting event: {e}")
+        raise HTTPException(status_code=500, detail="Failed to delete event")
 
 # ============== IMAGE UPLOAD ENDPOINT ==============
 

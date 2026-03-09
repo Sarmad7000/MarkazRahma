@@ -150,3 +150,36 @@ class SiteSettings(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     announcements_enabled: bool = True
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+# Timetable Settings Models
+class TimetableSettings(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    image_path: str
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class UpdateTimetableRequest(BaseModel):
+    image_path: str
+
+# Event Models
+class Event(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    title: str
+    description: str
+    image_path: str
+    order: int = 0
+    enabled: bool = True
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class CreateEventRequest(BaseModel):
+    title: str
+    description: str
+    image_path: str
+    order: Optional[int] = 0
+
+class UpdateEventRequest(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    image_path: Optional[str] = None
+    order: Optional[int] = None
+    enabled: Optional[bool] = None
