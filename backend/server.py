@@ -727,39 +727,37 @@ async def toggle_announcements(
 # ============== IMAGE UPLOAD ENDPOINT ==============
 
 from fastapi import UploadFile, File
-import uuid as uuid_lib
-import shutil
+import base64
 
 @api_router.post("/admin/upload-image")
 async def upload_image(
     file: UploadFile = File(...),
     current_user: dict = Depends(get_current_user)
 ):
-    """Upload an image for popup (Admin only)"""
+    """Upload an image for popup (Admin only) - Stores as base64 in MongoDB"""
     try:
         # Validate file type
         allowed_types = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
         if file.content_type not in allowed_types:
             raise HTTPException(status_code=400, detail="Invalid file type. Only JPEG, PNG, and WebP are allowed.")
         
-        # Generate unique filename
-        file_extension = file.filename.split(".")[-1]
-        unique_filename = f"{uuid_lib.uuid4()}.{file_extension}"
+        # Validate file size (max 5MB)
+        file_content = await file.read()
+        file_size_mb = len(file_content) / (1024 * 1024)
+        if file_size_mb > 5:
+            raise HTTPException(status_code=400, detail="File size must be less than 5MB")
         
-        # Save to uploads directory
-        upload_dir = Path("/app/frontend/public/uploads")
-        upload_dir.mkdir(parents=True, exist_ok=True)
+        # Convert to base64
+        base64_image = base64.b64encode(file_content).decode('utf-8')
         
-        file_path = upload_dir / unique_filename
+        # Create data URL with proper mime type
+        image_data_url = f"data:{file.content_type};base64,{base64_image}"
         
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-        
-        # Return the public URL path
-        image_url = f"/uploads/{unique_filename}"
-        
-        logger.info(f"Image uploaded by {current_user['username']}: {image_url}")
-        return {"message": "Image uploaded successfully", "image_path": image_url}
+        logger.info(f"Image uploaded by {current_user['username']} - Size: {file_size_mb:.2f}MB")
+        return {
+            "message": "Image uploaded successfully",
+            "image_path": image_data_url
+        }
         
     except HTTPException:
         raise
