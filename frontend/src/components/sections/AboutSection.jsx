@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 
 const AboutSection = ({ aboutContent }) => {
   return (
-    <section id="about" className="py-16 bg-white">
+    <section id="about" className="py-8 md:py-12 bg-white">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">

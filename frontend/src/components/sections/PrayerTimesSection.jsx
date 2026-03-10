@@ -6,7 +6,7 @@ const PrayerTimesSection = ({ prayerTimes, getNextPrayer, formatTime }) => {
   if (!prayerTimes) return null;
 
   return (
-    <section id="prayer-times" className="py-16 bg-white">
+    <section id="prayer-times" className="py-8 md:py-12 bg-white">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">

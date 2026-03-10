@@ -10,7 +10,7 @@ const DonationSection = ({ donationInfo, donationGoal }) => {
   };
 
   return (
-    <section id="donate" className="py-16 bg-gradient-to-br from-gray-50 to-cyan-50">
+    <section id="donate" className="py-8 md:py-12 bg-gradient-to-br from-gray-50 to-cyan-50">
       <div className="container mx-auto px-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
