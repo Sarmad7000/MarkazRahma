@@ -131,6 +131,7 @@ class UpdatePopupSettingsRequest(BaseModel):
 class Announcement(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     text: str
+    url: Optional[str] = None
     order: int = 0
     enabled: bool = True
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -138,10 +139,12 @@ class Announcement(BaseModel):
 
 class CreateAnnouncementRequest(BaseModel):
     text: str
+    url: Optional[str] = None
     order: Optional[int] = 0
 
 class UpdateAnnouncementRequest(BaseModel):
     text: Optional[str] = None
+    url: Optional[str] = None
     order: Optional[int] = None
     enabled: Optional[bool] = None
 

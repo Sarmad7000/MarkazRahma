@@ -239,12 +239,12 @@ export const getAnnouncementsAdmin = async () => {
   }
 };
 
-export const createAnnouncement = async (text, order = 0) => {
+export const createAnnouncement = async (text, order = 0, url = null) => {
   try {
     const token = getAuthToken();
     const response = await axios.post(
       `${API}/admin/announcements`,
-      { text, order },
+      { text, order, url },
       {
         headers: {
           Authorization: `Bearer ${token}`

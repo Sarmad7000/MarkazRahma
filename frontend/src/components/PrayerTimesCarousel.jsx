@@ -71,9 +71,20 @@ const PrayerTimesCarousel = ({ prayerTimes, formatTime, getNextPrayer, announcem
                   <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
                 </button>
               )}
-              <div className="flex-1 text-center">
+              <div 
+                className={`flex-1 text-center ${activeAnnouncements[currentAnnouncementIndex]?.url ? 'cursor-pointer hover:text-yellow-300 transition-colors' : ''}`}
+                onClick={() => {
+                  const url = activeAnnouncements[currentAnnouncementIndex]?.url;
+                  if (url) {
+                    window.open(url, '_blank', 'noopener,noreferrer');
+                  }
+                }}
+              >
                 <p className="text-white text-xs md:text-base font-medium px-2">
                   📢 {activeAnnouncements[currentAnnouncementIndex]?.text}
+                  {activeAnnouncements[currentAnnouncementIndex]?.url && (
+                    <span className="ml-2 text-yellow-300">🔗</span>
+                  )}
                 </p>
               </div>
               {activeAnnouncements.length > 1 && (

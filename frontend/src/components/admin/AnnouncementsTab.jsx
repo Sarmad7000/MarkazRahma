@@ -16,17 +16,21 @@ const AnnouncementsTab = ({
   handleDeleteAnnouncement
 }) => {
   const [newAnnouncementText, setNewAnnouncementText] = useState('');
+  const [newAnnouncementUrl, setNewAnnouncementUrl] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [editingText, setEditingText] = useState('');
+  const [editingUrl, setEditingUrl] = useState('');
 
   const startEdit = (announcement) => {
     setEditingId(announcement.id);
     setEditingText(announcement.text);
+    setEditingUrl(announcement.url || '');
   };
 
   const cancelEdit = () => {
     setEditingId(null);
     setEditingText('');
+    setEditingUrl('');
   };
 
   const saveEdit = async (id) => {
@@ -36,9 +40,10 @@ const AnnouncementsTab = ({
     }
     
     try {
-      await handleUpdateAnnouncement(id, { text: editingText });
+      await handleUpdateAnnouncement(id, { text: editingText, url: editingUrl });
       setEditingId(null);
       setEditingText('');
+      setEditingUrl('');
     } catch (error) {
       // Error already handled in parent
     }
@@ -51,8 +56,9 @@ const AnnouncementsTab = ({
     }
 
     try {
-      await handleCreateAnnouncement(newAnnouncementText);
+      await handleCreateAnnouncement({ text: newAnnouncementText, url: newAnnouncementUrl });
       setNewAnnouncementText('');
+      setNewAnnouncementUrl('');
     } catch (error) {
       // Error already handled in parent
     }
@@ -98,20 +104,35 @@ const AnnouncementsTab = ({
           <CardTitle>Add New Announcement</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-2">
-            <Input
-              value={newAnnouncementText}
-              onChange={(e) => setNewAnnouncementText(e.target.value)}
-              placeholder="Enter announcement text..."
-              onKeyPress={(e) => {
-                if (e.key === 'Enter') {
-                  handleCreate();
-                }
-              }}
-            />
-            <Button onClick={handleCreate}>
+          <div className="space-y-3">
+            <div>
+              <Label>Announcement Text</Label>
+              <Input
+                value={newAnnouncementText}
+                onChange={(e) => setNewAnnouncementText(e.target.value)}
+                placeholder="Enter announcement text..."
+                className="mt-1"
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    handleCreate();
+                  }
+                }}
+              />
+            </div>
+            <div>
+              <Label>Link URL (Optional)</Label>
+              <Input
+                value={newAnnouncementUrl}
+                onChange={(e) => setNewAnnouncementUrl(e.target.value)}
+                placeholder="https://example.com (leave blank if not needed)"
+                className="mt-1"
+                type="url"
+              />
+              <p className="text-xs text-gray-500 mt-1">Users will be redirected here when they click this announcement</p>
+            </div>
+            <Button onClick={handleCreate} className="w-full">
               <Plus className="h-4 w-4 mr-2" />
-              Add
+              Add Announcement
             </Button>
           </div>
         </CardContent>
@@ -142,34 +163,47 @@ const AnnouncementsTab = ({
                   }`}
                 >
                   {editingId === announcement.id ? (
-                    <>
+                    <div className="flex-1 space-y-2">
                       <Input
                         value={editingText}
                         onChange={(e) => setEditingText(e.target.value)}
-                        className="flex-1"
+                        placeholder="Announcement text..."
                         autoFocus
                       />
-                      <Button
-                        size="sm"
-                        onClick={() => saveEdit(announcement.id)}
-                        variant="default"
-                      >
-                        <Save className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={cancelEdit}
-                        variant="outline"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </>
+                      <Input
+                        value={editingUrl}
+                        onChange={(e) => setEditingUrl(e.target.value)}
+                        placeholder="Link URL (optional)"
+                        type="url"
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => saveEdit(announcement.id)}
+                          variant="default"
+                        >
+                          <Save className="h-4 w-4 mr-1" /> Save
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={cancelEdit}
+                          variant="outline"
+                        >
+                          <X className="h-4 w-4 mr-1" /> Cancel
+                        </Button>
+                      </div>
+                    </div>
                   ) : (
                     <>
                       <div className="flex-1">
                         <p className={announcement.enabled ? '' : 'line-through'}>
                           {announcement.text}
                         </p>
+                        {announcement.url && (
+                          <p className="text-xs text-cyan-600 mt-1 break-all">
+                            🔗 {announcement.url}
+                          </p>
+                        )}
                         <p className="text-xs text-gray-500 mt-1">
                           Created: {new Date(announcement.created_at).toLocaleString()}
                         </p>

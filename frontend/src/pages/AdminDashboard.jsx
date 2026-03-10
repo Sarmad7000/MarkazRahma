@@ -224,9 +224,12 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleCreateAnnouncement = async (text) => {
+  const handleCreateAnnouncement = async (announcementData) => {
     try {
-      await createAnnouncement(text, announcements.length);
+      const data = typeof announcementData === 'string' 
+        ? { text: announcementData, url: null }
+        : announcementData;
+      await createAnnouncement(data.text, announcements.length, data.url);
       toast.success('Announcement created successfully');
       fetchData();
     } catch (error) {
