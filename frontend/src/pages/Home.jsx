@@ -27,9 +27,24 @@ const Home = () => {
   const { announcements, announcementsEnabled } = useAnnouncements();
   const { popupSettings } = usePopupSettings();
 
-  // Scroll to top on page load
+  // Scroll to top on page load - multiple methods for reliability
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'instant' });
+    // Method 1: Immediate scroll
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    
+    // Method 2: Disable scroll restoration
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+    
+    // Method 3: Delayed scroll (after content loads)
+    const timer = setTimeout(() => {
+      window.scrollTo(0, 0);
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
