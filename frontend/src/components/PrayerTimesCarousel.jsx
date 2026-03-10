@@ -80,7 +80,7 @@ const PrayerTimesCarousel = ({ prayerTimes, formatTime, getNextPrayer, announcem
                   }
                 }}
               >
-                <p className="text-base md:text-base lg:text-lg font-semibold leading-relaxed">
+                <p className="text-white text-base md:text-base lg:text-lg font-semibold leading-relaxed">
                   📢 {activeAnnouncements[currentAnnouncementIndex]?.text}
                   {activeAnnouncements[currentAnnouncementIndex]?.url && (
                     <span className="ml-2 text-yellow-300">🔗</span>
