@@ -25,13 +25,13 @@ const PrayerTimesCarousel = ({ prayerTimes, formatTime, getNextPrayer, announcem
     <div className="bg-gradient-to-r from-cyan-600 to-cyan-700 shadow-md">
       <div className="container mx-auto px-2 md:px-4 py-3 md:py-4">
         {/* Prayer Times Row - Mobile Only */}
-        <div className="md:hidden flex items-center justify-center gap-1 overflow-x-auto pb-3">
+        <div className="md:hidden flex items-center justify-center gap-0.5 overflow-x-auto pb-3">
           {prayerTimes.prayers.map((prayer, index) => {
             const isNext = prayer.name === nextPrayer;
             return (
               <div
                 key={index}
-                className={`flex flex-col items-center min-w-[80px] px-2 py-2 ${
+                className={`flex flex-col items-center min-w-[75px] px-1.5 py-2 ${
                   isNext ? 'scale-110' : ''
                 } transition-all`}
               >
@@ -80,7 +80,7 @@ const PrayerTimesCarousel = ({ prayerTimes, formatTime, getNextPrayer, announcem
                   }
                 }}
               >
-                <p className="text-white text-base md:text-xl lg:text-2xl font-semibold leading-relaxed">
+                <p className="text-white text-base md:text-lg lg:text-xl font-semibold leading-relaxed">
                   📢 {activeAnnouncements[currentAnnouncementIndex]?.text}
                   {activeAnnouncements[currentAnnouncementIndex]?.url && (
                     <span className="ml-2 text-yellow-300">🔗</span>
