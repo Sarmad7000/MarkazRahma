@@ -20,7 +20,7 @@ const MixlrSection = () => {
   }, []);
 
   return (
-    <section id="mixlr-live" className="py-12 md:py-16 bg-gradient-to-b from-white to-gray-50">
+    <section id="mixlr-live" className="py-8 md:py-12 bg-gradient-to-b from-white to-gray-50">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
           {/* Section Header */}
@@ -61,11 +61,11 @@ const MixlrSection = () => {
               {/* Thumbnail or Embed */}
               <div className="relative bg-gray-900">
                 {!isLive ? (
-                  <div className="relative aspect-video">
+                  <div className="relative w-full">
                     <img 
                       src={defaultThumbnail} 
                       alt="Mixlr Stream" 
-                      className="w-full h-full object-cover"
+                      className="w-full h-auto object-contain"
                     />
                     <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
                       <div className="text-center text-white">
@@ -109,14 +109,14 @@ const MixlrSection = () => {
                   <Play className="h-5 w-5 mr-2" />
                   View All Recordings
                 </Button>
+                
+                {/* Info Text - Now inside card */}
+                <p className="text-center text-sm text-gray-500 mt-3">
+                  Listen to past lectures and programs on our recordings page
+                </p>
               </div>
             </CardContent>
           </Card>
-
-          {/* Info Text */}
-          <p className="text-center text-sm text-gray-500 mt-4">
-            Listen to past lectures and programs on our recordings page
-          </p>
         </div>
       </div>
     </section>
