@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
+import { Textarea } from '../ui/textarea';
 import { Label } from '../ui/label';
 import { Switch } from '../ui/switch';
 import { Plus, Trash2, Edit2, Save, X } from 'lucide-react';
@@ -107,13 +108,14 @@ const AnnouncementsTab = ({
           <div className="space-y-3">
             <div>
               <Label>Announcement Text</Label>
-              <Input
+              <Textarea
                 value={newAnnouncementText}
                 onChange={(e) => setNewAnnouncementText(e.target.value)}
-                placeholder="Enter announcement text..."
-                className="mt-1"
-                onKeyPress={(e) => {
+                placeholder="Enter announcement text... (Shift+Enter for new line)"
+                className="mt-1 min-h-[80px]"
+                onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
                     handleCreate();
                   }
                 }}
@@ -164,11 +166,18 @@ const AnnouncementsTab = ({
                 >
                   {editingId === announcement.id ? (
                     <div className="flex-1 space-y-2">
-                      <Input
+                      <Textarea
                         value={editingText}
                         onChange={(e) => setEditingText(e.target.value)}
-                        placeholder="Announcement text..."
+                        placeholder="Announcement text... (Shift+Enter for new line)"
+                        className="min-h-[80px]"
                         autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            saveEdit(announcement.id);
+                          }
+                        }}
                       />
                       <Input
                         value={editingUrl}
@@ -196,7 +205,7 @@ const AnnouncementsTab = ({
                   ) : (
                     <>
                       <div className="flex-1">
-                        <p className={announcement.enabled ? '' : 'line-through'}>
+                        <p className={`whitespace-pre-wrap ${announcement.enabled ? '' : 'line-through'}`}>
                           {announcement.text}
                         </p>
                         {announcement.url && (
