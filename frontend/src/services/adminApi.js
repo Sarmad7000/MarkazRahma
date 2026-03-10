@@ -118,6 +118,29 @@ export const updateJummahTimes = async (time) => {
   }
 };
 
+export const bulkUpdateIqamahTimes = async (file) => {
+  try {
+    const token = getAuthToken();
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await axios.post(
+      `${API}/admin/iqamah/bulk-update`,
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error bulk updating iqamah times:', error);
+    throw error;
+  }
+};
+
 export const addOfflineDonation = async (amount, source, note) => {
   try {
     const token = getAuthToken();

@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Request, Depends
+from fastapi import FastAPI, APIRouter, HTTPException, Request, Depends, UploadFile, File
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -8,6 +8,8 @@ from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Optional, List
 import uuid
+import csv
+import io
 
 from models import (
     PrayerTimes, UpdateIqamahRequest, UpdateJummahRequest,
@@ -206,6 +208,138 @@ async def update_jummah_times(request: UpdateJummahRequest, current_user: dict =
     except Exception as e:
         logger.error(f"Error updating Jummah times: {e}")
         raise HTTPException(status_code=500, detail="Failed to update Jummah times")
+
+@api_router.post("/admin/iqamah/bulk-update")
+async def bulk_update_iqamah_times(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
+    """
+    Bulk update Iqamah times for multiple dates via CSV upload
+    CSV Format: Date,Fajr_Iqama,Duhur_Iqama,Asr_Iqama,Magrib_Iqama,Isha_Iqama
+    Accepts both "Duhur" and "Dhuhr" spellings
+    Sets Jummah time to match Dhuhr time
+    """
+    try:
+        # Validate file type
+        if not file.filename.endswith('.csv'):
+            raise HTTPException(status_code=400, detail="File must be a CSV")
+        
+        # Read and decode CSV file
+        contents = await file.read()
+        csv_text = contents.decode('utf-8')
+        csv_reader = csv.DictReader(io.StringIO(csv_text))
+        
+        # Validate headers
+        required_headers = ['Date', 'Fajr_Iqama', 'Asr_Iqama', 'Magrib_Iqama', 'Isha_Iqama']
+        headers = csv_reader.fieldnames
+        
+        # Check for Dhuhr (accept both spellings)
+        dhuhr_header = None
+        if 'Duhur_Iqama' in headers:
+            dhuhr_header = 'Duhur_Iqama'
+        elif 'Dhuhr_Iqama' in headers:
+            dhuhr_header = 'Dhuhr_Iqama'
+        else:
+            raise HTTPException(
+                status_code=400, 
+                detail="Missing Dhuhr/Duhur column. Required: Date, Fajr_Iqama, Duhur_Iqama/Dhuhr_Iqama, Asr_Iqama, Magrib_Iqama, Isha_Iqama"
+            )
+        
+        # Validate all required headers are present
+        for header in required_headers:
+            if header not in headers:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Missing required column: {header}. Found: {', '.join(headers)}"
+                )
+        
+        # Parse and validate all rows first
+        rows_to_update = []
+        row_num = 1
+        
+        for row in csv_reader:
+            row_num += 1
+            
+            # Validate date format
+            try:
+                date_str = row['Date'].strip()
+                datetime.strptime(date_str, "%Y-%m-%d")
+            except ValueError:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid date format in row {row_num}: {row['Date']}. Expected YYYY-MM-DD"
+                )
+            
+            # Validate time format for all prayers
+            prayer_times = {
+                'Fajr': row['Fajr_Iqama'].strip(),
+                'Dhuhr': row[dhuhr_header].strip(),
+                'Asr': row['Asr_Iqama'].strip(),
+                'Maghrib': row['Magrib_Iqama'].strip(),
+                'Isha': row['Isha_Iqama'].strip()
+            }
+            
+            for prayer_name, time_str in prayer_times.items():
+                try:
+                    datetime.strptime(time_str, "%H:%M")
+                except ValueError:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Invalid time format in row {row_num} for {prayer_name}: {time_str}. Expected HH:MM"
+                    )
+            
+            rows_to_update.append({
+                'date': date_str,
+                'prayer_times': prayer_times
+            })
+        
+        if not rows_to_update:
+            raise HTTPException(status_code=400, detail="CSV file contains no data rows")
+        
+        # All validation passed - now update the database
+        updated_count = 0
+        
+        for row_data in rows_to_update:
+            date_str = row_data['date']
+            prayer_times = row_data['prayer_times']
+            
+            # Fetch live adhan times from AlAdhan API for this date
+            api_data = prayer_service.fetch_prayer_times_from_api(date_str)
+            
+            # Create iqamah times dict
+            iqamah_times = {
+                'Fajr': prayer_times['Fajr'],
+                'Dhuhr': prayer_times['Dhuhr'],
+                'Asr': prayer_times['Asr'],
+                'Maghrib': prayer_times['Maghrib'],
+                'Isha': prayer_times['Isha']
+            }
+            
+            # Create prayer times object with updated iqamah times
+            prayer_times_obj = prayer_service.create_prayer_times_object(api_data, iqamah_times)
+            
+            # Set Jummah time to match Dhuhr
+            prayer_times_obj.jummah.time = prayer_times['Dhuhr']
+            
+            # Update in database
+            await db.prayer_times.update_one(
+                {"date": date_str},
+                {"$set": prayer_times_obj.dict()},
+                upsert=True
+            )
+            
+            updated_count += 1
+        
+        logger.info(f"Admin bulk updated {updated_count} dates with Iqamah times from CSV")
+        return {
+            "message": f"Successfully updated {updated_count} dates",
+            "updated_count": updated_count,
+            "dates_updated": [row['date'] for row in rows_to_update]
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in bulk update: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to process CSV: {str(e)}")
 
 # ============== DONATION ENDPOINTS ==============
 # Note: Stripe checkout replaced with Square external redirect
