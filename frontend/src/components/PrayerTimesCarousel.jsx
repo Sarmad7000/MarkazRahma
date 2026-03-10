@@ -76,7 +76,7 @@ const PrayerTimesCarousel = ({ prayerTimes, formatTime, getNextPrayer, announcem
                 onClick={() => {
                   const url = activeAnnouncements[currentAnnouncementIndex]?.url;
                   if (url) {
-                    window.open(url, '_blank', 'noopener,noreferrer');
+                    window.location.href = url;
                   }
                 }}
               >
