@@ -22,16 +22,16 @@ const MixlrSection = () => {
   return (
     <section id="mixlr-live" className="py-8 md:py-12 bg-gradient-to-b from-white to-gray-50">
       <div className="container mx-auto px-4">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-3xl mx-auto">
           {/* Section Header */}
-          <div className="text-center mb-8">
-            <div className="flex items-center justify-center gap-2 mb-3">
-              <Radio className="h-6 w-6 md:h-8 md:w-8 text-cyan-600" />
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
+          <div className="text-center mb-6">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Radio className="h-5 w-5 md:h-6 md:w-6 text-cyan-600" />
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
                 Live Stream
               </h2>
             </div>
-            <p className="text-gray-600 text-base md:text-lg">
+            <p className="text-gray-600 text-sm md:text-base">
               Listen to our live lectures and programs
             </p>
           </div>
@@ -40,16 +40,16 @@ const MixlrSection = () => {
           <Card className="shadow-xl overflow-hidden border-2 border-cyan-100">
             <CardContent className="p-0">
               {/* Live Status Banner */}
-              <div className={`py-2 px-4 text-center font-semibold text-sm ${
+              <div className={`py-2 px-4 text-center font-semibold text-xs md:text-sm ${
                 isLive 
                   ? 'bg-gradient-to-r from-red-500 to-red-600 text-white animate-pulse' 
                   : 'bg-gray-800 text-gray-300'
               }`}>
                 {isLive ? (
                   <div className="flex items-center justify-center gap-2">
-                    <span className="relative flex h-3 w-3">
+                    <span className="relative flex h-2 w-2 md:h-3 md:w-3">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 md:h-3 md:w-3 bg-white"></span>
                     </span>
                     <span>🔴 LIVE NOW</span>
                   </div>
@@ -69,9 +69,9 @@ const MixlrSection = () => {
                     />
                     <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
                       <div className="text-center text-white">
-                        <Play className="h-16 w-16 mx-auto mb-3 opacity-80" />
-                        <p className="text-lg font-semibold">Currently Offline</p>
-                        <p className="text-sm opacity-90">Tune in when we go live</p>
+                        <Play className="h-12 w-12 md:h-16 md:w-16 mx-auto mb-2 md:mb-3 opacity-80" />
+                        <p className="text-base md:text-lg font-semibold">Currently Offline</p>
+                        <p className="text-xs md:text-sm opacity-90">Tune in when we go live</p>
                       </div>
                     </div>
                   </div>
@@ -89,7 +89,7 @@ const MixlrSection = () => {
               </div>
 
               {/* Mixlr Attribution */}
-              <div className="bg-gray-50 py-2 px-4 border-t border-gray-200">
+              <div className="bg-gray-50 py-1.5 px-3 border-t border-gray-200">
                 <a 
                   href="https://mixlr.com/" 
                   target="_blank"
@@ -101,17 +101,17 @@ const MixlrSection = () => {
               </div>
 
               {/* View Recordings Button */}
-              <div className="p-4 bg-white border-t border-gray-200">
+              <div className="p-3 md:p-4 bg-white border-t border-gray-200">
                 <Button 
                   onClick={() => window.location.href = 'https://markazrahma.mixlr.com/recordings'}
-                  className="w-full bg-cyan-600 hover:bg-cyan-700 text-white py-6 text-base md:text-lg font-semibold"
+                  className="w-full bg-cyan-600 hover:bg-cyan-700 text-white py-4 md:py-5 text-sm md:text-base font-semibold"
                 >
-                  <Play className="h-5 w-5 mr-2" />
+                  <Play className="h-4 w-4 md:h-5 md:w-5 mr-2" />
                   View All Recordings
                 </Button>
                 
                 {/* Info Text - Now inside card */}
-                <p className="text-center text-sm text-gray-500 mt-3">
+                <p className="text-center text-xs md:text-sm text-gray-500 mt-2 md:mt-3">
                   Listen to past lectures and programs on our recordings page
                 </p>
               </div>
