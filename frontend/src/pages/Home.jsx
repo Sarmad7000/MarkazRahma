@@ -8,6 +8,7 @@ import PrayerTimesCarousel from '../components/PrayerTimesCarousel';
 import Header from '../components/sections/Header';
 import HeroSection from '../components/sections/HeroSection';
 import PrayerTimesSection from '../components/sections/PrayerTimesSection';
+import MixlrSection from '../components/sections/MixlrSection';
 import DonationSection from '../components/sections/DonationSection';
 import AboutSection from '../components/sections/AboutSection';
 import LocationSection from '../components/sections/LocationSection';
@@ -175,6 +176,9 @@ const Home = () => {
         getNextPrayer={getNextPrayer} 
         formatTime={formatTime} 
       />
+
+      {/* Mixlr Live Stream Section */}
+      <MixlrSection />
 
       {/* Donation Section */}
       <DonationSection donationInfo={donationInfo} donationGoal={donationGoal} />
