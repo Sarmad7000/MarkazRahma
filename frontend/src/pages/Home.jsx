@@ -27,6 +27,11 @@ const Home = () => {
   const { announcements, announcementsEnabled } = useAnnouncements();
   const { popupSettings } = usePopupSettings();
 
+  // Scroll to top on page load
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, []);
+
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
