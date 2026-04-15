@@ -18,8 +18,16 @@ export const usePrayerTimes = () => {
       revalidateOnReconnect: true, // Revalidate when internet reconnects
       dedupingInterval: 60000, // Dedupe requests within 60 seconds
       fallbackData: null, // Start with null, will show loading state
+      shouldRetryOnError: true, // Retry on error
+      errorRetryCount: 3, // Retry up to 3 times
+      errorRetryInterval: 5000, // Wait 5 seconds between retries
       onError: (err) => {
         console.error('Error fetching prayer times:', err);
+      },
+      onErrorRetry: (error, key, config, revalidate, { retryCount }) => {
+        // Retry with exponential backoff
+        if (retryCount >= 3) return;
+        setTimeout(() => revalidate({ retryCount }), 5000 * (retryCount + 1));
       }
     }
   );

@@ -22,7 +22,7 @@ const Home = () => {
   const [donationModalOpen, setDonationModalOpen] = useState(false);
 
   // Use SWR hooks for automatic caching and revalidation
-  const { prayerTimes, isLoading: prayerLoading, isError: prayerError } = usePrayerTimes();
+  const { prayerTimes, isLoading: prayerLoading, isError: prayerError, mutate: mutatePrayerTimes } = usePrayerTimes();
   const { donationGoal, isLoading: goalLoading, isError: goalError } = useDonationGoal();
   const { announcements, announcementsEnabled } = useAnnouncements();
   const { popupSettings } = usePopupSettings();
@@ -163,6 +163,24 @@ const Home = () => {
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-cyan-600 mx-auto mb-4" />
           <p className="text-gray-600">Loading prayer times...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (prayerError && !prayerTimes) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-4">
+          <AlertCircle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Prayer Times Temporarily Unavailable</h2>
+          <p className="text-gray-600 mb-6">We're having trouble loading the prayer times. Please check back in a few minutes.</p>
+          <Button 
+            onClick={() => mutatePrayerTimes()}
+            className="bg-cyan-600 hover:bg-cyan-700 text-white"
+          >
+            Retry
+          </Button>
         </div>
       </div>
     );
