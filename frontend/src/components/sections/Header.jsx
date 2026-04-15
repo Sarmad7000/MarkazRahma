@@ -38,14 +38,25 @@ const Header = ({ mosqueInfo, onDonate }) => {
               Donate Now
             </Button>
             
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 text-gray-700 hover:text-cyan-600"
-              aria-label="Toggle menu"
-            >
-              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
+            {/* Mobile Buttons - Donate + Menu */}
+            <div className="md:hidden flex items-center gap-2">
+              <Button 
+                onClick={onDonate}
+                className="bg-cyan-600 hover:bg-cyan-700 text-white flex items-center gap-1.5 px-3 py-2 text-sm font-medium"
+                size="sm"
+              >
+                <Heart className="h-4 w-4" />
+                <span>Donate</span>
+              </Button>
+              
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="p-2 text-gray-700 hover:text-cyan-600 hover:bg-gray-100 rounded-lg transition-colors"
+                aria-label="Toggle menu"
+              >
+                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </button>
+            </div>
           </div>
         </div>
 
