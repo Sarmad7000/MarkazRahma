@@ -5,11 +5,12 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, List
 import uuid
 import csv
 import io
+import httpx
 
 from models import (
     PrayerTimes, UpdateIqamahRequest, UpdateJummahRequest,
@@ -1042,7 +1043,50 @@ async def upload_image(
             "message": "Image uploaded successfully",
             "image_path": image_data_url
         }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error uploading image: {e}")
+        raise HTTPException(status_code=500, detail="Failed to upload image")
+
+# ============== MIXLR LIVE STATUS ENDPOINT ==============
+
+@api_router.get("/mixlr/status")
+async def get_mixlr_live_status():
+    """Check if Mixlr stream is currently live"""
+    try:
+        import httpx
         
+        # Fetch the Mixlr page
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get('https://markazrahma.mixlr.com/')
+            html = response.text
+            
+            # Check for live indicators in the HTML
+            is_live = (
+                'is-live' in html or
+                'Live now' in html or
+                'live-indicator' in html or
+                'broadcasting' in html or
+                '"is_live":true' in html or
+                'data-live="true"' in html
+            )
+            
+            return {
+                "is_live": is_live,
+                "checked_at": datetime.now(timezone.utc).isoformat()
+            }
+            
+    except Exception as e:
+        logger.error(f"Error checking Mixlr status: {e}")
+        # Return offline status on error
+        return {
+            "is_live": False,
+            "checked_at": datetime.now(timezone.utc).isoformat(),
+            "error": "Could not check status"
+        }
+
     except HTTPException:
         raise
     except Exception as e:

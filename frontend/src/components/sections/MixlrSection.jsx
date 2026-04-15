@@ -1,23 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Radio, Play } from 'lucide-react';
+import { useMixlrStatus } from '../../services/api';
 
 const MixlrSection = () => {
-  const [isLive, setIsLive] = useState(false);
+  const { isLive, isLoading } = useMixlrStatus();
   const defaultThumbnail = 'https://customer-assets.emergentagent.com/job_markaz-rahma-1/artifacts/ieynnwvy_ON%20-%203.jpeg';
-
-  // Check if live by trying to detect iframe content (Mixlr updates the embed when live)
-  useEffect(() => {
-    // This is a simple check - in production you might want to use Mixlr's API
-    // For now, we'll show the default state
-    const checkLiveStatus = () => {
-      // You can implement actual live detection here if Mixlr provides an API
-      // For now, this is a placeholder
-    };
-    
-    checkLiveStatus();
-  }, []);
 
   return (
     <section id="mixlr-live" className="py-6 md:py-8 bg-gradient-to-b from-white to-gray-50">

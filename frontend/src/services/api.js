@@ -136,6 +136,32 @@ export const getDonationStatus = async (sessionId) => {
   }
 };
 
+
+// Custom hook for Mixlr live status with SWR
+export const useMixlrStatus = () => {
+  const { data, error, isLoading, mutate } = useSWR(
+    `${API}/mixlr/status`,
+    fetcher,
+    {
+      refreshInterval: 30000, // Refresh every 30 seconds
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+      dedupingInterval: 10000,
+      onError: (err) => {
+        console.error('Error fetching Mixlr status:', err);
+      }
+    }
+  );
+
+  return {
+    isLive: data?.is_live || false,
+    checkedAt: data?.checked_at,
+    isLoading,
+    isError: error,
+    mutate
+  };
+};
+
 export const getDonationGoal = async () => {
   try {
     const response = await axios.get(`${API}/donations/goal`);
