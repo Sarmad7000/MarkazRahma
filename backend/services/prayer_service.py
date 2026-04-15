@@ -1,6 +1,6 @@
-import requests
+import httpx
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from models import PrayerTimes, Prayer, JummahTime
 
@@ -16,9 +16,9 @@ class PrayerTimesService:
         self.method = 2  # ISNA method
         self.school = 0  # Shafi school
         
-    def fetch_prayer_times_from_api(self, date: Optional[str] = None) -> dict:
+    async def fetch_prayer_times_from_api(self, date: Optional[str] = None) -> dict:
         """
-        Fetch prayer times from AlAdhan API
+        Fetch prayer times from AlAdhan API (async)
         
         Args:
             date: Date in DD-MM-YYYY format. If None, uses today's date
@@ -27,7 +27,7 @@ class PrayerTimesService:
             dict: API response with prayer times data
         """
         if date is None:
-            date_obj = datetime.now()
+            date_obj = datetime.now(timezone.utc)
             date = date_obj.strftime("%d-%m-%Y")
         else:
             # Convert YYYY-MM-DD to DD-MM-YYYY for AlAdhan API
@@ -44,19 +44,24 @@ class PrayerTimesService:
         
         try:
             logger.info(f"Fetching prayer times from AlAdhan API for {date}")
-            response = requests.get(url, timeout=10)
-            response.raise_for_status()
             
-            api_response = response.json()
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                response = await client.get(url)
+                response.raise_for_status()
+                
+                api_response = response.json()
+                
+                if api_response.get('code') != 200:
+                    logger.error(f"API returned non-200 code: {api_response.get('code')}")
+                    raise ValueError(f"API error: {api_response.get('status')}")
+                
+                logger.info(f"Successfully fetched prayer times for {date}")
+                return api_response['data']
             
-            if api_response.get('code') != 200:
-                logger.error(f"API returned non-200 code: {api_response.get('code')}")
-                raise ValueError(f"API error: {api_response.get('status')}")
-            
-            logger.info(f"Successfully fetched prayer times for {date}")
-            return api_response['data']
-            
-        except requests.exceptions.RequestException as e:
+        except httpx.HTTPError as e:
+            logger.error(f"HTTP error fetching prayer times: {e}")
+            raise
+        except Exception as e:
             logger.error(f"Failed to fetch prayer times: {e}")
             raise
     

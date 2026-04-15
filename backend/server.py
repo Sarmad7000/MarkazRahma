@@ -59,13 +59,13 @@ async def root():
 async def get_todays_prayer_times():
     """Get today's prayer times with live Adhan times from API"""
     try:
-        today = datetime.now().strftime("%Y-%m-%d")
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         
         # Check if we have stored iqamah times for today
-        stored_times = await db.prayer_times.find_one({"date": today})
+        stored_times = await db.prayer_times.find_one({"date": today}, {"_id": 0})
         
         # Fetch live adhan times from AlAdhan API
-        api_data = prayer_service.fetch_prayer_times_from_api()
+        api_data = await prayer_service.fetch_prayer_times_from_api()
         
         # Use stored iqamah times if available, otherwise use defaults
         iqamah_times = None
@@ -103,10 +103,10 @@ async def get_prayer_times_by_date(date: str):
         datetime.strptime(date, "%Y-%m-%d")
         
         # Check if we have stored iqamah times for this date
-        stored_times = await db.prayer_times.find_one({"date": date})
+        stored_times = await db.prayer_times.find_one({"date": date}, {"_id": 0})
         
         # Fetch live adhan times from AlAdhan API
-        api_data = prayer_service.fetch_prayer_times_from_api(date)
+        api_data = await prayer_service.fetch_prayer_times_from_api(date)
         
         # Use stored iqamah times if available
         iqamah_times = None
@@ -138,14 +138,14 @@ async def get_prayer_times_by_date(date: str):
 async def update_iqamah_time(request: UpdateIqamahRequest, current_user: dict = Depends(get_current_user)):
     """Update iqamah time for a specific prayer (admin only)"""
     try:
-        today = datetime.now().strftime("%Y-%m-%d")
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         
         # Get current prayer times
-        current_times = await db.prayer_times.find_one({"date": today})
+        current_times = await db.prayer_times.find_one({"date": today}, {"_id": 0})
         
         if not current_times:
             # If no record exists, fetch from API first
-            api_data = prayer_service.fetch_prayer_times_from_api()
+            api_data = await prayer_service.fetch_prayer_times_from_api()
             prayer_times = prayer_service.create_prayer_times_object(api_data)
             current_times = prayer_times.dict()
         
@@ -162,7 +162,7 @@ async def update_iqamah_time(request: UpdateIqamahRequest, current_user: dict = 
             raise HTTPException(status_code=404, detail=f"Prayer '{request.prayer_name}' not found")
         
         # Update in database
-        current_times['updated_at'] = datetime.utcnow()
+        current_times['updated_at'] = datetime.now(timezone.utc)
         await db.prayer_times.update_one(
             {"date": today},
             {"$set": current_times},
@@ -182,20 +182,20 @@ async def update_iqamah_time(request: UpdateIqamahRequest, current_user: dict = 
 async def update_jummah_times(request: UpdateJummahRequest, current_user: dict = Depends(get_current_user)):
     """Update Jummah prayer time (admin only)"""
     try:
-        today = datetime.now().strftime("%Y-%m-%d")
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         
         # Get current prayer times
-        current_times = await db.prayer_times.find_one({"date": today})
+        current_times = await db.prayer_times.find_one({"date": today}, {"_id": 0})
         
         if not current_times:
             # If no record exists, fetch from API first
-            api_data = prayer_service.fetch_prayer_times_from_api()
+            api_data = await prayer_service.fetch_prayer_times_from_api()
             prayer_times = prayer_service.create_prayer_times_object(api_data)
             current_times = prayer_times.dict()
         
         # Update Jummah time
         current_times['jummah'] = {"time": request.time}
-        current_times['updated_at'] = datetime.utcnow()
+        current_times['updated_at'] = datetime.now(timezone.utc)
         
         await db.prayer_times.update_one(
             {"date": today},
@@ -303,7 +303,7 @@ async def bulk_update_iqamah_times(file: UploadFile = File(...), current_user: d
             prayer_times = row_data['prayer_times']
             
             # Fetch live adhan times from AlAdhan API for this date
-            api_data = prayer_service.fetch_prayer_times_from_api(date_str)
+            api_data = await prayer_service.fetch_prayer_times_from_api(date_str)
             
             # Create iqamah times dict
             iqamah_times = {
