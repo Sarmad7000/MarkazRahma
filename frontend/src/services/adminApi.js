@@ -411,7 +411,26 @@ export const updateEvent = async (id, data) => {
           Authorization: `Bearer ${token}`
         }
       }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error updating event:', error);
+    throw error;
+  }
+};
 
+export const deleteEvent = async (id) => {
+  try {
+    const token = getAuthToken();
+    const response = await axios.delete(`${API}/admin/events/${id}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting event:', error);
+    throw error;
+  }
+};
 
 // Hero Carousel APIs
 export const getHeroCards = async () => {
@@ -479,25 +498,3 @@ export const updateHeroSettings = async (settings) => {
   }
 };
 
-    );
-    return response.data;
-  } catch (error) {
-    console.error('Error updating event:', error);
-    throw error;
-  }
-};
-
-export const deleteEvent = async (id) => {
-  try {
-    const token = getAuthToken();
-    const response = await axios.delete(`${API}/admin/events/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Error deleting event:', error);
-    throw error;
-  }
-};
