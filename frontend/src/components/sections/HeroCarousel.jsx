@@ -6,7 +6,7 @@ import { useHeroCards, useHeroSettings } from '../../services/api';
 const HeroCarousel = ({ onDonate, onLocation }) => {
   const { cards, isLoading, isError } = useHeroCards();
   const { carouselEnabled, scrollInterval, isError: settingsError } = useHeroSettings();
-  const [currentIndex, setCurrentIndex] = useState(1); // Start at 1 because we'll add clones
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
@@ -29,6 +29,11 @@ const HeroCarousel = ({ onDonate, onLocation }) => {
   const allCards = baseCards.length > 1 
     ? [baseCards[baseCards.length - 1], ...baseCards, baseCards[0]]
     : baseCards;
+
+  // Initialize currentIndex based on whether we have clones
+  useEffect(() => {
+    setCurrentIndex(baseCards.length > 1 ? 1 : 0);
+  }, [baseCards.length]);
 
   // Auto-scroll functionality
   useEffect(() => {
