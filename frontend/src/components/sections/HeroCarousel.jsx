@@ -35,11 +35,30 @@ const HeroCarousel = ({ onDonate, onLocation }) => {
     if (!carouselEnabled || baseCards.length <= 1) return;
 
     const interval = setInterval(() => {
-      handleSlideChange(currentIndex + 1, true);
+      setCurrentIndex((prevIndex) => {
+        const nextIndex = prevIndex + 1;
+        
+        // Start transition
+        setIsTransitioning(true);
+        
+        // After animation completes, check if we need to loop
+        setTimeout(() => {
+          // If we're on the last clone (first card duplicate at end)
+          if (nextIndex === allCards.length - 1) {
+            setIsTransitioning(false);
+            // Jump to real first card without animation
+            setCurrentIndex(1);
+          } else {
+            setIsTransitioning(false);
+          }
+        }, 500); // Match transition duration
+        
+        return nextIndex;
+      });
     }, scrollInterval);
 
     return () => clearInterval(interval);
-  }, [carouselEnabled, baseCards.length, scrollInterval, currentIndex]);
+  }, [carouselEnabled, baseCards.length, scrollInterval, allCards.length]);
 
   const handleSlideChange = (newIndex, animate = true) => {
     if (isTransitioning && animate) return;
