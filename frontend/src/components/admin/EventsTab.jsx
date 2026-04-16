@@ -72,7 +72,8 @@ const EventsTab = ({
       setEditingId(null);
       setEditingEvent({});
     } catch (error) {
-      // Error handled in parent
+      console.error('Error saving event:', error);
+      toast.error('Failed to update event. Please try again.');
     }
   };
 
@@ -91,7 +92,8 @@ const EventsTab = ({
       await handleCreateEvent(newEvent);
       setNewEvent({ title: '', description: '', image_path: '' });
     } catch (error) {
-      // Error handled in parent
+      console.error('Error creating event:', error);
+      toast.error('Failed to create event. Please try again.');
     }
   };
 
@@ -99,7 +101,8 @@ const EventsTab = ({
     try {
       await handleUpdateEvent(id, { enabled: !currentStatus });
     } catch (error) {
-      // Error handled in parent
+      console.error('Error toggling event status:', error);
+      toast.error('Failed to update event status. Please try again.');
     }
   };
 

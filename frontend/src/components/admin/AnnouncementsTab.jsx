@@ -46,7 +46,8 @@ const AnnouncementsTab = ({
       setEditingText('');
       setEditingUrl('');
     } catch (error) {
-      // Error already handled in parent
+      console.error('Error updating announcement:', error);
+      toast.error('Failed to update announcement. Please try again.');
     }
   };
 
@@ -61,7 +62,8 @@ const AnnouncementsTab = ({
       setNewAnnouncementText('');
       setNewAnnouncementUrl('');
     } catch (error) {
-      // Error already handled in parent
+      console.error('Error creating announcement:', error);
+      toast.error('Failed to create announcement. Please try again.');
     }
   };
 
@@ -69,7 +71,8 @@ const AnnouncementsTab = ({
     try {
       await handleUpdateAnnouncement(id, { enabled: !currentStatus });
     } catch (error) {
-      // Error already handled in parent
+      console.error('Error toggling announcement:', error);
+      toast.error('Failed to toggle announcement. Please try again.');
     }
   };
 

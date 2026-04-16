@@ -25,11 +25,11 @@ const PrayerTimesSection = ({ prayerTimes, getNextPrayer, formatTime }) => {
           <Card className="shadow-lg border-t-4 border-t-cyan-600">
             <CardContent className="p-6">
               <div className="space-y-4">
-                {prayerTimes.prayers.map((prayer, index) => {
+                {prayerTimes.prayers.map((prayer) => {
                   const isNext = prayer.name === getNextPrayer();
                   return (
                     <div 
-                      key={index} 
+                      key={prayer.name} 
                       className={`flex items-center justify-between p-3 md:p-4 rounded-lg transition-all ${
                         isNext 
                           ? 'bg-cyan-50 border-2 border-cyan-500 shadow-md' 

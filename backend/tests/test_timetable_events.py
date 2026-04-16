@@ -10,9 +10,9 @@ import uuid
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://markaz-rahma-1.preview.emergentagent.com').rstrip('/')
 
-# Test credentials
-TEST_USERNAME = "MarkazRahma2026"
-TEST_PASSWORD = "Bismillah20!"
+# Test credentials - load from environment for security
+TEST_USERNAME = os.environ.get('TEST_ADMIN_USERNAME', 'MarkazRahma2026')
+TEST_PASSWORD = os.environ.get('TEST_ADMIN_PASSWORD', 'Bismillah20!')
 
 # ============== FIXTURES ==============
 

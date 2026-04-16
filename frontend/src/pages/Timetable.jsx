@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Calendar, Loader2 } from 'lucide-react';
 import { Button } from '../components/ui/button';
@@ -14,11 +14,7 @@ const Timetable = () => {
   const [timetable, setTimetable] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchTimetable();
-  }, []);
-
-  const fetchTimetable = async () => {
+  const fetchTimetable = useCallback(async () => {
     try {
       const response = await fetch(`${API}/api/timetable`);
       const data = await response.json();
@@ -28,7 +24,11 @@ const Timetable = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchTimetable();
+  }, [fetchTimetable]);
 
   const handleDonate = () => {
     window.open('https://checkout.square.site/merchant/MLSD6EY5CMY2P/checkout/HXF33WVBEFWIA65YBXUQST3B?src=sheet', '_blank');

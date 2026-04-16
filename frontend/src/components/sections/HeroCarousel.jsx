@@ -339,7 +339,7 @@ const HeroCarousel = ({ onDonate, onLocation }) => {
             
             return (
               <button
-                key={index}
+                key={`dot-${index}`}
                 onClick={() => goToSlide(index)}
                 className={`h-2 sm:h-2.5 rounded-full transition-all ${
                   isActive
