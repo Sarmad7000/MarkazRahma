@@ -57,46 +57,49 @@ const HeroCarousel = ({ onDonate, onLocation }) => {
   const renderCardContent = (card) => {
     if (card.content_type === 'default') {
       return (
-        <div className="relative bg-gradient-to-br from-cyan-50 to-white py-8 sm:py-12 md:py-16">
+        <div className="relative bg-gradient-to-br from-cyan-50 via-white to-cyan-50 py-8 sm:py-12 md:py-16">
           <div className="container mx-auto px-4 sm:px-6">
-            <div className="max-w-4xl mx-auto text-center">
-              {/* Logo */}
-              <div className="mb-4 sm:mb-6 flex justify-center">
-                <img
-                  src="https://customer-assets.emergentagent.com/job_markaz-rahma-1/artifacts/s5521pmg_Untitled%20design.png"
-                  alt="Markaz Al-Rahma Logo"
-                  className="h-16 sm:h-20 md:h-24 w-auto object-contain"
-                />
-              </div>
+            <div className="max-w-4xl mx-auto">
+              {/* Contained Card */}
+              <div className="bg-gradient-to-br from-cyan-50 to-white rounded-3xl shadow-xl p-8 sm:p-12 md:p-16 text-center border border-cyan-100">
+                {/* Logo */}
+                <div className="mb-6 sm:mb-8 flex justify-center">
+                  <img
+                    src="https://customer-assets.emergentagent.com/job_markaz-rahma-1/artifacts/s5521pmg_Untitled%20design.png"
+                    alt="Markaz Al-Rahma Logo"
+                    className="h-20 sm:h-24 md:h-28 w-auto object-contain"
+                  />
+                </div>
 
-              {/* Title */}
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-3 sm:mb-4">
-                Markaz Al-Rahma
-              </h1>
+                {/* Title */}
+                <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 mb-4 sm:mb-6">
+                  Markaz Al-Rahma
+                </h1>
 
-              {/* Subtitle */}
-              <p className="text-sm sm:text-base md:text-lg text-gray-600 mb-6 sm:mb-8 max-w-2xl mx-auto px-4">
-                A Community Center in the Heart of Colindale, London
-              </p>
+                {/* Description */}
+                <p className="text-base sm:text-lg md:text-xl text-gray-600 mb-8 sm:mb-10 max-w-3xl mx-auto leading-relaxed px-4">
+                  Dedicated to serving the local Muslim community in Colindale, Burnt Oak, Edgware and surrounding areas with prayer services, Islamic education, and community support.
+                </p>
 
-              {/* CTA Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center px-4">
-                <Button
-                  onClick={onDonate}
-                  className="w-full sm:w-auto bg-cyan-600 hover:bg-cyan-700 text-white px-6 sm:px-8 py-2.5 sm:py-3 text-sm sm:text-base font-medium rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
-                >
-                  <Heart className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                  Donate Now
-                </Button>
+                {/* CTA Buttons */}
+                <div className="flex flex-col sm:flex-row gap-4 justify-center items-center px-4">
+                  <Button
+                    onClick={onDonate}
+                    className="w-full sm:w-auto bg-cyan-600 hover:bg-cyan-700 text-white px-8 py-6 text-base sm:text-lg font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2"
+                  >
+                    <Heart className="h-5 w-5" />
+                    Support Our Expansion
+                  </Button>
 
-                <Button
-                  onClick={onLocation}
-                  variant="outline"
-                  className="w-full sm:w-auto border-2 border-cyan-600 text-cyan-600 hover:bg-cyan-50 px-6 sm:px-8 py-2.5 sm:py-3 text-sm sm:text-base font-medium rounded-lg transition-all duration-200"
-                >
-                  <MapPin className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                  Visit Us
-                </Button>
+                  <Button
+                    onClick={onLocation}
+                    variant="outline"
+                    className="w-full sm:w-auto border-2 border-cyan-600 text-cyan-600 hover:bg-cyan-50 px-8 py-6 text-base sm:text-lg font-medium rounded-xl transition-all duration-200 flex items-center justify-center gap-2"
+                  >
+                    <MapPin className="h-5 w-5" />
+                    Visit Us
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -107,30 +110,33 @@ const HeroCarousel = ({ onDonate, onLocation }) => {
     if (card.content_type === 'video') {
       const embedUrl = getYouTubeEmbedUrl(card.content_url);
       return (
-        <div className="relative bg-gradient-to-br from-cyan-50 to-white py-8 sm:py-12 md:py-16">
+        <div className="relative bg-gradient-to-br from-cyan-50 via-white to-cyan-50 py-8 sm:py-12 md:py-16">
           <div className="container mx-auto px-4 sm:px-6">
             <div className="max-w-4xl mx-auto">
-              {card.title && (
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4 sm:mb-6 text-center">
-                  {card.title}
-                </h2>
-              )}
-              {embedUrl ? (
-                <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
-                  <iframe
-                    className="absolute top-0 left-0 w-full h-full rounded-lg shadow-lg"
-                    src={embedUrl}
-                    title={card.title}
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
-                </div>
-              ) : (
-                <div className="bg-gray-200 rounded-lg h-64 sm:h-96 flex items-center justify-center">
-                  <p className="text-gray-500">Invalid video URL</p>
-                </div>
-              )}
+              {/* Contained Card */}
+              <div className="bg-white rounded-3xl shadow-xl p-6 sm:p-8 md:p-10 border border-cyan-100">
+                {card.title && (
+                  <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4 sm:mb-6 text-center">
+                    {card.title}
+                  </h2>
+                )}
+                {embedUrl ? (
+                  <div className="relative w-full rounded-2xl overflow-hidden shadow-lg" style={{ paddingBottom: '56.25%' }}>
+                    <iframe
+                      className="absolute top-0 left-0 w-full h-full"
+                      src={embedUrl}
+                      title={card.title}
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                ) : (
+                  <div className="bg-gray-100 rounded-2xl h-64 sm:h-96 flex items-center justify-center">
+                    <p className="text-gray-500">Invalid video URL</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -139,21 +145,24 @@ const HeroCarousel = ({ onDonate, onLocation }) => {
 
     if (card.content_type === 'image') {
       return (
-        <div className="relative bg-gradient-to-br from-cyan-50 to-white py-8 sm:py-12 md:py-16">
+        <div className="relative bg-gradient-to-br from-cyan-50 via-white to-cyan-50 py-8 sm:py-12 md:py-16">
           <div className="container mx-auto px-4 sm:px-6">
             <div className="max-w-4xl mx-auto">
-              {card.title && (
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4 sm:mb-6 text-center">
-                  {card.title}
-                </h2>
-              )}
-              <div className="relative rounded-lg overflow-hidden shadow-lg">
-                <img
-                  src={card.content_url}
-                  alt={card.title}
-                  className="w-full h-auto object-cover"
-                  style={{ maxHeight: '500px' }}
-                />
+              {/* Contained Card */}
+              <div className="bg-white rounded-3xl shadow-xl p-6 sm:p-8 md:p-10 border border-cyan-100">
+                {card.title && (
+                  <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4 sm:mb-6 text-center">
+                    {card.title}
+                  </h2>
+                )}
+                <div className="relative rounded-2xl overflow-hidden shadow-lg">
+                  <img
+                    src={card.content_url}
+                    alt={card.title}
+                    className="w-full h-auto object-cover"
+                    style={{ maxHeight: '600px', objectFit: 'contain' }}
+                  />
+                </div>
               </div>
             </div>
           </div>
