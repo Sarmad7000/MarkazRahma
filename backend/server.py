@@ -13,7 +13,7 @@ import io
 import httpx
 
 from models import (
-    PrayerTimes, UpdateIqamahRequest, UpdateJummahRequest,
+    PrayerTimes, UpdateIqamahRequest, UpdateJummahRequest, Prayer, JummahTime,
     DonationRequest, DonationResponse,
     PaymentTransaction, CheckoutStatusResponse, DonationGoal, DonationGoalResponse,
     UpdateDonationGoalRequest, AdminLoginRequest, AdminLoginResponse, DonationHistoryItem,
@@ -22,7 +22,6 @@ from models import (
     TimetableSettings, UpdateTimetableRequest, Event, CreateEventRequest, UpdateEventRequest,
     HeroCard, CreateHeroCardRequest, UpdateHeroCardRequest, HeroSettings, UpdateHeroSettingsRequest
 )
-from services.prayer_service import prayer_service
 from auth import authenticate_admin, create_access_token, get_current_user
 
 ROOT_DIR = Path(__file__).parent
@@ -58,37 +57,24 @@ async def root():
 
 @api_router.get("/prayers/today", response_model=PrayerTimes)
 async def get_todays_prayer_times():
-    """Get today's prayer times with live Adhan times from API"""
+    """Get today's prayer times from database"""
     try:
         today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         
-        # Check if we have stored iqamah times for today
+        # Fetch from database
         stored_times = await db.prayer_times.find_one({"date": today}, {"_id": 0})
         
-        # Fetch live adhan times from AlAdhan API
-        api_data = await prayer_service.fetch_prayer_times_from_api()
-        
-        # Use stored iqamah times if available, otherwise use defaults
-        iqamah_times = None
-        if stored_times:
-            iqamah_times = {
-                prayer['name']: prayer['iqamah']
-                for prayer in stored_times.get('prayers', [])
-            }
-        
-        # Create prayer times object
-        prayer_times = prayer_service.create_prayer_times_object(api_data, iqamah_times)
-        
-        # Store/update in database
-        await db.prayer_times.update_one(
-            {"date": today},
-            {"$set": prayer_times.dict()},
-            upsert=True
-        )
+        if not stored_times:
+            raise HTTPException(
+                status_code=404, 
+                detail=f"Prayer times not found for {today}. Please upload prayer times via admin panel."
+            )
         
         logger.info(f"Retrieved prayer times for {today}")
-        return prayer_times
+        return PrayerTimes(**stored_times)
         
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error fetching prayer times: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch prayer times")
@@ -96,41 +82,28 @@ async def get_todays_prayer_times():
 @api_router.get("/prayers/date", response_model=PrayerTimes)
 async def get_prayer_times_by_date(date: str):
     """
-    Get prayer times for a specific date
+    Get prayer times for a specific date from database
     Query param: date in YYYY-MM-DD format
     """
     try:
         # Validate date format
         datetime.strptime(date, "%Y-%m-%d")
         
-        # Check if we have stored iqamah times for this date
+        # Fetch from database
         stored_times = await db.prayer_times.find_one({"date": date}, {"_id": 0})
         
-        # Fetch live adhan times from AlAdhan API
-        api_data = await prayer_service.fetch_prayer_times_from_api(date)
+        if not stored_times:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Prayer times not found for {date}. Please upload prayer times via admin panel."
+            )
         
-        # Use stored iqamah times if available
-        iqamah_times = None
-        if stored_times:
-            iqamah_times = {
-                prayer['name']: prayer['iqamah']
-                for prayer in stored_times.get('prayers', [])
-            }
-        
-        # Create prayer times object
-        prayer_times = prayer_service.create_prayer_times_object(api_data, iqamah_times)
-        
-        # Store/update in database
-        await db.prayer_times.update_one(
-            {"date": date},
-            {"$set": prayer_times.dict()},
-            upsert=True
-        )
-        
-        return prayer_times
+        return PrayerTimes(**stored_times)
         
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error fetching prayer times for {date}: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch prayer times")
@@ -145,10 +118,10 @@ async def update_iqamah_time(request: UpdateIqamahRequest, current_user: dict = 
         current_times = await db.prayer_times.find_one({"date": today}, {"_id": 0})
         
         if not current_times:
-            # If no record exists, fetch from API first
-            api_data = await prayer_service.fetch_prayer_times_from_api()
-            prayer_times = prayer_service.create_prayer_times_object(api_data)
-            current_times = prayer_times.dict()
+            raise HTTPException(
+                status_code=404,
+                detail=f"Prayer times not found for {today}. Please upload prayer times via CSV first."
+            )
         
         # Update the specific iqamah time
         prayers = current_times.get('prayers', [])
@@ -189,10 +162,10 @@ async def update_jummah_times(request: UpdateJummahRequest, current_user: dict =
         current_times = await db.prayer_times.find_one({"date": today}, {"_id": 0})
         
         if not current_times:
-            # If no record exists, fetch from API first
-            api_data = await prayer_service.fetch_prayer_times_from_api()
-            prayer_times = prayer_service.create_prayer_times_object(api_data)
-            current_times = prayer_times.dict()
+            raise HTTPException(
+                status_code=404,
+                detail=f"Prayer times not found for {today}. Please upload prayer times via CSV first."
+            )
         
         # Update Jummah time
         current_times['jummah'] = {"time": request.time}
@@ -207,17 +180,19 @@ async def update_jummah_times(request: UpdateJummahRequest, current_user: dict =
         logger.info(f"Admin updated Jummah time to {request.time}")
         return {"message": "Jummah time updated successfully", "jummah": {"time": request.time}}
         
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error updating Jummah times: {e}")
         raise HTTPException(status_code=500, detail="Failed to update Jummah times")
 
-@api_router.post("/admin/iqamah/bulk-update")
-async def bulk_update_iqamah_times(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
+@api_router.post("/admin/prayer-times/bulk-update")
+async def bulk_update_prayer_times(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
     """
-    Bulk update Iqamah times for multiple dates via CSV upload
-    CSV Format: Date,Fajr_Iqama,Duhur_Iqama,Asr_Iqama,Magrib_Iqama,Isha_Iqama
+    Bulk update both Adhan and Iqamah times for multiple dates via CSV upload
+    CSV Format: Date,Fajr_Adhan,Fajr_Iqama,Dhuhr_Adhan,Dhuhr_Iqama,Asr_Adhan,Asr_Iqama,Maghrib_Adhan,Maghrib_Iqama,Isha_Adhan,Isha_Iqama,Sunrise,Sunset
     Accepts both "Duhur" and "Dhuhr" spellings
-    Sets Jummah time to match Dhuhr time
+    Sets Jummah time to match Dhuhr Iqamah time
     """
     try:
         # Validate file type
@@ -229,28 +204,49 @@ async def bulk_update_iqamah_times(file: UploadFile = File(...), current_user: d
         csv_text = contents.decode('utf-8')
         csv_reader = csv.DictReader(io.StringIO(csv_text))
         
-        # Validate headers
-        required_headers = ['Date', 'Fajr_Iqama', 'Asr_Iqama', 'Magrib_Iqama', 'Isha_Iqama']
-        headers = csv_reader.fieldnames
+        headers = csv_reader.fieldnames or []
         
         # Check for Dhuhr (accept both spellings)
-        dhuhr_header = None
-        if 'Duhur_Iqama' in headers:
-            dhuhr_header = 'Duhur_Iqama'
-        elif 'Dhuhr_Iqama' in headers:
-            dhuhr_header = 'Dhuhr_Iqama'
+        dhuhr_adhan_header = None
+        dhuhr_iqama_header = None
+        
+        if 'Duhur_Adhan' in headers:
+            dhuhr_adhan_header = 'Duhur_Adhan'
+        elif 'Dhuhr_Adhan' in headers:
+            dhuhr_adhan_header = 'Dhuhr_Adhan'
         else:
             raise HTTPException(
                 status_code=400, 
-                detail="Missing Dhuhr/Duhur column. Required: Date, Fajr_Iqama, Duhur_Iqama/Dhuhr_Iqama, Asr_Iqama, Magrib_Iqama, Isha_Iqama"
+                detail="Missing Dhuhr_Adhan/Duhur_Adhan column"
             )
+        
+        if 'Duhur_Iqama' in headers:
+            dhuhr_iqama_header = 'Duhur_Iqama'
+        elif 'Dhuhr_Iqama' in headers:
+            dhuhr_iqama_header = 'Dhuhr_Iqama'
+        else:
+            raise HTTPException(
+                status_code=400, 
+                detail="Missing Dhuhr_Iqama/Duhur_Iqama column"
+            )
+        
+        # Required headers (without Dhuhr variants)
+        required_headers = [
+            'Date', 'Fajr_Adhan', 'Fajr_Iqama', 
+            'Asr_Adhan', 'Asr_Iqama', 
+            'Maghrib_Adhan', 'Maghrib_Iqama', 
+            'Isha_Adhan', 'Isha_Iqama'
+        ]
+        
+        # Optional headers
+        optional_headers = ['Sunrise', 'Sunset']
         
         # Validate all required headers are present
         for header in required_headers:
             if header not in headers:
                 raise HTTPException(
                     status_code=400,
-                    detail=f"Missing required column: {header}. Found: {', '.join(headers)}"
+                    detail=f"Missing required column: {header}"
                 )
         
         # Parse and validate all rows first
@@ -270,27 +266,61 @@ async def bulk_update_iqamah_times(file: UploadFile = File(...), current_user: d
                     detail=f"Invalid date format in row {row_num}: {row['Date']}. Expected YYYY-MM-DD"
                 )
             
-            # Validate time format for all prayers
-            prayer_times = {
-                'Fajr': row['Fajr_Iqama'].strip(),
-                'Dhuhr': row[dhuhr_header].strip(),
-                'Asr': row['Asr_Iqama'].strip(),
-                'Maghrib': row['Magrib_Iqama'].strip(),
-                'Isha': row['Isha_Iqama'].strip()
+            # Validate and collect all prayer times
+            prayers_data = {
+                'Fajr': {
+                    'adhan': row['Fajr_Adhan'].strip(),
+                    'iqamah': row['Fajr_Iqama'].strip()
+                },
+                'Dhuhr': {
+                    'adhan': row[dhuhr_adhan_header].strip(),
+                    'iqamah': row[dhuhr_iqama_header].strip()
+                },
+                'Asr': {
+                    'adhan': row['Asr_Adhan'].strip(),
+                    'iqamah': row['Asr_Iqama'].strip()
+                },
+                'Maghrib': {
+                    'adhan': row['Maghrib_Adhan'].strip(),
+                    'iqamah': row['Maghrib_Iqama'].strip()
+                },
+                'Isha': {
+                    'adhan': row['Isha_Adhan'].strip(),
+                    'iqamah': row['Isha_Iqama'].strip()
+                }
             }
             
-            for prayer_name, time_str in prayer_times.items():
-                try:
-                    datetime.strptime(time_str, "%H:%M")
-                except ValueError:
-                    raise HTTPException(
-                        status_code=400,
-                        detail=f"Invalid time format in row {row_num} for {prayer_name}: {time_str}. Expected HH:MM"
-                    )
+            # Validate time formats
+            for prayer_name, times in prayers_data.items():
+                for time_type, time_str in times.items():
+                    try:
+                        datetime.strptime(time_str, "%H:%M")
+                    except ValueError:
+                        raise HTTPException(
+                            status_code=400,
+                            detail=f"Invalid time format in row {row_num} for {prayer_name} {time_type}: {time_str}. Expected HH:MM"
+                        )
+            
+            # Get optional Sunrise and Sunset
+            sunrise = row.get('Sunrise', '').strip() or 'N/A'
+            sunset = row.get('Sunset', '').strip() or 'N/A'
+            
+            # Validate sunrise/sunset if provided
+            for time_label, time_val in [('Sunrise', sunrise), ('Sunset', sunset)]:
+                if time_val != 'N/A':
+                    try:
+                        datetime.strptime(time_val, "%H:%M")
+                    except ValueError:
+                        raise HTTPException(
+                            status_code=400,
+                            detail=f"Invalid time format in row {row_num} for {time_label}: {time_val}. Expected HH:MM"
+                        )
             
             rows_to_update.append({
                 'date': date_str,
-                'prayer_times': prayer_times
+                'prayers': prayers_data,
+                'sunrise': sunrise,
+                'sunset': sunset
             })
         
         if not rows_to_update:
@@ -301,25 +331,46 @@ async def bulk_update_iqamah_times(file: UploadFile = File(...), current_user: d
         
         for row_data in rows_to_update:
             date_str = row_data['date']
-            prayer_times = row_data['prayer_times']
+            prayers_data = row_data['prayers']
             
-            # Fetch live adhan times from AlAdhan API for this date
-            api_data = await prayer_service.fetch_prayer_times_from_api(date_str)
+            # Build prayers array
+            prayers = [
+                Prayer(
+                    name='Fajr',
+                    adhan=prayers_data['Fajr']['adhan'],
+                    iqamah=prayers_data['Fajr']['iqamah']
+                ),
+                Prayer(
+                    name='Dhuhr',
+                    adhan=prayers_data['Dhuhr']['adhan'],
+                    iqamah=prayers_data['Dhuhr']['iqamah']
+                ),
+                Prayer(
+                    name='Asr',
+                    adhan=prayers_data['Asr']['adhan'],
+                    iqamah=prayers_data['Asr']['iqamah']
+                ),
+                Prayer(
+                    name='Maghrib',
+                    adhan=prayers_data['Maghrib']['adhan'],
+                    iqamah=prayers_data['Maghrib']['iqamah']
+                ),
+                Prayer(
+                    name='Isha',
+                    adhan=prayers_data['Isha']['adhan'],
+                    iqamah=prayers_data['Isha']['iqamah']
+                ),
+            ]
             
-            # Create iqamah times dict
-            iqamah_times = {
-                'Fajr': prayer_times['Fajr'],
-                'Dhuhr': prayer_times['Dhuhr'],
-                'Asr': prayer_times['Asr'],
-                'Maghrib': prayer_times['Maghrib'],
-                'Isha': prayer_times['Isha']
-            }
-            
-            # Create prayer times object with updated iqamah times
-            prayer_times_obj = prayer_service.create_prayer_times_object(api_data, iqamah_times)
-            
-            # Set Jummah time to match Dhuhr
-            prayer_times_obj.jummah.time = prayer_times['Dhuhr']
+            # Create prayer times object
+            prayer_times_obj = PrayerTimes(
+                date=date_str,
+                hijri_date="",  # Can be added later if needed
+                prayers=prayers,
+                jummah=JummahTime(time=prayers_data['Dhuhr']['iqamah']),  # Jummah matches Dhuhr Iqamah
+                sunrise=row_data['sunrise'],
+                sunset=row_data['sunset']
+            )
             
             # Update in database
             await db.prayer_times.update_one(
@@ -330,7 +381,7 @@ async def bulk_update_iqamah_times(file: UploadFile = File(...), current_user: d
             
             updated_count += 1
         
-        logger.info(f"Admin bulk updated {updated_count} dates with Iqamah times from CSV")
+        logger.info(f"Admin bulk updated {updated_count} dates with prayer times from CSV")
         return {
             "message": f"Successfully updated {updated_count} dates",
             "updated_count": updated_count,
