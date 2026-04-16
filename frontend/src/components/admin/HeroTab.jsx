@@ -12,7 +12,7 @@ import {
   updateHeroCard,
   deleteHeroCard,
   updateHeroSettings,
-  uploadImage
+  uploadPopupImage
 } from '../../services/adminApi';
 import {
   Select,
@@ -81,7 +81,7 @@ const HeroTab = () => {
 
     setUploading(true);
     try {
-      const result = await uploadImage(file);
+      const result = await uploadPopupImage(file);
       setNewCard({ ...newCard, content_url: result.image_path });
       toast.success('Image uploaded successfully');
     } catch (error) {
