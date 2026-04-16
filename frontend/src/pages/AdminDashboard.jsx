@@ -365,6 +365,7 @@ const AdminDashboard = () => {
               <TabsTrigger value="announcements" className="px-3 sm:px-6 md:px-8 text-xs sm:text-sm whitespace-nowrap">Announcements</TabsTrigger>
               <TabsTrigger value="timetable" className="px-3 sm:px-6 md:px-8 text-xs sm:text-sm whitespace-nowrap">Prayer Timetable</TabsTrigger>
               <TabsTrigger value="events" className="px-3 sm:px-6 md:px-8 text-xs sm:text-sm whitespace-nowrap">Events</TabsTrigger>
+              <TabsTrigger value="hero" className="px-3 sm:px-6 md:px-8 text-xs sm:text-sm whitespace-nowrap">Hero</TabsTrigger>
               <TabsTrigger value="settings" className="px-3 sm:px-6 md:px-8 text-xs sm:text-sm whitespace-nowrap">Settings</TabsTrigger>
             </TabsList>
           </div>
