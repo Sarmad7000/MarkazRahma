@@ -44,26 +44,29 @@ const HeroCarousel = ({ onDonate, onLocation }) => {
   const handleSlideChange = (newIndex, animate = true) => {
     if (isTransitioning && animate) return;
     
+    setCurrentIndex(newIndex);
+    
     if (animate) {
       setIsTransitioning(true);
-      setCurrentIndex(newIndex);
       
-      // After animation, check if we're on a clone and jump to real card
+      // After animation completes, check if we need to loop
       setTimeout(() => {
-        if (newIndex >= allCards.length - 1) {
-          // We're on the cloned first card at the end, jump to real first card
+        // If we're on the last clone (first card duplicate at end)
+        if (newIndex === allCards.length - 1) {
           setIsTransitioning(false);
-          setTimeout(() => setCurrentIndex(1), 50);
-        } else if (newIndex <= 0) {
-          // We're on the cloned last card at the beginning, jump to real last card
+          // Jump to real first card without animation
+          setCurrentIndex(1);
+        } 
+        // If we're on the first clone (last card duplicate at start)
+        else if (newIndex === 0) {
           setIsTransitioning(false);
-          setTimeout(() => setCurrentIndex(allCards.length - 2), 50);
-        } else {
+          // Jump to real last card without animation
+          setCurrentIndex(allCards.length - 2);
+        } 
+        else {
           setIsTransitioning(false);
         }
-      }, 500);
-    } else {
-      setCurrentIndex(newIndex);
+      }, 500); // Match transition duration
     }
   };
 
@@ -257,7 +260,7 @@ const HeroCarousel = ({ onDonate, onLocation }) => {
     >
       {/* Cards Container with sliding animation */}
       <div 
-        className={`flex ${isTransitioning ? 'transition-transform duration-500 ease-in-out' : ''}`}
+        className={`flex ${isTransitioning ? 'transition-transform duration-500 ease-in-out' : 'transition-none'}`}
         style={{ transform: `translateX(-${currentIndex * 100}%)` }}
       >
         {allCards.map((card, index) => (
