@@ -4,8 +4,8 @@ import { MapPin, Heart, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useHeroCards, useHeroSettings } from '../../services/api';
 
 const HeroCarousel = ({ onDonate, onLocation }) => {
-  const { cards, isLoading } = useHeroCards();
-  const { carouselEnabled, scrollInterval } = useHeroSettings();
+  const { cards, isLoading, isError } = useHeroCards();
+  const { carouselEnabled, scrollInterval, isError: settingsError } = useHeroSettings();
   const [currentIndex, setCurrentIndex] = useState(1); // Start at 1 because we'll add clones
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [touchStart, setTouchStart] = useState(null);
@@ -268,7 +268,17 @@ const HeroCarousel = ({ onDonate, onLocation }) => {
     );
   }
 
-  const currentCard = allCards[currentIndex];
+  if (isError || settingsError) {
+    return (
+      <div className="relative bg-gradient-to-br from-cyan-50 to-white py-16">
+        <div className="container mx-auto px-4 text-center">
+          <p className="text-red-500">Failed to load carousel. Please refresh the page.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const currentCard = allCards[currentIndex] || allCards[0] || defaultCard;
 
   return (
     <div 
