@@ -6,7 +6,7 @@ import { useHeroCards, useHeroSettings } from '../../services/api';
 const HeroCarousel = ({ onDonate, onLocation }) => {
   const { cards, isLoading } = useHeroCards();
   const { carouselEnabled, scrollInterval } = useHeroSettings();
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(1); // Start at 1 because we'll add clones
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
@@ -23,36 +23,61 @@ const HeroCarousel = ({ onDonate, onLocation }) => {
   };
 
   // Combine default card with custom cards when carousel is enabled
-  const allCards = carouselEnabled ? [defaultCard, ...cards] : [defaultCard];
+  const baseCards = carouselEnabled ? [defaultCard, ...cards] : [defaultCard];
+  
+  // Create infinite loop by cloning first and last cards
+  const allCards = baseCards.length > 1 
+    ? [baseCards[baseCards.length - 1], ...baseCards, baseCards[0]]
+    : baseCards;
 
   // Auto-scroll functionality
   useEffect(() => {
-    if (!carouselEnabled || allCards.length <= 1) return;
+    if (!carouselEnabled || baseCards.length <= 1) return;
 
     const interval = setInterval(() => {
-      handleSlideChange((currentIndex + 1) % allCards.length);
+      handleSlideChange(currentIndex + 1, true);
     }, scrollInterval);
 
     return () => clearInterval(interval);
-  }, [carouselEnabled, allCards.length, scrollInterval, currentIndex]);
+  }, [carouselEnabled, baseCards.length, scrollInterval, currentIndex]);
 
-  const handleSlideChange = (newIndex) => {
-    if (isTransitioning) return;
-    setIsTransitioning(true);
-    setCurrentIndex(newIndex);
-    setTimeout(() => setIsTransitioning(false), 500);
+  const handleSlideChange = (newIndex, animate = true) => {
+    if (isTransitioning && animate) return;
+    
+    if (animate) {
+      setIsTransitioning(true);
+      setCurrentIndex(newIndex);
+      
+      // After animation, check if we're on a clone and jump to real card
+      setTimeout(() => {
+        if (newIndex >= allCards.length - 1) {
+          // We're on the cloned first card at the end, jump to real first card
+          setIsTransitioning(false);
+          setTimeout(() => setCurrentIndex(1), 50);
+        } else if (newIndex <= 0) {
+          // We're on the cloned last card at the beginning, jump to real last card
+          setIsTransitioning(false);
+          setTimeout(() => setCurrentIndex(allCards.length - 2), 50);
+        } else {
+          setIsTransitioning(false);
+        }
+      }, 500);
+    } else {
+      setCurrentIndex(newIndex);
+    }
   };
 
   const nextSlide = () => {
-    handleSlideChange((currentIndex + 1) % allCards.length);
+    handleSlideChange(currentIndex + 1, true);
   };
 
   const prevSlide = () => {
-    handleSlideChange((currentIndex - 1 + allCards.length) % allCards.length);
+    handleSlideChange(currentIndex - 1, true);
   };
 
   const goToSlide = (index) => {
-    handleSlideChange(index);
+    // Adjust index to account for cloned card at beginning
+    handleSlideChange(index + 1, true);
   };
 
   // Touch handlers for swipe
@@ -232,18 +257,18 @@ const HeroCarousel = ({ onDonate, onLocation }) => {
     >
       {/* Cards Container with sliding animation */}
       <div 
-        className="flex transition-transform duration-500 ease-in-out"
+        className={`flex ${isTransitioning ? 'transition-transform duration-500 ease-in-out' : ''}`}
         style={{ transform: `translateX(-${currentIndex * 100}%)` }}
       >
         {allCards.map((card, index) => (
-          <div key={card.id} className="w-full flex-shrink-0">
+          <div key={`${card.id}-${index}`} className="w-full flex-shrink-0">
             {renderCardContent(card)}
           </div>
         ))}
       </div>
 
       {/* Navigation Arrows - Only show if carousel enabled and has multiple cards */}
-      {carouselEnabled && allCards.length > 1 && (
+      {carouselEnabled && baseCards.length > 1 && (
         <>
           <button
             onClick={prevSlide}
@@ -264,20 +289,27 @@ const HeroCarousel = ({ onDonate, onLocation }) => {
       )}
 
       {/* Dots Indicator - Only show if carousel enabled and has multiple cards */}
-      {carouselEnabled && allCards.length > 1 && (
+      {carouselEnabled && baseCards.length > 1 && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
-          {allCards.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => goToSlide(index)}
-              className={`h-2 sm:h-2.5 rounded-full transition-all ${
-                index === currentIndex
-                  ? 'w-6 sm:w-8 bg-cyan-600'
-                  : 'w-2 sm:w-2.5 bg-gray-300 hover:bg-gray-400'
-              }`}
-              aria-label={`Go to slide ${index + 1}`}
-            />
-          ))}
+          {baseCards.map((_, index) => {
+            // Calculate actual position (subtract 1 because of cloned card at start)
+            const isActive = currentIndex === index + 1 || 
+                           (currentIndex === 0 && index === baseCards.length - 1) ||
+                           (currentIndex === allCards.length - 1 && index === 0);
+            
+            return (
+              <button
+                key={index}
+                onClick={() => goToSlide(index)}
+                className={`h-2 sm:h-2.5 rounded-full transition-all ${
+                  isActive
+                    ? 'w-6 sm:w-8 bg-cyan-600'
+                    : 'w-2 sm:w-2.5 bg-gray-300 hover:bg-gray-400'
+                }`}
+                aria-label={`Go to slide ${index + 1}`}
+              />
+            );
+          })}
         </div>
       )}
     </div>
