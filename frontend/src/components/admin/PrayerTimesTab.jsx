@@ -3,9 +3,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import { Clock, Save, Upload, FileSpreadsheet, AlertCircle } from 'lucide-react';
+import { Clock, Save, Upload, FileSpreadsheet, AlertCircle, Download } from 'lucide-react';
 import { toast } from 'sonner';
-import { bulkUpdateIqamahTimes } from '../../services/adminApi';
+import { bulkUpdatePrayerTimes } from '../../services/adminApi';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -59,7 +59,7 @@ const PrayerTimesTab = ({
     setShowConfirmDialog(false);
 
     try {
-      const result = await bulkUpdateIqamahTimes(selectedFile);
+      const result = await bulkUpdatePrayerTimes(selectedFile);
       toast.success(result.message || `Updated ${result.updated_count} dates successfully`);
       setSelectedFile(null);
       // Reset file input
@@ -77,6 +77,21 @@ const PrayerTimesTab = ({
     }
   };
 
+  const downloadSampleCSV = () => {
+    const csvContent = `Date,Fajr_Adhan,Fajr_Iqama,Dhuhr_Adhan,Dhuhr_Iqama,Asr_Adhan,Asr_Iqama,Maghrib_Adhan,Maghrib_Iqama,Isha_Adhan,Isha_Iqama,Sunrise,Sunset
+2026-05-01,04:19,04:34,13:01,13:16,16:49,17:04,20:00,20:05,21:44,21:59,05:55,20:00
+2026-05-02,04:17,04:32,13:01,13:16,16:50,17:05,20:01,20:06,21:45,22:00,05:53,20:01
+2026-05-03,04:15,04:30,13:01,13:16,16:51,17:06,20:02,20:07,21:47,22:02,05:51,20:02`;
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'prayer_times_template.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   const handleCancelUpload = () => {
     setShowConfirmDialog(false);
     setSelectedFile(null);
@@ -91,9 +106,9 @@ const PrayerTimesTab = ({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileSpreadsheet className="h-5 w-5 text-cyan-600" />
-            Bulk Update via CSV
+            Bulk Update Prayer Times via CSV
           </CardTitle>
-          <CardDescription>Upload a CSV file to update Iqamah times for an entire month</CardDescription>
+          <CardDescription>Upload both Adhan and Iqamah times for an entire month</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -102,13 +117,26 @@ const PrayerTimesTab = ({
               <div className="text-sm text-blue-800 space-y-2">
                 <p className="font-semibold">CSV Format Requirements:</p>
                 <ul className="list-disc list-inside space-y-1 ml-2">
-                  <li>Columns: Date, Fajr_Iqama, Duhur_Iqama, Asr_Iqama, Magrib_Iqama, Isha_Iqama</li>
-                  <li>Date format: YYYY-MM-DD (e.g., 2026-03-01)</li>
-                  <li>Time format: HH:MM (e.g., 05:30)</li>
-                  <li>Jummah time will automatically match Dhuhr time</li>
+                  <li><strong>Required columns:</strong> Date, Fajr_Adhan, Fajr_Iqama, Dhuhr_Adhan, Dhuhr_Iqama, Asr_Adhan, Asr_Iqama, Maghrib_Adhan, Maghrib_Iqama, Isha_Adhan, Isha_Iqama</li>
+                  <li><strong>Optional columns:</strong> Sunrise, Sunset</li>
+                  <li>Date format: YYYY-MM-DD (e.g., 2026-05-01)</li>
+                  <li>Time format: HH:MM in 24-hour format (e.g., 13:30)</li>
+                  <li>Jummah time will automatically match Dhuhr Iqamah time</li>
+                  <li>Both "Dhuhr" and "Duhur" spellings are accepted</li>
                 </ul>
               </div>
             </div>
+          </div>
+
+          <div className="flex gap-2">
+            <Button
+              onClick={downloadSampleCSV}
+              variant="outline"
+              className="border-cyan-600 text-cyan-600 hover:bg-cyan-50"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Download Sample CSV
+            </Button>
           </div>
 
           <div className="space-y-2">
@@ -147,8 +175,8 @@ const PrayerTimesTab = ({
             <AlertDialogTitle>Confirm Bulk Update</AlertDialogTitle>
             <AlertDialogDescription className="space-y-2">
               <p>You are about to upload: <span className="font-semibold">{selectedFile?.name}</span></p>
-              <p>This will update Iqamah times for all dates in the CSV file. The file will be validated first, and the upload will be rejected if any errors are found.</p>
-              <p className="text-amber-600 font-medium">⚠️ This action will overwrite existing Iqamah times for the dates in the CSV.</p>
+              <p>This will update both Adhan and Iqamah times for all dates in the CSV file. The file will be validated first, and the upload will be rejected if any errors are found.</p>
+              <p className="text-amber-600 font-medium">⚠️ This action will overwrite existing prayer times for the dates in the CSV.</p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

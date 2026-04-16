@@ -118,14 +118,14 @@ export const updateJummahTimes = async (time) => {
   }
 };
 
-export const bulkUpdateIqamahTimes = async (file) => {
+export const bulkUpdatePrayerTimes = async (file) => {
   try {
     const token = getAuthToken();
     const formData = new FormData();
     formData.append('file', file);
     
     const response = await axios.post(
-      `${API}/admin/iqamah/bulk-update`,
+      `${API}/admin/prayer-times/bulk-update`,
       formData,
       {
         headers: {
@@ -136,7 +136,7 @@ export const bulkUpdateIqamahTimes = async (file) => {
     );
     return response.data;
   } catch (error) {
-    console.error('Error bulk updating iqamah times:', error);
+    console.error('Error bulk updating prayer times:', error);
     throw error;
   }
 };

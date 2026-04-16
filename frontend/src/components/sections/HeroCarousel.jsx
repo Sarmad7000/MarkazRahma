@@ -10,7 +10,7 @@ const HeroCarousel = ({ onDonate, onLocation }) => {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
-  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
 
   // Minimum swipe distance (in px)
   const minSwipeDistance = 50;
@@ -36,9 +36,9 @@ const HeroCarousel = ({ onDonate, onLocation }) => {
     setCurrentIndex(baseCards.length > 1 ? 1 : 0);
   }, [baseCards.length]);
 
-  // Auto-scroll functionality (pause when video is playing)
+  // Auto-scroll functionality (pause when user hovers or pauses manually)
   useEffect(() => {
-    if (!carouselEnabled || baseCards.length <= 1 || isVideoPlaying) return;
+    if (!carouselEnabled || baseCards.length <= 1 || isPaused) return;
 
     const interval = setInterval(() => {
       setCurrentIndex((prevIndex) => {
@@ -64,7 +64,7 @@ const HeroCarousel = ({ onDonate, onLocation }) => {
     }, scrollInterval);
 
     return () => clearInterval(interval);
-  }, [carouselEnabled, baseCards.length, scrollInterval, allCards.length, isVideoPlaying]);
+  }, [carouselEnabled, baseCards.length, scrollInterval, allCards.length, isPaused]);
 
   const handleSlideChange = (newIndex, animate = true) => {
     if (isTransitioning && animate) return;
@@ -141,52 +141,8 @@ const HeroCarousel = ({ onDonate, onLocation }) => {
     const match = url.match(regExp);
     const videoId = (match && match[7].length === 11) ? match[7] : null;
     
-    return videoId ? `https://www.youtube.com/embed/${videoId}?enablejsapi=1&autoplay=0&rel=0` : null;
+    return videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=0&rel=0` : null;
   };
-
-  // Load YouTube IFrame API
-  useEffect(() => {
-    // Check if API is already loaded
-    if (window.YT) return;
-
-    const tag = document.createElement('script');
-    tag.src = 'https://www.youtube.com/iframe_api';
-    const firstScriptTag = document.getElementsByTagName('script')[0];
-    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-
-    window.onYouTubeIframeAPIReady = () => {
-      console.log('YouTube IFrame API ready');
-    };
-  }, []);
-
-  // Listen for video play/pause events via postMessage
-  useEffect(() => {
-    const handleMessage = (event) => {
-      // Only accept messages from YouTube
-      if (event.origin !== 'https://www.youtube.com') return;
-
-      try {
-        const data = JSON.parse(event.data);
-        
-        // YouTube player events
-        if (data.event === 'infoDelivery' && data.info) {
-          const playerState = data.info.playerState;
-          
-          // 1 = playing, 2 = paused, 0 = ended
-          if (playerState === 1) {
-            setIsVideoPlaying(true);
-          } else if (playerState === 2 || playerState === 0) {
-            setIsVideoPlaying(false);
-          }
-        }
-      } catch (e) {
-        // Ignore non-JSON messages
-      }
-    };
-
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, []);
 
   // Render card content based on type
   const renderCardContent = (card) => {
@@ -336,6 +292,8 @@ const HeroCarousel = ({ onDonate, onLocation }) => {
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
     >
       {/* Cards Container with sliding animation */}
       <div 
