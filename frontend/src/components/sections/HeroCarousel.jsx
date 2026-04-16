@@ -7,6 +7,11 @@ const HeroCarousel = ({ onDonate, onLocation }) => {
   const { cards, isLoading } = useHeroCards();
   const { carouselEnabled, scrollInterval } = useHeroSettings();
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
+
+  // Minimum swipe distance (in px)
+  const minSwipeDistance = 50;
 
   // Default hero card (original content)
   const defaultCard = {
@@ -42,6 +47,31 @@ const HeroCarousel = ({ onDonate, onLocation }) => {
     setCurrentIndex(index);
   };
 
+  // Touch handlers for swipe
+  const onTouchStart = (e) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe) {
+      nextSlide();
+    }
+    if (isRightSwipe) {
+      prevSlide();
+    }
+  };
+
   // Extract YouTube video ID from URL
   const getYouTubeEmbedUrl = (url) => {
     if (!url) return null;
@@ -65,7 +95,7 @@ const HeroCarousel = ({ onDonate, onLocation }) => {
                 {/* Logo */}
                 <div className="mb-6 sm:mb-8 flex justify-center">
                   <img
-                    src="https://customer-assets.emergentagent.com/job_markaz-rahma-1/artifacts/s5521pmg_Untitled%20design.png"
+                    src="https://customer-assets.emergentagent.com/job_markaz-rahma-1/artifacts/85zdrywf_Untitled%20design%20%281%29.png"
                     alt="Markaz Al-Rahma Logo"
                     className="h-20 sm:h-24 md:h-28 w-auto object-contain"
                   />
@@ -186,7 +216,12 @@ const HeroCarousel = ({ onDonate, onLocation }) => {
   const currentCard = allCards[currentIndex];
 
   return (
-    <div className="relative">
+    <div 
+      className="relative"
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+    >
       {/* Card Content */}
       <div className="transition-all duration-500">
         {renderCardContent(currentCard)}
