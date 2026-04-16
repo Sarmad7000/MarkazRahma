@@ -170,6 +170,46 @@ export const useMixlrStatus = () => {
   };
 };
 
+// Custom hook for hero cards with SWR
+export const useHeroCards = () => {
+  const { data, error, isLoading, mutate } = useSWR(
+    `${API}/hero/cards`,
+    fetcher,
+    {
+      refreshInterval: 300000, // Refresh every 5 minutes
+      revalidateOnFocus: false
+    }
+  );
+
+  return {
+    cards: data?.cards || [],
+    isLoading,
+    isError: error,
+    mutate
+  };
+};
+
+// Custom hook for hero settings with SWR
+export const useHeroSettings = () => {
+  const { data, error, isLoading, mutate } = useSWR(
+    `${API}/hero/settings`,
+    fetcher,
+    {
+      refreshInterval: 300000,
+      revalidateOnFocus: false
+    }
+  );
+
+  return {
+    carouselEnabled: data?.carousel_enabled || false,
+    scrollInterval: data?.scroll_interval || 5000,
+    isLoading,
+    isError: error,
+    mutate
+  };
+};
+
+// Direct API calls (non-SWR)
 export const getDonationGoal = async () => {
   try {
     const response = await axios.get(`${API}/donations/goal`);

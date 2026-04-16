@@ -6,7 +6,7 @@ import DonationModal from '../components/DonationModal';
 import RamadanPopup from '../components/RamadanPopup';
 import PrayerTimesCarousel from '../components/PrayerTimesCarousel';
 import Header from '../components/sections/Header';
-import HeroSection from '../components/sections/HeroSection';
+import HeroCarousel from '../components/sections/HeroCarousel';
 import PrayerTimesSection from '../components/sections/PrayerTimesSection';
 import MixlrSection from '../components/sections/MixlrSection';
 import DonationSection from '../components/sections/DonationSection';
@@ -205,8 +205,11 @@ const Home = () => {
         announcementsEnabled={announcementsEnabled}
       />
 
-      {/* Hero Section */}
-      <HeroSection mosqueInfo={mosqueInfo} onDonate={handleDonate} />
+      {/* Hero Carousel */}
+      <HeroCarousel
+        onDonate={handleDonate}
+        onLocation={() => document.querySelector('#location')?.scrollIntoView({ behavior: 'smooth' })}
+      />
 
       {/* Prayer Times Section */}
       <PrayerTimesSection 

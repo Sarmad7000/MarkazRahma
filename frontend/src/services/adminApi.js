@@ -411,6 +411,74 @@ export const updateEvent = async (id, data) => {
           Authorization: `Bearer ${token}`
         }
       }
+
+
+// Hero Carousel APIs
+export const getHeroCards = async () => {
+  try {
+    const token = getAuthToken();
+    const response = await axios.get(`${API}/admin/hero/cards`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching hero cards:', error);
+    throw error;
+  }
+};
+
+export const createHeroCard = async (cardData) => {
+  try {
+    const token = getAuthToken();
+    const response = await axios.post(`${API}/admin/hero/cards`, cardData, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error creating hero card:', error);
+    throw error;
+  }
+};
+
+export const updateHeroCard = async (cardId, cardData) => {
+  try {
+    const token = getAuthToken();
+    const response = await axios.put(`${API}/admin/hero/cards/${cardId}`, cardData, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error updating hero card:', error);
+    throw error;
+  }
+};
+
+export const deleteHeroCard = async (cardId) => {
+  try {
+    const token = getAuthToken();
+    const response = await axios.delete(`${API}/admin/hero/cards/${cardId}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting hero card:', error);
+    throw error;
+  }
+};
+
+export const updateHeroSettings = async (settings) => {
+  try {
+    const token = getAuthToken();
+    const response = await axios.put(`${API}/admin/hero/settings`, settings, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error updating hero settings:', error);
+    throw error;
+  }
+};
+
     );
     return response.data;
   } catch (error) {

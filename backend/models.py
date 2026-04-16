@@ -186,3 +186,39 @@ class UpdateEventRequest(BaseModel):
     image_path: Optional[str] = None
     order: Optional[int] = None
     enabled: Optional[bool] = None
+
+
+
+# Hero Carousel Models
+class HeroCard(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    title: str
+    content_type: str  # 'default', 'video', 'image'
+    content_url: Optional[str] = None  # YouTube URL or image data URL
+    order: int = 0
+    enabled: bool = True
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class CreateHeroCardRequest(BaseModel):
+    title: str
+    content_type: str
+    content_url: Optional[str] = None
+    order: Optional[int] = 0
+
+class UpdateHeroCardRequest(BaseModel):
+    title: Optional[str] = None
+    content_type: Optional[str] = None
+    content_url: Optional[str] = None
+    order: Optional[int] = None
+    enabled: Optional[bool] = None
+
+class HeroSettings(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    carousel_enabled: bool = False
+    scroll_interval: int = 5000  # milliseconds
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class UpdateHeroSettingsRequest(BaseModel):
+    carousel_enabled: Optional[bool] = None
+    scroll_interval: Optional[int] = None

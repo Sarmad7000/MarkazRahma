@@ -39,6 +39,7 @@ import PopupSettingsTab from '../components/admin/PopupSettingsTab';
 import AnnouncementsTab from '../components/admin/AnnouncementsTab';
 import TimetableTab from '../components/admin/TimetableTab';
 import EventsTab from '../components/admin/EventsTab';
+import HeroTab from '../components/admin/HeroTab';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -440,6 +441,11 @@ const AdminDashboard = () => {
               handleDeleteEvent={handleDeleteEvent}
               handleUploadImage={handleUploadImage}
             />
+          </TabsContent>
+
+          {/* Hero Tab */}
+          <TabsContent value="hero">
+            <HeroTab />
           </TabsContent>
 
           {/* Settings Tab */}

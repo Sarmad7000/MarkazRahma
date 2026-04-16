@@ -19,7 +19,8 @@ from models import (
     UpdateDonationGoalRequest, AdminLoginRequest, AdminLoginResponse, DonationHistoryItem,
     AddOfflineDonationRequest, PopupSettings, UpdatePopupSettingsRequest,
     Announcement, CreateAnnouncementRequest, UpdateAnnouncementRequest, SiteSettings,
-    TimetableSettings, UpdateTimetableRequest, Event, CreateEventRequest, UpdateEventRequest
+    TimetableSettings, UpdateTimetableRequest, Event, CreateEventRequest, UpdateEventRequest,
+    HeroCard, CreateHeroCardRequest, UpdateHeroCardRequest, HeroSettings, UpdateHeroSettingsRequest
 )
 from services.prayer_service import prayer_service
 from auth import authenticate_admin, create_access_token, get_current_user
@@ -1087,11 +1088,153 @@ async def get_mixlr_live_status():
             "error": "Could not check status"
         }
 
+# ============== HERO CAROUSEL ENDPOINTS ==============
+
+@api_router.get("/hero/cards")
+async def get_hero_cards():
+    """Get all active hero cards"""
+    try:
+        cards = await db.hero_cards.find(
+            {"enabled": True},
+            {"_id": 0}
+        ).sort("order", 1).to_list(100)
+        
+        return {"cards": cards}
+        
+    except Exception as e:
+        logger.error(f"Error fetching hero cards: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch hero cards")
+
+@api_router.get("/hero/settings")
+async def get_hero_settings():
+    """Get hero carousel settings"""
+    try:
+        settings = await db.hero_settings.find_one({}, {"_id": 0})
+        
+        if not settings:
+            # Return default settings
+            return {
+                "carousel_enabled": False,
+                "scroll_interval": 5000
+            }
+        
+        return settings
+        
+    except Exception as e:
+        logger.error(f"Error fetching hero settings: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch hero settings")
+
+@api_router.get("/admin/hero/cards")
+async def get_all_hero_cards_admin(current_user: dict = Depends(get_current_user)):
+    """Get all hero cards (Admin only)"""
+    try:
+        cards = await db.hero_cards.find(
+            {},
+            {"_id": 0}
+        ).sort("order", 1).to_list(100)
+        
+        return {"cards": cards}
+        
+    except Exception as e:
+        logger.error(f"Error fetching hero cards: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch hero cards")
+
+@api_router.post("/admin/hero/cards")
+async def create_hero_card(
+    request: CreateHeroCardRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Create a new hero card (Admin only)"""
+    try:
+        card = HeroCard(
+            title=request.title,
+            content_type=request.content_type,
+            content_url=request.content_url,
+            order=request.order or 0
+        )
+        
+        await db.hero_cards.insert_one(card.dict())
+        
+        logger.info(f"Hero card created by {current_user.get('sub', 'admin')}: {card.title}")
+        return {"message": "Hero card created successfully", "card": card.dict()}
+        
+    except Exception as e:
+        logger.error(f"Error creating hero card: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create hero card")
+
+@api_router.put("/admin/hero/cards/{card_id}")
+async def update_hero_card(
+    card_id: str,
+    request: UpdateHeroCardRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Update a hero card (Admin only)"""
+    try:
+        card = await db.hero_cards.find_one({"id": card_id}, {"_id": 0})
+        
+        if not card:
+            raise HTTPException(status_code=404, detail="Hero card not found")
+        
+        update_data = {k: v for k, v in request.dict().items() if v is not None}
+        update_data["updated_at"] = datetime.now(timezone.utc)
+        
+        await db.hero_cards.update_one(
+            {"id": card_id},
+            {"$set": update_data}
+        )
+        
+        logger.info(f"Hero card updated by {current_user.get('sub', 'admin')}: {card_id}")
+        return {"message": "Hero card updated successfully"}
+        
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error uploading image: {e}")
-        raise HTTPException(status_code=500, detail="Failed to upload image")
+        logger.error(f"Error updating hero card: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update hero card")
+
+@api_router.delete("/admin/hero/cards/{card_id}")
+async def delete_hero_card(
+    card_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Delete a hero card (Admin only)"""
+    try:
+        result = await db.hero_cards.delete_one({"id": card_id})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Hero card not found")
+        
+        logger.info(f"Hero card deleted by {current_user.get('sub', 'admin')}: {card_id}")
+        return {"message": "Hero card deleted successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting hero card: {e}")
+        raise HTTPException(status_code=500, detail="Failed to delete hero card")
+
+@api_router.put("/admin/hero/settings")
+async def update_hero_settings(
+    request: UpdateHeroSettingsRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Update hero carousel settings (Admin only)"""
+    try:
+        update_data = {k: v for k, v in request.dict().items() if v is not None}
+        update_data["updated_at"] = datetime.now(timezone.utc)
+        
+        await db.hero_settings.update_one(
+            {},
+            {"$set": update_data},
+            upsert=True
+        )
+        
+        logger.info(f"Hero settings updated by {current_user.get('sub', 'admin')}")
+        return {"message": "Hero settings updated successfully"}
+        
+    except Exception as e:
+        logger.error(f"Error updating hero settings: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update hero settings")
 
 # Include the router in the main app
 app.include_router(api_router)
