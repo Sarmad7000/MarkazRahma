@@ -7,6 +7,7 @@ const HeroCarousel = ({ onDonate, onLocation }) => {
   const { cards, isLoading } = useHeroCards();
   const { carouselEnabled, scrollInterval } = useHeroSettings();
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
 
@@ -29,22 +30,29 @@ const HeroCarousel = ({ onDonate, onLocation }) => {
     if (!carouselEnabled || allCards.length <= 1) return;
 
     const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % allCards.length);
+      handleSlideChange((currentIndex + 1) % allCards.length);
     }, scrollInterval);
 
     return () => clearInterval(interval);
-  }, [carouselEnabled, allCards.length, scrollInterval]);
+  }, [carouselEnabled, allCards.length, scrollInterval, currentIndex]);
+
+  const handleSlideChange = (newIndex) => {
+    if (isTransitioning) return;
+    setIsTransitioning(true);
+    setCurrentIndex(newIndex);
+    setTimeout(() => setIsTransitioning(false), 500);
+  };
 
   const nextSlide = () => {
-    setCurrentIndex((prev) => (prev + 1) % allCards.length);
+    handleSlideChange((currentIndex + 1) % allCards.length);
   };
 
   const prevSlide = () => {
-    setCurrentIndex((prev) => (prev - 1 + allCards.length) % allCards.length);
+    handleSlideChange((currentIndex - 1 + allCards.length) % allCards.length);
   };
 
   const goToSlide = (index) => {
-    setCurrentIndex(index);
+    handleSlideChange(index);
   };
 
   // Touch handlers for swipe
@@ -87,22 +95,22 @@ const HeroCarousel = ({ onDonate, onLocation }) => {
   const renderCardContent = (card) => {
     if (card.content_type === 'default') {
       return (
-        <div className="relative bg-gradient-to-br from-cyan-50 via-white to-cyan-50 py-8 sm:py-12 md:py-16">
+        <div className="relative bg-gradient-to-br from-cyan-50 via-white to-cyan-50 py-8 sm:py-12 md:py-16 min-h-[600px] flex items-center">
           <div className="container mx-auto px-4 sm:px-6">
             <div className="max-w-4xl mx-auto">
               {/* Contained Card */}
               <div className="bg-gradient-to-br from-cyan-50 to-white rounded-3xl shadow-xl p-8 sm:p-12 md:p-16 text-center border border-cyan-100">
-                {/* Logo */}
+                {/* Logo - 2x bigger */}
                 <div className="mb-6 sm:mb-8 flex justify-center">
                   <img
                     src="https://customer-assets.emergentagent.com/job_markaz-rahma-1/artifacts/85zdrywf_Untitled%20design%20%281%29.png"
                     alt="Markaz Al-Rahma Logo"
-                    className="h-20 sm:h-24 md:h-28 w-auto object-contain"
+                    className="h-40 sm:h-48 md:h-56 w-auto object-contain"
                   />
                 </div>
 
-                {/* Title */}
-                <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 mb-4 sm:mb-6">
+                {/* Title - Smaller font */}
+                <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4 sm:mb-6">
                   Markaz Al-Rahma
                 </h1>
 
@@ -140,7 +148,7 @@ const HeroCarousel = ({ onDonate, onLocation }) => {
     if (card.content_type === 'video') {
       const embedUrl = getYouTubeEmbedUrl(card.content_url);
       return (
-        <div className="relative bg-gradient-to-br from-cyan-50 via-white to-cyan-50 py-8 sm:py-12 md:py-16">
+        <div className="relative bg-gradient-to-br from-cyan-50 via-white to-cyan-50 py-8 sm:py-12 md:py-16 min-h-[600px] flex items-center">
           <div className="container mx-auto px-4 sm:px-6">
             <div className="max-w-4xl mx-auto">
               {/* Contained Card */}
@@ -175,7 +183,7 @@ const HeroCarousel = ({ onDonate, onLocation }) => {
 
     if (card.content_type === 'image') {
       return (
-        <div className="relative bg-gradient-to-br from-cyan-50 via-white to-cyan-50 py-8 sm:py-12 md:py-16">
+        <div className="relative bg-gradient-to-br from-cyan-50 via-white to-cyan-50 py-8 sm:py-12 md:py-16 min-h-[600px] flex items-center">
           <div className="container mx-auto px-4 sm:px-6">
             <div className="max-w-4xl mx-auto">
               {/* Contained Card */}
@@ -217,14 +225,21 @@ const HeroCarousel = ({ onDonate, onLocation }) => {
 
   return (
     <div 
-      className="relative"
+      className="relative overflow-hidden"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
     >
-      {/* Card Content */}
-      <div className="transition-all duration-500">
-        {renderCardContent(currentCard)}
+      {/* Cards Container with sliding animation */}
+      <div 
+        className="flex transition-transform duration-500 ease-in-out"
+        style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+      >
+        {allCards.map((card, index) => (
+          <div key={card.id} className="w-full flex-shrink-0">
+            {renderCardContent(card)}
+          </div>
+        ))}
       </div>
 
       {/* Navigation Arrows - Only show if carousel enabled and has multiple cards */}
