@@ -60,7 +60,15 @@ const ContactFormTab = ({
     }
 
     try {
-      await onUpdateSettings({ reason_options: reasonOptions });
+      const settings = {
+        reason_options: reasonOptions
+      };
+      
+      if (emailRecipient) settings.email_recipient = emailRecipient;
+      if (googleSheetId) settings.google_sheet_id = googleSheetId;
+      if (googleCredentials) settings.google_credentials_json = googleCredentials;
+      
+      await onUpdateSettings(settings);
       setEditingOptions(false);
       toast.success('Form settings updated successfully');
     } catch (error) {
@@ -175,6 +183,42 @@ const ContactFormTab = ({
                   <Plus className="h-4 w-4 mr-2" />
                   Add
                 </Button>
+              </div>
+
+              <div className="space-y-4 pt-4 border-t">
+                <div className="space-y-2">
+                  <Label htmlFor="email-recipient">Email Recipient (where submissions go)</Label>
+                  <Input
+                    id="email-recipient"
+                    type="email"
+                    value={emailRecipient}
+                    onChange={(e) => setEmailRecipient(e.target.value)}
+                    placeholder="info@markazrahma.org"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="sheet-id">Google Sheet ID (optional)</Label>
+                  <Input
+                    id="sheet-id"
+                    value={googleSheetId}
+                    onChange={(e) => setGoogleSheetId(e.target.value)}
+                    placeholder="16IWp53fHr8rJ5zasrEQmUofj9YaPVAn_MkrFrSMktj4"
+                  />
+                  <p className="text-xs text-gray-500">Find this in your Google Sheet URL</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="google-creds">Google Service Account JSON (optional)</Label>
+                  <textarea
+                    id="google-creds"
+                    value={googleCredentials}
+                    onChange={(e) => setGoogleCredentials(e.target.value)}
+                    placeholder='Paste the entire JSON file contents here...'
+                    className="w-full min-h-[100px] p-2 border rounded text-xs font-mono"
+                  />
+                  <p className="text-xs text-gray-500">This enables automatic Google Sheets sync</p>
+                </div>
               </div>
 
               <div className="flex gap-2 pt-2">
