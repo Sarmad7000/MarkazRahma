@@ -73,7 +73,9 @@ const ContactFormTab = ({
       toast.success('Form settings updated successfully');
     } catch (error) {
       console.error('Error saving options:', error);
-      toast.error('Failed to save settings');
+      // Surface backend validation message (e.g. invalid JSON, sheet not shared, missing fields)
+      const detail = error?.response?.data?.detail || error?.message || 'Failed to save settings';
+      toast.error(detail, { duration: 10000 });
     }
   };
 
@@ -218,6 +220,11 @@ const ContactFormTab = ({
                     className="w-full min-h-[100px] p-2 border rounded text-xs font-mono"
                   />
                   <p className="text-xs text-gray-500">This enables automatic Google Sheets sync</p>
+                  <div className="text-xs bg-amber-50 border border-amber-200 rounded p-3 space-y-1 text-amber-900">
+                    <p className="font-semibold">⚠️ Two things are required:</p>
+                    <p>1. Paste the <strong>complete</strong> JSON (must include <code>client_email</code> and <code>token_uri</code> — usually 10 fields).</p>
+                    <p>2. Open your Google Sheet → <strong>Share</strong> → add the service account's <code>client_email</code> as <strong>Editor</strong>.</p>
+                  </div>
                 </div>
               </div>
 

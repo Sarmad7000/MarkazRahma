@@ -1476,13 +1476,57 @@ async def update_contact_form_settings(
 ):
     """Update contact form settings (admin only)"""
     try:
+        # Validate Google credentials JSON if provided
+        update_data = {k: v for k, v in request.dict().items() if v is not None}
+
+        if update_data.get('google_credentials_json'):
+            import json as _json
+            raw = update_data['google_credentials_json'].strip()
+            try:
+                creds_dict = _json.loads(raw)
+            except _json.JSONDecodeError as e:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Google Service Account JSON is not valid JSON: {str(e)}. Please paste the entire .json file contents from Google Cloud Console."
+                )
+
+            required_fields = ['type', 'project_id', 'private_key_id', 'private_key', 'client_email', 'token_uri']
+            missing = [f for f in required_fields if not creds_dict.get(f)]
+            if missing:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Google Service Account JSON is missing required fields: {', '.join(missing)}. Please paste the COMPLETE .json file contents from Google Cloud Console (it should contain ~10 fields including client_email and token_uri)."
+                )
+
+            # Test the credentials by attempting to open the sheet
+            sheet_id_to_test = update_data.get('google_sheet_id')
+            if sheet_id_to_test:
+                try:
+                    from services.google_sheets_service import GoogleSheetsService
+                    test_service = GoogleSheetsService(raw, sheet_id_to_test)
+                    test_service.service.spreadsheets().get(spreadsheetId=sheet_id_to_test).execute()
+                except Exception as e:
+                    err_str = str(e)
+                    client_email = creds_dict.get('client_email', '<unknown>')
+                    if '403' in err_str or 'PERMISSION_DENIED' in err_str or 'permission' in err_str.lower():
+                        raise HTTPException(
+                            status_code=400,
+                            detail=f"The service account does not have access to this Google Sheet. Open your sheet, click 'Share', and give Editor access to: {client_email}"
+                        )
+                    if '404' in err_str or 'not found' in err_str.lower():
+                        raise HTTPException(
+                            status_code=400,
+                            detail=f"Google Sheet ID '{sheet_id_to_test}' not found. Double-check the ID from your sheet URL."
+                        )
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Failed to connect to Google Sheets: {err_str}. Make sure you've shared the sheet with: {client_email}"
+                    )
+
         # Get existing settings or create new
         existing = await db.contact_form_settings.find_one({})
-        
-        # Prepare update data
-        update_data = {k: v for k, v in request.dict().items() if v is not None}
         update_data['updated_at'] = datetime.now(timezone.utc)
-        
+
         if existing:
             await db.contact_form_settings.update_one(
                 {"id": existing["id"]},
@@ -1491,7 +1535,7 @@ async def update_contact_form_settings(
         else:
             settings = ContactFormSettings(**request.dict())
             await db.contact_form_settings.insert_one(settings.dict())
-        
+
         # If Google Sheets is configured and reason_options changed, create sheets
         if update_data.get('reason_options') and update_data.get('google_sheet_id') and update_data.get('google_credentials_json'):
             try:
@@ -1503,9 +1547,11 @@ async def update_contact_form_settings(
                 sheets_service.create_sheets_for_reasons(update_data['reason_options'])
             except Exception as e:
                 logger.error(f"Failed to create Google Sheets tabs: {e}")
-        
+
         logger.info(f"Admin updated contact form settings")
         return {"message": "Settings updated successfully"}
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error updating contact form settings: {e}")
         raise HTTPException(status_code=500, detail="Failed to update settings")
