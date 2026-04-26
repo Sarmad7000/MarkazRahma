@@ -52,7 +52,7 @@ const Contact = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.location || !formData.reason) {
+    if (!formData.name || !formData.location || !formData.reason || !formData.email || !formData.phone) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -163,7 +163,7 @@ const Contact = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="email" className="text-gray-700">
-                      Email (Optional)
+                      Email <span className="text-red-500">*</span>
                     </Label>
                     <Input
                       id="email"
@@ -171,13 +171,14 @@ const Contact = () => {
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       placeholder="your.email@example.com"
+                      required
                       className="border-gray-300 focus:border-cyan-500"
                     />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="phone" className="text-gray-700">
-                      Phone (Optional)
+                      Phone <span className="text-red-500">*</span>
                     </Label>
                     <Input
                       id="phone"
@@ -185,6 +186,7 @@ const Contact = () => {
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       placeholder="Your phone number"
+                      required
                       className="border-gray-300 focus:border-cyan-500"
                     />
                   </div>

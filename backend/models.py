@@ -228,11 +228,17 @@ class UpdateHeroSettingsRequest(BaseModel):
 class ContactFormSettings(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     reason_options: List[str] = ["Nikkah", "General Q&A", "Madrasah Enquiry"]
+    email_recipient: Optional[str] = None
+    google_sheet_id: Optional[str] = None
+    google_credentials_json: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 class UpdateContactFormSettingsRequest(BaseModel):
-    reason_options: List[str]
+    reason_options: Optional[List[str]] = None
+    email_recipient: Optional[str] = None
+    google_sheet_id: Optional[str] = None
+    google_credentials_json: Optional[str] = None
 
 class ContactSubmission(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -240,8 +246,8 @@ class ContactSubmission(BaseModel):
     location: str
     reason: str
     message: Optional[str] = None
-    email: Optional[str] = None
-    phone: Optional[str] = None
+    email: str
+    phone: str
     status: str = "new"  # new, read, resolved
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
@@ -251,8 +257,8 @@ class CreateContactSubmissionRequest(BaseModel):
     location: str
     reason: str
     message: Optional[str] = None
-    email: Optional[str] = None
-    phone: Optional[str] = None
+    email: str
+    phone: str
 
 class UpdateContactSubmissionRequest(BaseModel):
     status: Optional[str] = None

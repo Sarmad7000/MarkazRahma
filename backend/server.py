@@ -1327,6 +1327,30 @@ async def submit_contact_form(request: CreateContactSubmissionRequest):
         submission = ContactSubmission(**request.dict())
         await db.contact_submissions.insert_one(submission.dict())
         
+        # Get settings for Google Sheets and email
+        settings = await db.contact_form_settings.find_one({}, {"_id": 0})
+        
+        if settings:
+            # Send to Google Sheets if configured
+            if settings.get('google_sheet_id') and settings.get('google_credentials_json'):
+                try:
+                    from services.google_sheets_service import GoogleSheetsService
+                    sheets_service = GoogleSheetsService(
+                        settings['google_credentials_json'],
+                        settings['google_sheet_id']
+                    )
+                    sheets_service.append_submission(request.reason, submission.dict())
+                except Exception as e:
+                    logger.error(f"Failed to add to Google Sheets: {e}")
+            
+            # Send email notification if configured
+            if settings.get('email_recipient'):
+                try:
+                    from services.google_sheets_service import send_contact_notification
+                    send_contact_notification(settings['email_recipient'], submission.dict())
+                except Exception as e:
+                    logger.error(f"Failed to send email notification: {e}")
+        
         logger.info(f"New contact form submission from {request.name} - {request.reason}")
         return {"message": "Form submitted successfully", "id": submission.id}
     except Exception as e:
@@ -1392,22 +1416,35 @@ async def update_contact_form_settings(
     request: UpdateContactFormSettingsRequest,
     current_user: dict = Depends(get_current_user)
 ):
-    """Update contact form dropdown options (admin only)"""
+    """Update contact form settings (admin only)"""
     try:
         # Get existing settings or create new
         existing = await db.contact_form_settings.find_one({})
         
+        # Prepare update data
+        update_data = {k: v for k, v in request.dict().items() if v is not None}
+        update_data['updated_at'] = datetime.now(timezone.utc)
+        
         if existing:
             await db.contact_form_settings.update_one(
                 {"id": existing["id"]},
-                {"$set": {
-                    "reason_options": request.reason_options,
-                    "updated_at": datetime.now(timezone.utc)
-                }}
+                {"$set": update_data}
             )
         else:
-            settings = ContactFormSettings(reason_options=request.reason_options)
+            settings = ContactFormSettings(**request.dict())
             await db.contact_form_settings.insert_one(settings.dict())
+        
+        # If Google Sheets is configured and reason_options changed, create sheets
+        if update_data.get('reason_options') and update_data.get('google_sheet_id') and update_data.get('google_credentials_json'):
+            try:
+                from services.google_sheets_service import GoogleSheetsService
+                sheets_service = GoogleSheetsService(
+                    update_data['google_credentials_json'],
+                    update_data['google_sheet_id']
+                )
+                sheets_service.create_sheets_for_reasons(update_data['reason_options'])
+            except Exception as e:
+                logger.error(f"Failed to create Google Sheets tabs: {e}")
         
         logger.info(f"Admin updated contact form settings")
         return {"message": "Settings updated successfully"}
