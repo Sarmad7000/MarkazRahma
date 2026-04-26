@@ -13,21 +13,15 @@ export const usePrayerTimes = () => {
     `${API}/prayers/today`,
     fetcher,
     {
-      refreshInterval: 3600000, // Refresh every hour (3600000ms)
+      refreshInterval: 0, // Disable auto-refresh
       revalidateOnFocus: false, // Don't revalidate when window gets focus
-      revalidateOnReconnect: true, // Revalidate when internet reconnects
+      revalidateOnReconnect: false, // Don't revalidate when internet reconnects
       dedupingInterval: 60000, // Dedupe requests within 60 seconds
-      fallbackData: null, // Start with null, will show loading state
-      shouldRetryOnError: true, // Retry on error
-      errorRetryCount: 3, // Retry up to 3 times
-      errorRetryInterval: 5000, // Wait 5 seconds between retries
+      fallbackData: null, // Start with null
+      shouldRetryOnError: false, // Don't retry on error
+      errorRetryCount: 0, // No retries
       onError: (err) => {
-        console.error('Error fetching prayer times:', err);
-      },
-      onErrorRetry: (error, key, config, revalidate, { retryCount }) => {
-        // Retry with exponential backoff
-        if (retryCount >= 3) return;
-        setTimeout(() => revalidate({ retryCount }), 5000 * (retryCount + 1));
+        console.error('Prayer times unavailable:', err.message);
       }
     }
   );
@@ -176,8 +170,9 @@ export const useHeroCards = () => {
     `${API}/hero/cards`,
     fetcher,
     {
-      refreshInterval: 300000, // Refresh every 5 minutes
-      revalidateOnFocus: false
+      refreshInterval: 0, // Disable auto-refresh
+      revalidateOnFocus: false,
+      shouldRetryOnError: false
     }
   );
 
@@ -195,8 +190,9 @@ export const useHeroSettings = () => {
     `${API}/hero/settings`,
     fetcher,
     {
-      refreshInterval: 300000,
-      revalidateOnFocus: false
+      refreshInterval: 0, // Disable auto-refresh
+      revalidateOnFocus: false,
+      shouldRetryOnError: false
     }
   );
 

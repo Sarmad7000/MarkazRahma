@@ -1504,18 +1504,6 @@ async def search_youtube_videos(q: str):
         logger.error(f"Error searching YouTube videos: {e}")
         raise HTTPException(status_code=500, detail="Failed to search videos")
 
-                    update_data['google_sheet_id']
-                )
-                sheets_service.create_sheets_for_reasons(update_data['reason_options'])
-            except Exception as e:
-                logger.error(f"Failed to create Google Sheets tabs: {e}")
-        
-        logger.info(f"Admin updated contact form settings")
-        return {"message": "Settings updated successfully"}
-    except Exception as e:
-        logger.error(f"Error updating contact form settings: {e}")
-        raise HTTPException(status_code=500, detail="Failed to update settings")
-
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
