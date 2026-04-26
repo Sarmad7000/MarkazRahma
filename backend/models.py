@@ -222,3 +222,37 @@ class HeroSettings(BaseModel):
 class UpdateHeroSettingsRequest(BaseModel):
     carousel_enabled: Optional[bool] = None
     scroll_interval: Optional[int] = None
+
+
+# Contact Form Models
+class ContactFormSettings(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    reason_options: List[str] = ["Nikkah", "General Q&A", "Madrasah Enquiry"]
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class UpdateContactFormSettingsRequest(BaseModel):
+    reason_options: List[str]
+
+class ContactSubmission(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    location: str
+    reason: str
+    message: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    status: str = "new"  # new, read, resolved
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class CreateContactSubmissionRequest(BaseModel):
+    name: str
+    location: str
+    reason: str
+    message: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+
+class UpdateContactSubmissionRequest(BaseModel):
+    status: Optional[str] = None

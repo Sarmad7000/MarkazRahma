@@ -498,3 +498,68 @@ export const updateHeroSettings = async (settings) => {
   }
 };
 
+
+
+// ===== CONTACT FORM API =====
+export const getContactSubmissions = async () => {
+  try {
+    const token = getAuthToken();
+    const response = await axios.get(`${API}/admin/contact/submissions`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching contact submissions:', error);
+    throw error;
+  }
+};
+
+export const getContactSettings = async () => {
+  try {
+    const response = await axios.get(`${API}/contact/settings`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching contact settings:', error);
+    throw error;
+  }
+};
+
+export const updateContactSettings = async (settings) => {
+  try {
+    const token = getAuthToken();
+    const response = await axios.put(`${API}/admin/contact/settings`, settings, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error updating contact settings:', error);
+    throw error;
+  }
+};
+
+export const updateContactSubmission = async (id, data) => {
+  try {
+    const token = getAuthToken();
+    const response = await axios.put(`${API}/admin/contact/submissions/${id}`, data, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error updating contact submission:', error);
+    throw error;
+  }
+};
+
+export const deleteContactSubmission = async (id) => {
+  try {
+    const token = getAuthToken();
+    const response = await axios.delete(`${API}/admin/contact/submissions/${id}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting contact submission:', error);
+    throw error;
+  }
+};
+

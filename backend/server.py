@@ -20,7 +20,9 @@ from models import (
     AddOfflineDonationRequest, PopupSettings, UpdatePopupSettingsRequest,
     Announcement, CreateAnnouncementRequest, UpdateAnnouncementRequest, SiteSettings,
     TimetableSettings, UpdateTimetableRequest, Event, CreateEventRequest, UpdateEventRequest,
-    HeroCard, CreateHeroCardRequest, UpdateHeroCardRequest, HeroSettings, UpdateHeroSettingsRequest
+    HeroCard, CreateHeroCardRequest, UpdateHeroCardRequest, HeroSettings, UpdateHeroSettingsRequest,
+    ContactFormSettings, UpdateContactFormSettingsRequest, ContactSubmission,
+    CreateContactSubmissionRequest, UpdateContactSubmissionRequest
 )
 from auth import authenticate_admin, create_access_token, get_current_user
 
@@ -1297,6 +1299,122 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ===== CONTACT FORM ENDPOINTS =====
+
+@api_router.get("/contact/settings")
+async def get_contact_form_settings():
+    """Get contact form dropdown settings"""
+    try:
+        settings = await db.contact_form_settings.find_one({}, {"_id": 0})
+        
+        if not settings:
+            # Create default settings
+            default_settings = ContactFormSettings()
+            await db.contact_form_settings.insert_one(default_settings.dict())
+            return default_settings
+        
+        return ContactFormSettings(**settings)
+    except Exception as e:
+        logger.error(f"Error fetching contact form settings: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch settings")
+
+@api_router.post("/contact/submit")
+async def submit_contact_form(request: CreateContactSubmissionRequest):
+    """Submit a new contact form"""
+    try:
+        submission = ContactSubmission(**request.dict())
+        await db.contact_submissions.insert_one(submission.dict())
+        
+        logger.info(f"New contact form submission from {request.name} - {request.reason}")
+        return {"message": "Form submitted successfully", "id": submission.id}
+    except Exception as e:
+        logger.error(f"Error submitting contact form: {e}")
+        raise HTTPException(status_code=500, detail="Failed to submit form")
+
+@api_router.get("/admin/contact/submissions")
+async def get_contact_submissions(current_user: dict = Depends(get_current_user)):
+    """Get all contact form submissions (admin only)"""
+    try:
+        submissions = await db.contact_submissions.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+        return {"submissions": submissions}
+    except Exception as e:
+        logger.error(f"Error fetching submissions: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch submissions")
+
+@api_router.put("/admin/contact/submissions/{submission_id}")
+async def update_contact_submission(
+    submission_id: str,
+    request: UpdateContactSubmissionRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Update contact submission status (admin only)"""
+    try:
+        update_data = {k: v for k, v in request.dict().items() if v is not None}
+        update_data['updated_at'] = datetime.now(timezone.utc)
+        
+        result = await db.contact_submissions.update_one(
+            {"id": submission_id},
+            {"$set": update_data}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Submission not found")
+        
+        logger.info(f"Admin updated contact submission {submission_id}")
+        return {"message": "Submission updated successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating submission: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update submission")
+
+@api_router.delete("/admin/contact/submissions/{submission_id}")
+async def delete_contact_submission(submission_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a contact submission (admin only)"""
+    try:
+        result = await db.contact_submissions.delete_one({"id": submission_id})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Submission not found")
+        
+        logger.info(f"Admin deleted contact submission {submission_id}")
+        return {"message": "Submission deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting submission: {e}")
+        raise HTTPException(status_code=500, detail="Failed to delete submission")
+
+@api_router.put("/admin/contact/settings")
+async def update_contact_form_settings(
+    request: UpdateContactFormSettingsRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Update contact form dropdown options (admin only)"""
+    try:
+        # Get existing settings or create new
+        existing = await db.contact_form_settings.find_one({})
+        
+        if existing:
+            await db.contact_form_settings.update_one(
+                {"id": existing["id"]},
+                {"$set": {
+                    "reason_options": request.reason_options,
+                    "updated_at": datetime.now(timezone.utc)
+                }}
+            )
+        else:
+            settings = ContactFormSettings(reason_options=request.reason_options)
+            await db.contact_form_settings.insert_one(settings.dict())
+        
+        logger.info(f"Admin updated contact form settings")
+        return {"message": "Settings updated successfully"}
+    except Exception as e:
+        logger.error(f"Error updating contact form settings: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update settings")
+
 
 @app.on_event("shutdown")
 async def shutdown_db_client():

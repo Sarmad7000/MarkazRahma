@@ -26,7 +26,12 @@ import {
   getEventsAdmin,
   createEvent,
   updateEvent,
-  deleteEvent
+  deleteEvent,
+  getContactSubmissions,
+  getContactSettings,
+  updateContactSettings,
+  updateContactSubmission,
+  deleteContactSubmission
 } from '../services/adminApi';
 import { getPrayerTimes, getDonationGoal, usePopupSettings } from '../services/api';
 import { LogOut, Loader2 } from 'lucide-react';
@@ -40,6 +45,7 @@ import AnnouncementsTab from '../components/admin/AnnouncementsTab';
 import TimetableTab from '../components/admin/TimetableTab';
 import EventsTab from '../components/admin/EventsTab';
 import HeroTab from '../components/admin/HeroTab';
+import ContactFormTab from '../components/admin/ContactFormTab';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -64,13 +70,15 @@ const AdminDashboard = () => {
   const [announcementsEnabled, setAnnouncementsEnabled] = useState(true);
   const [timetableImage, setTimetableImage] = useState('');
   const [events, setEvents] = useState([]);
+  const [contactSubmissions, setContactSubmissions] = useState([]);
+  const [contactSettings, setContactSettings] = useState(null);
 
   const { popupSettings: livePopupSettings, mutate: mutatePopupSettings } = usePopupSettings();
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const [prayerData, donationData, statsData, goalData, summaryData, announcementsData, timetableData, eventsData] = await Promise.all([
+      const [prayerData, donationData, statsData, goalData, summaryData, announcementsData, timetableData, eventsData, contactSubData, contactSetData] = await Promise.all([
         getPrayerTimes(),
         getDonationHistory(),
         getDonationStats(),
@@ -78,7 +86,9 @@ const AdminDashboard = () => {
         getDonationSummary(),
         getAnnouncementsAdmin(),
         getTimetable().catch(() => ({ image_path: '' })),
-        getEventsAdmin().catch(() => ({ events: [] }))
+        getEventsAdmin().catch(() => ({ events: [] })),
+        getContactSubmissions().catch(() => ({ submissions: [] })),
+        getContactSettings().catch(() => ({ reason_options: [] }))
       ]);
 
       setPrayerTimes(prayerData);
@@ -89,6 +99,8 @@ const AdminDashboard = () => {
       setAnnouncements(announcementsData.announcements || []);
       setTimetableImage(timetableData.image_path || '');
       setEvents(eventsData.events || []);
+      setContactSubmissions(contactSubData.submissions || []);
+      setContactSettings(contactSetData);
 
       // Initialize popup settings from live data
       if (livePopupSettings) {
@@ -366,6 +378,7 @@ const AdminDashboard = () => {
               <TabsTrigger value="timetable" className="px-3 sm:px-6 md:px-8 text-xs sm:text-sm whitespace-nowrap">Prayer Timetable</TabsTrigger>
               <TabsTrigger value="events" className="px-3 sm:px-6 md:px-8 text-xs sm:text-sm whitespace-nowrap">Events</TabsTrigger>
               <TabsTrigger value="hero" className="px-3 sm:px-6 md:px-8 text-xs sm:text-sm whitespace-nowrap">Hero</TabsTrigger>
+              <TabsTrigger value="contact" className="px-3 sm:px-6 md:px-8 text-xs sm:text-sm whitespace-nowrap">Contact</TabsTrigger>
               <TabsTrigger value="settings" className="px-3 sm:px-6 md:px-8 text-xs sm:text-sm whitespace-nowrap">Settings</TabsTrigger>
             </TabsList>
           </div>
@@ -447,6 +460,26 @@ const AdminDashboard = () => {
           {/* Hero Tab */}
           <TabsContent value="hero">
             <HeroTab />
+          </TabsContent>
+
+          {/* Contact Form Tab */}
+          <TabsContent value="contact">
+            <ContactFormTab
+              submissions={contactSubmissions}
+              settings={contactSettings}
+              onUpdateSettings={async (settings) => {
+                await updateContactSettings(settings);
+                await fetchData();
+              }}
+              onUpdateSubmission={async (id, data) => {
+                await updateContactSubmission(id, data);
+                await fetchData();
+              }}
+              onDeleteSubmission={async (id) => {
+                await deleteContactSubmission(id);
+                await fetchData();
+              }}
+            />
           </TabsContent>
 
           {/* Settings Tab */}

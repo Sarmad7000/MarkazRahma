@@ -22,13 +22,12 @@ const Header = ({ mosqueInfo, onDonate }) => {
           
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-6 absolute left-1/2 transform -translate-x-1/2">
-            <a href="/#prayer-times" className="text-gray-700 hover:text-cyan-600 transition-colors whitespace-nowrap">Prayer Times</a>
+            <a href="/" className="text-gray-700 hover:text-cyan-600 transition-colors whitespace-nowrap">Home</a>
             <a href="/timetable" className="text-gray-700 hover:text-cyan-600 transition-colors whitespace-nowrap">Prayer Timetable</a>
             <a href="/events" className="text-gray-700 hover:text-cyan-600 transition-colors whitespace-nowrap">Events</a>
             <a href="https://markazrahma.mixlr.com/recordings" target="_blank" rel="noopener noreferrer" className="text-gray-700 hover:text-cyan-600 transition-colors whitespace-nowrap">Mixlr Recordings</a>
-            <a href="/#donate" className="text-gray-700 hover:text-cyan-600 transition-colors whitespace-nowrap">Donate</a>
             <a href="/#about" className="text-gray-700 hover:text-cyan-600 transition-colors whitespace-nowrap">About</a>
-            <a href="/#contact" className="text-gray-700 hover:text-cyan-600 transition-colors whitespace-nowrap">Contact</a>
+            <a href="/contact" className="text-gray-700 hover:text-cyan-600 transition-colors whitespace-nowrap">Contact</a>
           </nav>
           
           {/* Desktop Donate Button */}
@@ -65,11 +64,11 @@ const Header = ({ mosqueInfo, onDonate }) => {
           <div className="md:hidden mt-4 pb-4 border-t border-gray-200 pt-4">
             <nav className="flex flex-col space-y-3">
               <a 
-                href="/#prayer-times" 
+                href="/" 
                 className="text-gray-700 hover:text-cyan-600 transition-colors py-2 px-4 rounded hover:bg-gray-50"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Prayer Times
+                Home
               </a>
               <a 
                 href="/timetable" 
@@ -95,13 +94,6 @@ const Header = ({ mosqueInfo, onDonate }) => {
                 Mixlr Recordings
               </a>
               <a 
-                href="/#donate" 
-                className="text-gray-700 hover:text-cyan-600 transition-colors py-2 px-4 rounded hover:bg-gray-50"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Donate
-              </a>
-              <a 
                 href="/#about" 
                 className="text-gray-700 hover:text-cyan-600 transition-colors py-2 px-4 rounded hover:bg-gray-50"
                 onClick={() => setMobileMenuOpen(false)}
@@ -109,22 +101,12 @@ const Header = ({ mosqueInfo, onDonate }) => {
                 About
               </a>
               <a 
-                href="/#contact" 
+                href="/contact" 
                 className="text-gray-700 hover:text-cyan-600 transition-colors py-2 px-4 rounded hover:bg-gray-50"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Contact
               </a>
-              <Button 
-                onClick={() => {
-                  onDonate();
-                  setMobileMenuOpen(false);
-                }}
-                className="bg-cyan-600 hover:bg-cyan-700 text-white flex items-center justify-center gap-2 w-full"
-              >
-                <Heart className="h-4 w-4" />
-                Donate Now
-              </Button>
             </nav>
           </div>
         )}
