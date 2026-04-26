@@ -516,7 +516,10 @@ export const getContactSubmissions = async () => {
 
 export const getContactSettings = async () => {
   try {
-    const response = await axios.get(`${API}/contact/settings`);
+    const token = getAuthToken();
+    const response = await axios.get(`${API}/admin/contact/settings`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
     return response.data;
   } catch (error) {
     console.error('Error fetching contact settings:', error);

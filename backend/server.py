@@ -1342,35 +1342,40 @@ async def search_youtube_videos(q: str):
         raise HTTPException(status_code=500, detail="Failed to search videos")
 
 
-# Include the router in the main app
-app.include_router(api_router)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_credentials=True,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-
 # ===== CONTACT FORM ENDPOINTS =====
 
 @api_router.get("/contact/settings")
 async def get_contact_form_settings():
-    """Get contact form dropdown settings"""
+    """Get contact form dropdown settings (PUBLIC - returns only reason options)"""
     try:
         settings = await db.contact_form_settings.find_one({}, {"_id": 0})
-        
+
         if not settings:
-            # Create default settings
+            default_settings = ContactFormSettings()
+            await db.contact_form_settings.insert_one(default_settings.dict())
+            return {"reason_options": default_settings.reason_options}
+
+        # Only return safe public fields - never leak credentials
+        return {"reason_options": settings.get("reason_options", [])}
+    except Exception as e:
+        logger.error(f"Error fetching contact form settings: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch settings")
+
+
+@api_router.get("/admin/contact/settings")
+async def get_contact_form_settings_admin(current_user: dict = Depends(get_current_user)):
+    """Get full contact form settings including credentials (admin only)"""
+    try:
+        settings = await db.contact_form_settings.find_one({}, {"_id": 0})
+
+        if not settings:
             default_settings = ContactFormSettings()
             await db.contact_form_settings.insert_one(default_settings.dict())
             return default_settings
-        
+
         return ContactFormSettings(**settings)
     except Exception as e:
-        logger.error(f"Error fetching contact form settings: {e}")
+        logger.error(f"Error fetching admin contact form settings: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch settings")
 
 @api_router.post("/contact/submit")
@@ -1509,3 +1514,15 @@ async def update_contact_form_settings(
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
+
+
+# Include the router in the main app (MUST be at the end after all routes are defined)
+app.include_router(api_router)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_credentials=True,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
