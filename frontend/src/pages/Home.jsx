@@ -138,51 +138,13 @@ const Home = () => {
     window.open('https://checkout.square.site/merchant/MLSD6EY5CMY2P/checkout/HXF33WVBEFWIA65YBXUQST3B?src=sheet', '_blank');
   };
 
-  // Show error state if prayer times fail to load
-  if (prayerError) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto p-6">
-          <AlertCircle className="h-16 w-16 text-amber-600 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Prayer Times Temporarily Unavailable</h2>
-          <p className="text-gray-600 mb-4">
-            We're having trouble loading the prayer times. Please check back in a few minutes.
-          </p>
-          <Button 
-            onClick={() => window.location.reload()} 
-            className="bg-cyan-600 hover:bg-cyan-700"
-          >
-            Retry
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
+  // Just show loading state briefly, then show the site even without prayer times
   if (prayerLoading && !prayerTimes) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-cyan-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading prayer times...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (prayerError && !prayerTimes) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto px-4">
-          <AlertCircle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Prayer Times Temporarily Unavailable</h2>
-          <p className="text-gray-600 mb-6">We're having trouble loading the prayer times. Please check back in a few minutes.</p>
-          <Button 
-            onClick={() => mutatePrayerTimes()}
-            className="bg-cyan-600 hover:bg-cyan-700 text-white"
-          >
-            Retry
-          </Button>
+          <p className="text-gray-600">Loading...</p>
         </div>
       </div>
     );
