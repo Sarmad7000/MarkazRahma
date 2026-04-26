@@ -25,7 +25,7 @@ const Header = ({ mosqueInfo, onDonate }) => {
             <a href="/" className="text-gray-700 hover:text-cyan-600 transition-colors whitespace-nowrap">Home</a>
             <a href="/timetable" className="text-gray-700 hover:text-cyan-600 transition-colors whitespace-nowrap">Prayer Timetable</a>
             <a href="/events" className="text-gray-700 hover:text-cyan-600 transition-colors whitespace-nowrap">Events</a>
-            <a href="https://markazrahma.mixlr.com/recordings" target="_blank" rel="noopener noreferrer" className="text-gray-700 hover:text-cyan-600 transition-colors whitespace-nowrap">Mixlr Recordings</a>
+            <a href="/youtube-recordings" className="text-gray-700 hover:text-cyan-600 transition-colors whitespace-nowrap">YouTube Recordings</a>
             <a href="/#about" className="text-gray-700 hover:text-cyan-600 transition-colors whitespace-nowrap">About</a>
             <a href="/contact" className="text-gray-700 hover:text-cyan-600 transition-colors whitespace-nowrap">Contact</a>
           </nav>
@@ -85,13 +85,11 @@ const Header = ({ mosqueInfo, onDonate }) => {
                 Events
               </a>
               <a 
-                href="https://markazrahma.mixlr.com/recordings"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/youtube-recordings" 
                 className="text-gray-700 hover:text-cyan-600 transition-colors py-2 px-4 rounded hover:bg-gray-50"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Mixlr Recordings
+                YouTube Recordings
               </a>
               <a 
                 href="/#about" 

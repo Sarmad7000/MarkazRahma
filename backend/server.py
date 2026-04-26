@@ -1440,6 +1440,59 @@ async def update_contact_form_settings(
                 from services.google_sheets_service import GoogleSheetsService
                 sheets_service = GoogleSheetsService(
                     update_data['google_credentials_json'],
+
+
+# ===== YOUTUBE RECORDINGS ENDPOINTS =====
+
+YOUTUBE_API_KEY = "AIzaSyAv-8bQkYhNPixHkoSoN-WbGcB87A-zynI"
+YOUTUBE_CHANNEL_HANDLE = "markazrahma"
+
+@api_router.get("/youtube/videos")
+async def get_youtube_videos():
+    """Get all videos from the YouTube channel"""
+    try:
+        from services.youtube_service import get_youtube_service
+        
+        youtube = get_youtube_service(YOUTUBE_API_KEY)
+        
+        # Get channel ID from handle
+        channel_id = await youtube.get_channel_id_from_handle(YOUTUBE_CHANNEL_HANDLE)
+        
+        if not channel_id:
+            raise HTTPException(status_code=404, detail="Channel not found")
+        
+        # Get videos
+        videos = await youtube.get_channel_videos(channel_id, max_results=50)
+        
+        return {"videos": videos, "channel_id": channel_id}
+        
+    except Exception as e:
+        logger.error(f"Error fetching YouTube videos: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch videos")
+
+@api_router.get("/youtube/search")
+async def search_youtube_videos(q: str):
+    """Search videos in the channel"""
+    try:
+        from services.youtube_service import get_youtube_service
+        
+        youtube = get_youtube_service(YOUTUBE_API_KEY)
+        
+        # Get channel ID from handle
+        channel_id = await youtube.get_channel_id_from_handle(YOUTUBE_CHANNEL_HANDLE)
+        
+        if not channel_id:
+            raise HTTPException(status_code=404, detail="Channel not found")
+        
+        # Search videos
+        videos = await youtube.search_videos(channel_id, q, max_results=20)
+        
+        return {"videos": videos}
+        
+    except Exception as e:
+        logger.error(f"Error searching YouTube videos: {e}")
+        raise HTTPException(status_code=500, detail="Failed to search videos")
+
                     update_data['google_sheet_id']
                 )
                 sheets_service.create_sheets_for_reasons(update_data['reason_options'])

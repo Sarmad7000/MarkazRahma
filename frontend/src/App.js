@@ -7,6 +7,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import Timetable from "./pages/Timetable";
 import Events from "./pages/Events";
 import Contact from "./pages/Contact";
+import YouTubeRecordings from "./pages/YouTubeRecordings";
 
 // Component to scroll to top on route change
 function ScrollToTop() {
@@ -34,6 +35,7 @@ function App() {
           <Route path="/timetable" element={<Timetable />} />
           <Route path="/events" element={<Events />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/youtube-recordings" element={<YouTubeRecordings />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
         </Routes>
