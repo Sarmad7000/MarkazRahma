@@ -282,5 +282,30 @@ GET  /api/admin/donations/history
 - Uptime: 99%+ availability
 
 ---
-*Last Updated: March 3, 2025*
-*Status: Backend Complete ✅ | Frontend Complete ✅ | Fully Functional*
+
+## Updates (Feb 26, 2026 — Current Session)
+
+### ✅ This Session
+- **YouTube Recordings**: New `/youtube-recordings` page replaces Mixlr. Backend `GET /api/youtube/videos` and `GET /api/youtube/search?q=` use YouTube Data API v3 against `@markazrahma`. Confirmed live (returning 9+ videos).
+- **Contact Form Google Sheets**: Admin Contact tab has UI inputs for `google_sheet_id`, `google_credentials_json` (textarea), and `email_recipient`. On submission, payload is appended to per-reason tabs in the configured Sheet (graceful failure if creds invalid).
+- **Security fix**: `GET /api/contact/settings` (public) now returns ONLY `{reason_options}` — credentials are no longer leaked publicly. New `GET /api/admin/contact/settings` (auth) returns full settings for admin UI.
+- **Routing fix**: Moved `app.include_router(api_router)` to the END of `server.py` so all routes (including new contact endpoints) register correctly. This was the root cause of multiple 404s.
+- **Email notifications**: Skipped per user; `send_contact_notification()` is a logging stub.
+- **Prayer Times**: Now fully CSV-driven (AlAdhan API removed earlier this session).
+- **Hero Carousel**: Auto-scroll loop fixed, pause-on-hover added.
+
+### Backend test results (iteration_3): 15/15 PASS, 100% frontend flows verified.
+
+### 🔵 P1 / Backlog
+- Wire up real email notifications (Resend / SendGrid / Gmail SMTP) when user provides API key.
+- Verify domain in Resend if user wants emails sent from `noreply@markazrahma.org`.
+- Move `YOUTUBE_API_KEY` from hardcoded `server.py` value to `backend/.env`.
+
+### 🟢 P2 / Future
+- Refactor `server.py` (~1530 lines) into routers (`routes/youtube.py`, `routes/contact.py`, `routes/donations.py`, `routes/admin.py`).
+- Secure admin password reset endpoint.
+- Delete the lingering test submission `TEST_PW User / Colindale` from the admin Contact tab.
+
+---
+*Last Updated: Feb 26, 2026*
+*Status: Backend ✅ | Frontend ✅ | YouTube ✅ | Contact + Sheets ✅ | Fully Functional*
