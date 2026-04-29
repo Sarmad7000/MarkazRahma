@@ -164,7 +164,7 @@ const InteriorPrayerTimes = () => {
               />
             )}
             <VText
-              className={`font-bold uppercase tracking-wide ${nameTone}`}
+              className={`font-bold tracking-wide ${nameTone}`}
               style={{ fontSize: isJummah ? '2.2rem' : '2.8rem', lineHeight: '1.05' }}
             >
               {label}
@@ -232,7 +232,7 @@ const InteriorPrayerTimes = () => {
                     const cards = [
                       buildPrayerColumn(
                         prayer.name,
-                        prayer.name.toUpperCase(),
+                        prayer.name,
                         false,
                         false,
                         prayer.iqamah,
@@ -242,7 +242,7 @@ const InteriorPrayerTimes = () => {
                     ];
                     if (prayer.name === 'Fajr' && sunrise) {
                       cards.push(
-                        buildPrayerColumn('Shuruq', 'SHURUQ', true, false, null, sunrise, false)
+                        buildPrayerColumn('Shuruq', 'Shuruq', true, false, null, sunrise, false)
                       );
                     }
                     return cards;
@@ -365,7 +365,7 @@ const InteriorPrayerTimes = () => {
   );
 
   const HeaderBar = (
-    <div className="flex items-center justify-between gap-4 px-6 lg:px-10 xl:px-12 pt-5 lg:pt-6 xl:pt-8" data-testid="landscape-header-bar">
+    <div className="flex items-center justify-between gap-4 px-6 lg:px-10 xl:px-12 pt-2 lg:pt-3" data-testid="landscape-header-bar">
       <div className="flex-1">
         <h1 className={`font-bold text-cyan-700 ${titleSize}`}>Markaz Al-Rahma</h1>
         <p className={`text-gray-600 mt-1 ${dateSize}`}>{dateString}</p>
@@ -390,9 +390,9 @@ const InteriorPrayerTimes = () => {
   if (!heroEnabled) {
     return (
       <div className={`h-screen w-screen overflow-hidden ${pageBg}`} data-testid="interior-display-page">
-        <div className="grid grid-cols-1 grid-rows-[auto_minmax(0,1fr)] h-full gap-4 pb-6 lg:pb-10 xl:pb-12">
+        <div className="grid grid-cols-1 grid-rows-[auto_minmax(0,1fr)] h-full">
           {HeaderBar}
-          <div className="px-6 lg:px-10 xl:px-12 flex">{PrayerTimesCard}</div>
+          <div className="px-3 lg:px-4 pb-3 lg:pb-4 flex">{PrayerTimesCard}</div>
         </div>
       </div>
     );
@@ -400,10 +400,10 @@ const InteriorPrayerTimes = () => {
 
   return (
     <div className={`h-screen w-screen overflow-hidden ${pageBg}`} data-testid="interior-display-page">
-      <div className="grid grid-rows-[auto_minmax(0,1fr)] h-full gap-3">
+      <div className="grid grid-rows-[auto_minmax(0,1fr)] h-full">
         {HeaderBar}
         <div className="grid grid-cols-1 lg:grid-cols-2 grid-rows-1 h-full overflow-hidden">
-          <div className="flex flex-col h-full px-6 lg:px-10 xl:px-12 pb-6 lg:pb-10 xl:pb-12 overflow-hidden">
+          <div className="flex flex-col h-full px-3 lg:px-4 pb-3 lg:pb-4 overflow-hidden">
             <div className="flex-1 overflow-hidden flex">{PrayerTimesCard}</div>
           </div>
           <div className="relative h-full w-full flex items-center justify-center p-2 lg:p-4 overflow-hidden">
