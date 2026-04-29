@@ -176,44 +176,48 @@ const InteriorPrayerTimes = () => {
 
     return (
       <div className={`relative h-screen w-screen overflow-hidden ${pageBg}`} data-testid="interior-display-page">
-        {/* Floating title + date + time pill — stays clear of the centered logo */}
-        <div
-          className="absolute z-10 flex items-stretch"
-          style={{ bottom: '14px', right: '14px', writingMode: 'vertical-rl', transform: 'rotate(180deg)', transformOrigin: 'center' }}
-        >
-          <div className="flex flex-col gap-1 bg-white/75 backdrop-blur-sm rounded-2xl px-5 py-3 shadow-md border border-cyan-100">
-            <span className="font-bold text-cyan-700" style={{ fontSize: '1.5rem', lineHeight: '1.1', whiteSpace: 'nowrap' }} data-testid="portrait-title">
-              Markaz Al-Rahma
-            </span>
-            <span className="text-gray-600" style={{ fontSize: '0.95rem', whiteSpace: 'nowrap' }} data-testid="portrait-date">
-              {dateString}
-            </span>
-            <span className="font-mono font-bold text-cyan-700 tabular-nums" style={{ fontSize: '1.7rem', whiteSpace: 'nowrap' }} data-testid="portrait-clock">
-              {timeString}
-            </span>
-          </div>
-        </div>
-
         <div
           className="h-full w-full grid gap-3 px-3 pb-3"
           style={{
             gridTemplateColumns: heroEnabled
-              ? 'minmax(170px, 1.4fr) minmax(0, 5.2fr) minmax(0, 4fr)'
-              : 'minmax(170px, 1.4fr) minmax(0, 4fr)',
+              ? 'minmax(150px, 1.3fr) minmax(0, 5.2fr) minmax(0, 4fr)'
+              : 'minmax(160px, 1.3fr) minmax(0, 4fr)',
           }}
         >
-          {/* HEADER COLUMN — ONLY the logo, centered both axes (= top center of the portrait page) */}
+          {/* HEADER COLUMN — clock at top, logo centered, title/date at bottom */}
           <div
-            className="relative flex items-center justify-center h-full w-full"
+            className="relative grid grid-rows-[auto_1fr_auto] items-center py-6"
             data-testid="portrait-header-column"
           >
-            <img
-              src={LOGO_URL}
-              alt="Markaz Al-Rahma"
-              className="object-contain"
-              style={{ transform: 'rotate(-90deg)', width: '92%', height: 'auto', maxHeight: '92%' }}
-              data-testid="portrait-logo"
-            />
+            <div
+              className="font-mono font-bold text-cyan-700 tabular-nums justify-self-center"
+              style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', fontSize: '2.2rem' }}
+              data-testid="portrait-clock"
+            >
+              {timeString}
+            </div>
+
+            <div className="flex items-center justify-center w-full h-full overflow-visible">
+              <img
+                src={LOGO_URL}
+                alt="Markaz Al-Rahma"
+                className="object-contain"
+                style={{ transform: 'rotate(-90deg)', width: '92%', height: 'auto', maxHeight: '92%' }}
+                data-testid="portrait-logo"
+              />
+            </div>
+
+            <div
+              className="flex items-center gap-2 justify-self-center"
+              style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
+            >
+              <span className="font-bold text-cyan-700" style={{ fontSize: '1.6rem', lineHeight: '1.1', whiteSpace: 'nowrap' }} data-testid="portrait-title">
+                Markaz Al-Rahma
+              </span>
+              <span className="text-gray-600" style={{ fontSize: '0.85rem', whiteSpace: 'nowrap' }} data-testid="portrait-date">
+                {dateString}
+              </span>
+            </div>
           </div>
 
           {/* MIDDLE — Prayer cards */}
