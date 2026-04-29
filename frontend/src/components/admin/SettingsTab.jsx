@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import { Settings, Monitor, ExternalLink } from 'lucide-react';
+import { Switch } from '../ui/switch';
+import { Settings, Monitor, ExternalLink, RotateCw } from 'lucide-react';
 
 const SettingsTab = ({ 
   editingGoal, 
@@ -11,6 +12,17 @@ const SettingsTab = ({
   handleUpdateGoal,
   goal 
 }) => {
+  const [portraitMode, setPortraitMode] = useState(false);
+  const [showHero, setShowHero] = useState(true);
+
+  const openInteriorDisplay = () => {
+    const params = new URLSearchParams();
+    if (portraitMode) params.set('orientation', 'portrait');
+    if (!showHero) params.set('hero', 'off');
+    const qs = params.toString();
+    window.open(`/admin/interior-display${qs ? `?${qs}` : ''}`, '_blank');
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -20,20 +32,52 @@ const SettingsTab = ({
             Interior Display
           </CardTitle>
           <CardDescription>
-            A full-screen view designed for a TV/monitor inside the masjid. Left half shows
-            today's prayer times (with Shuruq), right half shows the hero carousel.
+            A full-screen view designed for a TV/monitor inside the masjid. Configure the
+            orientation and whether to show the hero carousel before opening it.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-3">
+              <RotateCw className="h-4 w-4 text-cyan-600" />
+              <div>
+                <Label htmlFor="portrait-toggle" className="font-medium">Portrait orientation</Label>
+                <p className="text-xs text-gray-500 mt-0.5">For vertical TVs — stacks content top/bottom instead of left/right.</p>
+              </div>
+            </div>
+            <Switch
+              id="portrait-toggle"
+              checked={portraitMode}
+              onCheckedChange={setPortraitMode}
+              data-testid="interior-portrait-toggle"
+            />
+          </div>
+
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-3">
+              <Monitor className="h-4 w-4 text-cyan-600" />
+              <div>
+                <Label htmlFor="hero-toggle" className="font-medium">Show hero carousel</Label>
+                <p className="text-xs text-gray-500 mt-0.5">When off, prayer times fill the entire screen.</p>
+              </div>
+            </div>
+            <Switch
+              id="hero-toggle"
+              checked={showHero}
+              onCheckedChange={setShowHero}
+              data-testid="interior-hero-toggle"
+            />
+          </div>
+
           <Button
-            onClick={() => window.open('/admin/interior-display', '_blank')}
+            onClick={openInteriorDisplay}
             className="bg-cyan-600 hover:bg-cyan-700"
             data-testid="open-interior-display-button"
           >
             <ExternalLink className="h-4 w-4 mr-2" />
             Open Interior Display
           </Button>
-          <p className="text-xs text-gray-500 mt-3">
+          <p className="text-xs text-gray-500">
             Tip: open this page on the display device, then press F11 for true full-screen.
           </p>
         </CardContent>
