@@ -192,7 +192,7 @@ async def update_jummah_times(request: UpdateJummahRequest, current_user: dict =
 async def bulk_update_prayer_times(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
     """
     Bulk update both Adhan and Iqamah times for multiple dates via CSV upload
-    CSV Format: Date,Fajr_Adhan,Fajr_Iqama,Dhuhr_Adhan,Dhuhr_Iqama,Asr_Adhan,Asr_Iqama,Maghrib_Adhan,Maghrib_Iqama,Isha_Adhan,Isha_Iqama,Sunrise,Sunset
+    CSV Format: Date,Fajr_Adhan,Fajr_Iqama,Dhuhr_Adhan,Dhuhr_Iqama,Asr_Adhan,Asr_Iqama,Maghrib_Adhan,Maghrib_Iqama,Isha_Adhan,Isha_Iqama,Sunrise (or Shuruq),Sunset
     Accepts both "Duhur" and "Dhuhr" spellings
     Sets Jummah time to match Dhuhr Iqamah time
     """
@@ -240,8 +240,15 @@ async def bulk_update_prayer_times(file: UploadFile = File(...), current_user: d
             'Isha_Adhan', 'Isha_Iqama'
         ]
         
-        # Optional headers
-        optional_headers = ['Sunrise', 'Sunset']
+        # Optional headers (Shuruq is an alias for Sunrise)
+        optional_headers = ['Sunrise', 'Shuruq', 'Sunset']
+
+        # Resolve sunrise header (accept both spellings)
+        sunrise_header = None
+        if 'Sunrise' in headers:
+            sunrise_header = 'Sunrise'
+        elif 'Shuruq' in headers:
+            sunrise_header = 'Shuruq'
         
         # Validate all required headers are present
         for header in required_headers:
@@ -303,8 +310,11 @@ async def bulk_update_prayer_times(file: UploadFile = File(...), current_user: d
                             detail=f"Invalid time format in row {row_num} for {prayer_name} {time_type}: {time_str}. Expected HH:MM"
                         )
             
-            # Get optional Sunrise and Sunset
-            sunrise = row.get('Sunrise', '').strip() or 'N/A'
+            # Get optional Sunrise (or Shuruq) and Sunset
+            sunrise = ''
+            if sunrise_header:
+                sunrise = row.get(sunrise_header, '').strip()
+            sunrise = sunrise or 'N/A'
             sunset = row.get('Sunset', '').strip() or 'N/A'
             
             # Validate sunrise/sunset if provided

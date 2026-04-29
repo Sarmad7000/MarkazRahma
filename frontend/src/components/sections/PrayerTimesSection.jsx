@@ -1,9 +1,11 @@
 import React from 'react';
-import { Clock } from 'lucide-react';
+import { Clock, Sunrise as SunriseIcon } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 
 const PrayerTimesSection = ({ prayerTimes, getNextPrayer, formatTime }) => {
   if (!prayerTimes) return null;
+
+  const sunriseTime = prayerTimes.sunrise && prayerTimes.sunrise !== 'N/A' ? prayerTimes.sunrise : null;
 
   return (
     <section id="prayer-times" className="py-8 md:py-12 bg-white">
@@ -27,9 +29,33 @@ const PrayerTimesSection = ({ prayerTimes, getNextPrayer, formatTime }) => {
               <div className="space-y-4">
                 {prayerTimes.prayers.map((prayer) => {
                   const isNext = prayer.name === getNextPrayer();
+                  // Insert Shuruq (Sunrise) row right after Fajr
+                  const shuruqRow = (prayer.name === 'Fajr' && sunriseTime) ? (
+                    <div
+                      key="shuruq"
+                      className="flex items-center justify-between p-3 md:p-4 rounded-lg bg-amber-50 border border-amber-200"
+                      data-testid="shuruq-row"
+                    >
+                      <div className="flex items-center gap-2 md:gap-3">
+                        <SunriseIcon className="h-4 w-4 md:h-5 md:w-5 text-amber-500" />
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-base md:text-lg text-amber-900">
+                            Shuruq
+                          </span>
+                          <span className="text-[10px] md:text-xs text-amber-700">(Sunrise)</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-mono text-sm md:text-lg font-semibold text-amber-700">
+                          {formatTime(sunriseTime)}
+                        </div>
+                      </div>
+                    </div>
+                  ) : null;
+
                   return (
+                    <React.Fragment key={prayer.name}>
                     <div 
-                      key={prayer.name} 
                       className={`flex items-center justify-between p-3 md:p-4 rounded-lg transition-all ${
                         isNext 
                           ? 'bg-cyan-50 border-2 border-cyan-500 shadow-md' 
@@ -64,6 +90,8 @@ const PrayerTimesSection = ({ prayerTimes, getNextPrayer, formatTime }) => {
                         </div>
                       </div>
                     </div>
+                    {shuruqRow}
+                    </React.Fragment>
                   );
                 })}
 

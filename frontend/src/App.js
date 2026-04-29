@@ -8,6 +8,7 @@ import Timetable from "./pages/Timetable";
 import Events from "./pages/Events";
 import Contact from "./pages/Contact";
 import YouTubeRecordings from "./pages/YouTubeRecordings";
+import InteriorPrayerTimes from "./pages/InteriorPrayerTimes";
 
 // Component to scroll to top on route change
 function ScrollToTop() {
@@ -38,6 +39,7 @@ function App() {
           <Route path="/youtube-recordings" element={<YouTubeRecordings />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/interior-display" element={<InteriorPrayerTimes />} />
         </Routes>
       </BrowserRouter>
     </div>
