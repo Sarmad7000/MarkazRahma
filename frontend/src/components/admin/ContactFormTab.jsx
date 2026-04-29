@@ -4,8 +4,9 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Badge } from '../ui/badge';
-import { Settings, Plus, X, Trash2, Eye, CheckCircle } from 'lucide-react';
+import { Settings, Plus, X, Trash2, Eye, CheckCircle, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatAllSheetTabs } from '../../services/adminApi';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,6 +34,21 @@ const ContactFormTab = ({
   const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [submissionToDelete, setSubmissionToDelete] = useState(null);
+  const [formattingSheets, setFormattingSheets] = useState(false);
+
+  const handleReformatSheets = async () => {
+    setFormattingSheets(true);
+    try {
+      const result = await formatAllSheetTabs();
+      const tabs = (result?.results || []).map(r => r.tab).join(', ');
+      toast.success(`Sheet formatting applied to: ${tabs || 'all tabs'}`, { duration: 8000 });
+    } catch (error) {
+      const detail = error?.response?.data?.detail || 'Failed to format sheets';
+      toast.error(detail, { duration: 10000 });
+    } finally {
+      setFormattingSheets(false);
+    }
+  };
 
   const handleAddReason = () => {
     if (!newReason.trim()) {
@@ -253,6 +269,19 @@ const ContactFormTab = ({
                 <Settings className="h-4 w-4 mr-2" />
                 Edit Options
               </Button>
+
+              {settings?.google_sheet_id && settings?.google_credentials_json && (
+                <Button
+                  onClick={handleReformatSheets}
+                  disabled={formattingSheets}
+                  variant="outline"
+                  className="ml-2 border-amber-500 text-amber-700 hover:bg-amber-50"
+                  data-testid="reformat-sheets-button"
+                >
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  {formattingSheets ? 'Formatting…' : 'Re-format Google Sheets tabs'}
+                </Button>
+              )}
             </>
           )}
         </CardContent>

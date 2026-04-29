@@ -540,6 +540,19 @@ export const updateContactSettings = async (settings) => {
   }
 };
 
+export const formatAllSheetTabs = async () => {
+  try {
+    const token = getAuthToken();
+    const response = await axios.post(`${API}/admin/contact/sheets/format-all`, {}, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error formatting sheet tabs:', error);
+    throw error;
+  }
+};
+
 export const updateContactSubmission = async (id, data) => {
   try {
     const token = getAuthToken();

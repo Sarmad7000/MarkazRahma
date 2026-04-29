@@ -86,9 +86,13 @@ class GoogleSheetsService:
             return False
 
     def _format_new_sheet(self, sheet_id: int):
-        """Bold + freeze header row, checkbox data validation on Resolved?, auto-resize columns."""
-        requests = [
-            {
+        """Bold + freeze header row, checkbox data validation on Resolved?, auto-resize columns.
+
+        Each formatting step is run in its own batchUpdate so a single failing
+        request does not abort all formatting.
+        """
+        steps = [
+            ("bold-header", {
                 'repeatCell': {
                     'range': {
                         'sheetId': sheet_id,
@@ -104,8 +108,8 @@ class GoogleSheetsService:
                     },
                     'fields': 'userEnteredFormat(textFormat,horizontalAlignment,verticalAlignment)'
                 }
-            },
-            {
+            }),
+            ("freeze-header", {
                 'updateSheetProperties': {
                     'properties': {
                         'sheetId': sheet_id,
@@ -113,8 +117,8 @@ class GoogleSheetsService:
                     },
                     'fields': 'gridProperties.frozenRowCount'
                 }
-            },
-            {
+            }),
+            ("checkbox-resolved", {
                 'setDataValidation': {
                     'range': {
                         'sheetId': sheet_id,
@@ -129,8 +133,8 @@ class GoogleSheetsService:
                         'showCustomUi': True,
                     }
                 }
-            },
-            {
+            }),
+            ("autoresize", {
                 'autoResizeDimensions': {
                     'dimensions': {
                         'sheetId': sheet_id,
@@ -139,16 +143,18 @@ class GoogleSheetsService:
                         'endIndex': len(HEADERS),
                     }
                 }
-            },
+            }),
         ]
 
-        try:
-            self.service.spreadsheets().batchUpdate(
-                spreadsheetId=self.spreadsheet_id,
-                body={'requests': requests}
-            ).execute()
-        except HttpError as e:
-            logger.error(f"Error formatting new sheet: {e}")
+        for name, request in steps:
+            try:
+                self.service.spreadsheets().batchUpdate(
+                    spreadsheetId=self.spreadsheet_id,
+                    body={'requests': [request]}
+                ).execute()
+                logger.info(f"Sheet format step '{name}' applied to sheetId={sheet_id}")
+            except Exception as e:
+                logger.error(f"Sheet format step '{name}' FAILED on sheetId={sheet_id}: {e}")
 
     def append_submission(self, sheet_name: str, submission: Dict) -> bool:
         """Append a submission row.

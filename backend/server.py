@@ -1557,6 +1557,52 @@ async def update_contact_form_settings(
         raise HTTPException(status_code=500, detail="Failed to update settings")
 
 
+@api_router.post("/admin/contact/sheets/format-all")
+async def format_all_sheet_tabs(current_user: dict = Depends(get_current_user)):
+    """Re-apply bold/freeze/checkbox formatting to all per-reason tabs in the configured Google Sheet.
+
+    Use this to upgrade tabs that were created before the formatting feature was added,
+    or to fix tabs whose formatting was lost.
+    """
+    settings = await db.contact_form_settings.find_one({}, {"_id": 0})
+    if not settings or not settings.get('google_sheet_id') or not settings.get('google_credentials_json'):
+        raise HTTPException(status_code=400, detail="Google Sheets is not configured. Save credentials first.")
+
+    try:
+        from services.google_sheets_service import GoogleSheetsService, HEADERS
+        sheets_service = GoogleSheetsService(
+            settings['google_credentials_json'],
+            settings['google_sheet_id']
+        )
+
+        results = []
+        for reason in settings.get('reason_options', []):
+            sheet_id = sheets_service._get_sheet_id_by_name(reason)
+            if sheet_id is None:
+                # Tab doesn't exist yet — create it (which also formats it)
+                created = sheets_service.get_or_create_sheet(reason)
+                results.append({"tab": reason, "action": "created", "ok": created})
+            else:
+                # Ensure header row matches expected layout (without overwriting existing data rows)
+                try:
+                    sheets_service.service.spreadsheets().values().update(
+                        spreadsheetId=settings['google_sheet_id'],
+                        range=f"'{reason}'!A1:I1",
+                        valueInputOption='RAW',
+                        body={'values': [HEADERS]}
+                    ).execute()
+                except Exception as e:
+                    logger.error(f"Header update failed for tab '{reason}': {e}")
+
+                sheets_service._format_new_sheet(sheet_id)
+                results.append({"tab": reason, "action": "reformatted", "ok": True})
+
+        return {"message": "Formatting applied", "results": results}
+    except Exception as e:
+        logger.error(f"format-all failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to format sheets: {str(e)}")
+
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
