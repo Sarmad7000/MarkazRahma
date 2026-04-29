@@ -80,7 +80,7 @@ const InteriorPrayerTimes = () => {
     );
 
     const buildPrayerColumn = (key, label, isShuruq, isJummah, iqamah, adhan, isHighlighted) => {
-      const cardBase = 'flex flex-col items-center justify-between rounded-xl px-2 py-4 transition-all min-w-0';
+      const cardBase = 'flex flex-col items-center justify-between rounded-xl px-4 py-5 transition-all min-w-[78px]';
       const bg = isShuruq
         ? 'bg-amber-50 border border-amber-200'
         : isJummah
@@ -119,47 +119,47 @@ const InteriorPrayerTimes = () => {
           data-testid={`portrait-prayer-${label.toLowerCase()}`}
         >
           {/* Top: rotated time labels and values */}
-          <div className="flex flex-col items-center gap-4 flex-1 justify-center">
+          <div className="flex flex-col items-center gap-6 flex-1 justify-center">
             {!isJummah && !isShuruq && (
-              <div className="flex items-center gap-1">
-                <VText className={`text-[11px] uppercase tracking-wide ${labelTone}`}>Iqamah</VText>
-                <VText className={`font-mono font-bold tabular-nums ${iqamahTone}`} style={{ fontSize: '1.6rem' }}>
+              <div className="flex items-center gap-2">
+                <VText className={`text-base uppercase tracking-wide ${labelTone}`}>Iqamah</VText>
+                <VText className={`font-mono font-bold tabular-nums ${iqamahTone}`} style={{ fontSize: '3.2rem' }}>
                   {formatTime(iqamah)}
                 </VText>
               </div>
             )}
             {!isShuruq && (
-              <div className="flex items-center gap-1">
-                <VText className={`text-[11px] uppercase tracking-wide ${labelTone}`}>{isJummah ? 'Time' : 'Adhan'}</VText>
-                <VText className={`font-mono font-bold tabular-nums ${timeTone}`} style={{ fontSize: '1.6rem' }}>
+              <div className="flex items-center gap-2">
+                <VText className={`text-base uppercase tracking-wide ${labelTone}`}>{isJummah ? 'Time' : 'Adhan'}</VText>
+                <VText className={`font-mono font-bold tabular-nums ${timeTone}`} style={{ fontSize: '3.2rem' }}>
                   {formatTime(adhan)}
                 </VText>
               </div>
             )}
             {isShuruq && (
-              <VText className={`font-mono font-bold tabular-nums ${timeTone}`} style={{ fontSize: '1.6rem' }}>
+              <VText className={`font-mono font-bold tabular-nums ${timeTone}`} style={{ fontSize: '3.2rem' }}>
                 {formatTime(adhan)}
               </VText>
             )}
           </div>
 
           {/* Bottom: clock icon + Next badge + rotated prayer name */}
-          <div className="flex flex-col items-center gap-2 mt-3">
+          <div className="flex flex-col items-center gap-3 mt-3">
             {isHighlighted && (
               <VText
-                className="bg-cyan-600 text-white px-2 py-1 rounded-full text-[10px] uppercase font-semibold"
+                className="bg-cyan-600 text-white px-3 py-1 rounded-full text-sm uppercase font-semibold"
               >
                 Next
               </VText>
             )}
             {isShuruq ? (
-              <SunriseIcon className="h-4 w-4 text-amber-500" />
+              <SunriseIcon className="h-7 w-7 text-amber-500" />
             ) : (
-              <Clock className={`h-4 w-4 ${isJummah ? 'text-cyan-100' : isHighlighted ? 'text-cyan-700' : 'text-cyan-600'}`} />
+              <Clock className={`h-7 w-7 ${isJummah ? 'text-cyan-100' : isHighlighted ? 'text-cyan-700' : 'text-cyan-600'}`} />
             )}
             <VText
               className={`font-bold uppercase tracking-wide ${nameTone}`}
-              style={{ fontSize: isJummah ? '1.1rem' : '1.4rem', lineHeight: '1.05' }}
+              style={{ fontSize: isJummah ? '2.2rem' : '2.8rem', lineHeight: '1.05' }}
             >
               {label}
             </VText>
@@ -174,8 +174,8 @@ const InteriorPrayerTimes = () => {
           className="h-full w-full grid gap-3 p-3"
           style={{
             gridTemplateColumns: heroEnabled
-              ? 'minmax(80px, 0.7fr) minmax(0, 4fr) minmax(0, 4.2fr)'
-              : 'minmax(90px, 0.8fr) minmax(0, 4fr)',
+              ? 'minmax(120px, 1fr) minmax(0, 4fr) minmax(0, 4.2fr)'
+              : 'minmax(140px, 1.2fr) minmax(0, 4fr)',
           }}
         >
           {/* HEADER COLUMN — vertical text + bigger logo in middle */}
@@ -194,7 +194,7 @@ const InteriorPrayerTimes = () => {
             <img
               src={LOGO_URL}
               alt="Markaz Al-Rahma"
-              className="w-full max-w-[240px] object-contain"
+              className="w-full max-w-[340px] object-contain"
               data-testid="portrait-logo"
             />
 
@@ -219,7 +219,7 @@ const InteriorPrayerTimes = () => {
               <div className="flex-1 flex items-center justify-center text-gray-400">Loading…</div>
             ) : (
               <Card className="shadow-2xl border-t-4 border-t-cyan-600 bg-white/80 backdrop-blur-sm flex-1 overflow-hidden">
-                <CardContent className="p-3 h-full flex gap-2 items-stretch">
+                <CardContent className="p-3 h-full flex gap-2 items-stretch justify-end">
                   {prayerTimes.prayers.map((prayer) => {
                     const isHighlighted = prayer.name === nextPrayer;
                     const cards = [
@@ -357,15 +357,25 @@ const InteriorPrayerTimes = () => {
     </Card>
   );
 
-  const HeaderRow = (
-    <div className="flex items-start justify-between gap-4">
-      <div>
+  const HeaderBar = (
+    <div className="flex items-center justify-between gap-4 px-6 lg:px-10 xl:px-12 pt-5 lg:pt-6 xl:pt-8" data-testid="landscape-header-bar">
+      <div className="flex-1">
         <h1 className={`font-bold text-cyan-700 ${titleSize}`}>Markaz Al-Rahma</h1>
-        <p className={`text-gray-600 mt-2 ${dateSize}`}>{dateString}</p>
+        <p className={`text-gray-600 mt-1 ${dateSize}`}>{dateString}</p>
         {prayerTimes?.hijri_date && <p className={`text-cyan-600 font-medium ${dateSize}`}>{prayerTimes.hijri_date}</p>}
       </div>
-      <div className="text-right">
-        <div className={`font-mono font-bold text-cyan-700 tabular-nums ${clockSize}`} data-testid="interior-clock">{timeString}</div>
+      <div className="flex-shrink-0 flex items-center justify-center">
+        <img
+          src={LOGO_URL}
+          alt="Markaz Al-Rahma"
+          className={!heroEnabled ? 'h-32 xl:h-40 2xl:h-48 object-contain' : 'h-24 lg:h-28 xl:h-32 object-contain'}
+          data-testid="landscape-logo"
+        />
+      </div>
+      <div className="flex-1 flex justify-end">
+        <div className={`font-mono font-bold text-cyan-700 tabular-nums ${clockSize}`} data-testid="interior-clock">
+          {timeString}
+        </div>
       </div>
     </div>
   );
@@ -373,9 +383,9 @@ const InteriorPrayerTimes = () => {
   if (!heroEnabled) {
     return (
       <div className={`h-screen w-screen overflow-hidden ${pageBg}`} data-testid="interior-display-page">
-        <div className="grid grid-cols-1 grid-rows-[auto_minmax(0,1fr)] h-full p-6 lg:p-10 xl:p-12 gap-4">
-          {HeaderRow}
-          {PrayerTimesCard}
+        <div className="grid grid-cols-1 grid-rows-[auto_minmax(0,1fr)] h-full gap-4 pb-6 lg:pb-10 xl:pb-12">
+          {HeaderBar}
+          <div className="px-6 lg:px-10 xl:px-12 flex">{PrayerTimesCard}</div>
         </div>
       </div>
     );
@@ -383,20 +393,22 @@ const InteriorPrayerTimes = () => {
 
   return (
     <div className={`h-screen w-screen overflow-hidden ${pageBg}`} data-testid="interior-display-page">
-      <div className="grid grid-cols-1 lg:grid-cols-2 grid-rows-1 h-full">
-        <div className="flex flex-col h-full p-6 lg:p-10 xl:p-12 overflow-hidden gap-4">
-          {HeaderRow}
-          <div className="flex-1 overflow-hidden flex">{PrayerTimesCard}</div>
-        </div>
-        <div className="relative h-full w-full flex items-center justify-center p-2 lg:p-4 overflow-hidden">
-          <div className="w-full h-full flex items-center justify-center">
-            <HeroCarousel
-              onDonate={onDonate}
-              onLocation={onLocation}
-              intervalOverride={intervalOverride}
-              hideArrows
-              transparent
-            />
+      <div className="grid grid-rows-[auto_minmax(0,1fr)] h-full gap-3">
+        {HeaderBar}
+        <div className="grid grid-cols-1 lg:grid-cols-2 grid-rows-1 h-full overflow-hidden">
+          <div className="flex flex-col h-full px-6 lg:px-10 xl:px-12 pb-6 lg:pb-10 xl:pb-12 overflow-hidden">
+            <div className="flex-1 overflow-hidden flex">{PrayerTimesCard}</div>
+          </div>
+          <div className="relative h-full w-full flex items-center justify-center p-2 lg:p-4 overflow-hidden">
+            <div className="w-full h-full flex items-center justify-center">
+              <HeroCarousel
+                onDonate={onDonate}
+                onLocation={onLocation}
+                intervalOverride={intervalOverride}
+                hideArrows
+                transparent
+              />
+            </div>
           </div>
         </div>
       </div>
