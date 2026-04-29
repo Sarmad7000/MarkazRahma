@@ -177,10 +177,10 @@ const InteriorPrayerTimes = () => {
     return (
       <div className={`h-screen w-screen overflow-hidden ${pageBg}`} data-testid="interior-display-page">
         <div
-          className="h-full w-full grid gap-3 p-3"
+          className="h-full w-full grid gap-3 px-3 pb-3"
           style={{
             gridTemplateColumns: heroEnabled
-              ? 'minmax(120px, 1fr) minmax(0, 4fr) minmax(0, 4.2fr)'
+              ? 'minmax(120px, 1fr) minmax(0, 4fr) minmax(0, 5.5fr)'
               : 'minmax(140px, 1.2fr) minmax(0, 4fr)',
           }}
         >
