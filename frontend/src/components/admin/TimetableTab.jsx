@@ -1,0 +1,105 @@
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Upload, Save, Image as ImageIcon } from 'lucide-react';
+import { toast } from 'sonner';
+
+const TimetableTab = ({ 
+  timetableImage,
+  setTimetableImage,
+  handleUpdateTimetable,
+  handleUploadImage 
+}) => {
+  const [uploading, setUploading] = useState(false);
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File size must be less than 5MB');
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file');
+      return;
+    }
+
+    try {
+      setUploading(true);
+      const result = await handleUploadImage(file);
+      setTimetableImage(result.image_path);
+      toast.success('Image uploaded successfully');
+    } catch (error) {
+      toast.error('Failed to upload image');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4 sm:space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg sm:text-xl">Prayer Timetable Management</CardTitle>
+          <p className="text-xs sm:text-sm text-gray-600">
+            Upload the prayer timetable image for display on the Prayer Timetable page
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4 sm:space-y-6">
+          <div className="space-y-2">
+            <Label className="text-sm sm:text-base">Upload Prayer Timetable Image</Label>
+            <div className="flex flex-col gap-3 sm:gap-4">
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                disabled={uploading}
+                className="text-xs sm:text-sm"
+              />
+            </div>
+            {uploading && (
+              <p className="text-xs sm:text-sm text-cyan-600">Uploading...</p>
+            )}
+          </div>
+
+          {timetableImage && (
+            <div className="space-y-2">
+              <Label className="text-sm sm:text-base">Current Prayer Timetable Preview</Label>
+              <div className="border rounded-lg p-2 sm:p-4 bg-gray-50">
+                <img
+                  src={timetableImage}
+                  alt="Prayer Timetable preview"
+                  className="w-full h-auto max-h-64 sm:max-h-96 object-contain rounded"
+                />
+              </div>
+            </div>
+          )}
+
+          <Button 
+            onClick={handleUpdateTimetable} 
+            className="w-full bg-cyan-600 hover:bg-cyan-700 text-sm sm:text-base"
+            disabled={!timetableImage}
+          >
+            <Save className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
+            Save Prayer Timetable
+          </Button>
+
+          {!timetableImage && (
+            <div className="flex items-center justify-center p-6 sm:p-8 border-2 border-dashed border-gray-300 rounded-lg">
+              <div className="text-center">
+                <ImageIcon className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-2" />
+                <p className="text-sm sm:text-base text-gray-600">No prayer timetable image uploaded</p>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default TimetableTab;
