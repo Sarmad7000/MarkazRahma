@@ -65,8 +65,22 @@ const InteriorPrayerTimes = () => {
   // prayer name rotated at the bottom.
   // ============================================================
   if (isPortrait) {
+    const VText = ({ children, className = '', style = {} }) => (
+      <span
+        className={className}
+        style={{
+          writingMode: 'vertical-rl',
+          transform: 'rotate(180deg)',
+          whiteSpace: 'nowrap',
+          ...style,
+        }}
+      >
+        {children}
+      </span>
+    );
+
     const buildPrayerColumn = (key, label, isShuruq, isJummah, iqamah, adhan, isHighlighted) => {
-      const cardBase = 'flex flex-col justify-between rounded-xl px-2 py-4 transition-all min-w-0';
+      const cardBase = 'flex flex-col items-center justify-between rounded-xl px-2 py-4 transition-all min-w-0';
       const bg = isShuruq
         ? 'bg-amber-50 border border-amber-200'
         : isJummah
@@ -104,51 +118,51 @@ const InteriorPrayerTimes = () => {
           className={`${cardBase} ${bg} h-full`}
           data-testid={`portrait-prayer-${label.toLowerCase()}`}
         >
-          {/* Times stacked top */}
-          <div className="flex flex-col items-center gap-3 text-center">
+          {/* Top: rotated time labels and values */}
+          <div className="flex flex-col items-center gap-4 flex-1 justify-center">
             {!isJummah && !isShuruq && (
-              <div>
-                <div className={`text-[10px] uppercase tracking-wide ${labelTone}`}>Iqamah</div>
-                <div className={`font-mono font-bold text-2xl tabular-nums ${iqamahTone}`}>{formatTime(iqamah)}</div>
+              <div className="flex items-center gap-1">
+                <VText className={`text-[11px] uppercase tracking-wide ${labelTone}`}>Iqamah</VText>
+                <VText className={`font-mono font-bold tabular-nums ${iqamahTone}`} style={{ fontSize: '1.6rem' }}>
+                  {formatTime(iqamah)}
+                </VText>
               </div>
             )}
             {!isShuruq && (
-              <div>
-                <div className={`text-[10px] uppercase tracking-wide ${labelTone}`}>{isJummah ? 'Time' : 'Adhan'}</div>
-                <div className={`font-mono font-bold text-2xl tabular-nums ${timeTone}`}>{formatTime(adhan)}</div>
+              <div className="flex items-center gap-1">
+                <VText className={`text-[11px] uppercase tracking-wide ${labelTone}`}>{isJummah ? 'Time' : 'Adhan'}</VText>
+                <VText className={`font-mono font-bold tabular-nums ${timeTone}`} style={{ fontSize: '1.6rem' }}>
+                  {formatTime(adhan)}
+                </VText>
               </div>
             )}
             {isShuruq && (
-              <div>
-                <div className={`font-mono font-bold text-2xl tabular-nums ${timeTone}`}>{formatTime(adhan)}</div>
-              </div>
+              <VText className={`font-mono font-bold tabular-nums ${timeTone}`} style={{ fontSize: '1.6rem' }}>
+                {formatTime(adhan)}
+              </VText>
             )}
           </div>
 
-          {/* Bottom: clock icon + rotated prayer name */}
-          <div className="flex flex-col items-center gap-2 mt-4">
+          {/* Bottom: clock icon + Next badge + rotated prayer name */}
+          <div className="flex flex-col items-center gap-2 mt-3">
             {isHighlighted && (
-              <span className="text-[9px] uppercase font-semibold bg-cyan-600 text-white px-2 py-0.5 rounded-full">
+              <VText
+                className="bg-cyan-600 text-white px-2 py-1 rounded-full text-[10px] uppercase font-semibold"
+              >
                 Next
-              </span>
+              </VText>
             )}
             {isShuruq ? (
               <SunriseIcon className="h-4 w-4 text-amber-500" />
             ) : (
               <Clock className={`h-4 w-4 ${isJummah ? 'text-cyan-100' : isHighlighted ? 'text-cyan-700' : 'text-cyan-600'}`} />
             )}
-            <div
+            <VText
               className={`font-bold uppercase tracking-wide ${nameTone}`}
-              style={{
-                writingMode: 'vertical-rl',
-                transform: 'rotate(180deg)',
-                fontSize: isJummah ? '1.1rem' : '1.4rem',
-                lineHeight: '1.05',
-                whiteSpace: 'nowrap',
-              }}
+              style={{ fontSize: isJummah ? '1.1rem' : '1.4rem', lineHeight: '1.05' }}
             >
               {label}
-            </div>
+            </VText>
           </div>
         </div>
       );
@@ -160,16 +174,15 @@ const InteriorPrayerTimes = () => {
           className="h-full w-full grid gap-3 p-3"
           style={{
             gridTemplateColumns: heroEnabled
-              ? 'minmax(80px, 0.7fr) minmax(0, 4fr) minmax(0, 3.4fr)'
+              ? 'minmax(80px, 0.7fr) minmax(0, 4fr) minmax(0, 4.2fr)'
               : 'minmax(90px, 0.8fr) minmax(0, 4fr)',
           }}
         >
-          {/* HEADER COLUMN — vertical text + logo in middle */}
+          {/* HEADER COLUMN — vertical text + bigger logo in middle */}
           <div
             className="relative flex flex-col items-center justify-between py-6"
             data-testid="portrait-header-column"
           >
-            {/* Clock at top, rotated */}
             <div
               className="font-mono font-bold text-cyan-700 tabular-nums"
               style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', fontSize: '2.2rem' }}
@@ -178,15 +191,13 @@ const InteriorPrayerTimes = () => {
               {timeString}
             </div>
 
-            {/* Logo in the middle */}
             <img
               src={LOGO_URL}
               alt="Markaz Al-Rahma"
-              className="w-full max-w-[160px] object-contain"
+              className="w-full max-w-[240px] object-contain"
               data-testid="portrait-logo"
             />
 
-            {/* Title + date at bottom, rotated */}
             <div
               className="flex items-center gap-2"
               style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
@@ -200,7 +211,7 @@ const InteriorPrayerTimes = () => {
             </div>
           </div>
 
-          {/* MIDDLE — Prayer cards as horizontal row of vertical columns */}
+          {/* MIDDLE — Prayer cards */}
           <div className="flex items-stretch min-w-0">
             {!prayerTimes && !isLoading ? (
               <div className="flex-1 flex items-center justify-center text-gray-400">No prayer times</div>
@@ -237,20 +248,32 @@ const InteriorPrayerTimes = () => {
             )}
           </div>
 
-          {/* HERO — right side, transparent */}
+          {/* HERO — rotated 90° CCW so its landscape content fits the portrait pane */}
           {heroEnabled && (
             <div
-              className="relative h-full w-full flex items-center justify-center overflow-hidden"
+              className="relative h-full w-full overflow-hidden"
               data-testid="portrait-carousel"
             >
-              <div className="w-full h-full flex items-center justify-center">
-                <HeroCarousel
-                  onDonate={onDonate}
-                  onLocation={onLocation}
-                  intervalOverride={intervalOverride}
-                  hideArrows
-                  transparent
-                />
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  width: 'calc(100vh - 24px)',
+                  height: '100%',
+                  transform: 'translate(-50%, -50%) rotate(-90deg)',
+                  transformOrigin: 'center center',
+                }}
+              >
+                <div className="w-full h-full flex items-center justify-center">
+                  <HeroCarousel
+                    onDonate={onDonate}
+                    onLocation={onLocation}
+                    intervalOverride={intervalOverride}
+                    hideArrows
+                    transparent
+                  />
+                </div>
               </div>
             </div>
           )}
