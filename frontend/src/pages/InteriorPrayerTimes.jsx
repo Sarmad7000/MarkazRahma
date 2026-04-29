@@ -46,7 +46,7 @@ const InteriorPrayerTimes = () => {
   const dateString = now.toLocaleDateString('en-GB', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
   });
-  const timeString = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const timeString = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 
   const onDonate = () => {
     window.open('https://checkout.square.site/merchant/MLSD6EY5CMY2P/checkout/HXF33WVBEFWIA65YBXUQST3B?src=sheet', '_blank');
@@ -191,7 +191,7 @@ const InteriorPrayerTimes = () => {
           >
             <div
               className="font-mono font-bold text-cyan-700 tabular-nums justify-self-center"
-              style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', fontSize: '2.2rem' }}
+              style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', fontSize: '3.4rem' }}
               data-testid="portrait-clock"
             >
               {timeString}
@@ -295,12 +295,12 @@ const InteriorPrayerTimes = () => {
   // LANDSCAPE LAYOUTS (unchanged from previous step)
   // ============================================================
   const titleSize = !heroEnabled ? 'text-5xl xl:text-6xl 2xl:text-7xl' : 'text-3xl lg:text-4xl xl:text-5xl';
-  const clockSize = !heroEnabled ? 'text-7xl xl:text-8xl 2xl:text-9xl' : 'text-5xl lg:text-6xl xl:text-7xl';
+  const clockSize = !heroEnabled ? 'text-8xl xl:text-9xl' : 'text-7xl lg:text-8xl xl:text-9xl';
   const dateSize = !heroEnabled ? 'text-xl xl:text-2xl' : 'text-base lg:text-lg xl:text-xl';
-  const prayerNameSize = !heroEnabled ? 'text-3xl xl:text-4xl 2xl:text-5xl' : 'text-2xl lg:text-3xl xl:text-4xl';
-  const prayerTimeSize = !heroEnabled ? 'text-4xl xl:text-5xl 2xl:text-6xl' : 'text-2xl lg:text-3xl xl:text-4xl';
-  const labelSize = !heroEnabled ? 'text-sm xl:text-base' : 'text-xs lg:text-sm';
-  const iconSize = !heroEnabled ? 'h-8 w-8 xl:h-10 xl:w-10' : 'h-6 w-6 lg:h-7 lg:w-7';
+  const prayerNameSize = !heroEnabled ? 'text-4xl xl:text-5xl 2xl:text-6xl' : 'text-3xl lg:text-4xl xl:text-5xl';
+  const prayerTimeSize = !heroEnabled ? 'text-5xl xl:text-6xl 2xl:text-7xl' : 'text-3xl lg:text-4xl xl:text-5xl';
+  const labelSize = !heroEnabled ? 'text-base xl:text-lg' : 'text-sm lg:text-base';
+  const iconSize = !heroEnabled ? 'h-10 w-10 xl:h-12 xl:w-12' : 'h-8 w-8 lg:h-10 lg:w-10';
 
   const PrayerTimesCard = (
     <Card className="shadow-2xl border-t-4 border-t-cyan-600 bg-white/80 backdrop-blur-sm flex-1 flex flex-col overflow-hidden">
