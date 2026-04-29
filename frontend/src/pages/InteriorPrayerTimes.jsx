@@ -175,49 +175,42 @@ const InteriorPrayerTimes = () => {
     };
 
     return (
-      <div className={`h-screen w-screen overflow-hidden ${pageBg}`} data-testid="interior-display-page">
+      <div className={`relative h-screen w-screen overflow-hidden ${pageBg}`} data-testid="interior-display-page">
+        {/* Floating clock + date at the bottom-right of preview = bottom-right of portrait page */}
+        <div
+          className="absolute z-10"
+          style={{ bottom: '12px', right: '12px', writingMode: 'vertical-rl', transform: 'rotate(180deg)', transformOrigin: 'center' }}
+        >
+          <div className="flex items-baseline gap-3 bg-white/70 backdrop-blur-sm rounded-full px-4 py-2 shadow-md">
+            <span className="font-mono font-bold text-cyan-700 tabular-nums" style={{ fontSize: '1.5rem' }} data-testid="portrait-clock">
+              {timeString}
+            </span>
+            <span className="text-gray-600" style={{ fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+              {dateString}
+            </span>
+          </div>
+        </div>
+
         <div
           className="h-full w-full grid gap-3 px-3 pb-3"
           style={{
             gridTemplateColumns: heroEnabled
-              ? 'minmax(150px, 1.3fr) minmax(0, 5.2fr) minmax(0, 4fr)'
-              : 'minmax(160px, 1.3fr) minmax(0, 4fr)',
+              ? 'minmax(170px, 1.4fr) minmax(0, 5.2fr) minmax(0, 4fr)'
+              : 'minmax(170px, 1.4fr) minmax(0, 4fr)',
           }}
         >
-          {/* HEADER COLUMN — clock at top, logo CENTER-LARGE, title/date at bottom */}
+          {/* HEADER COLUMN — ONLY the logo, centered both axes (= top center of the portrait page) */}
           <div
-            className="relative grid grid-rows-[auto_1fr_auto] items-center py-6"
+            className="relative flex items-center justify-center h-full w-full"
             data-testid="portrait-header-column"
           >
-            <div
-              className="font-mono font-bold text-cyan-700 tabular-nums justify-self-center"
-              style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', fontSize: '2.2rem' }}
-              data-testid="portrait-clock"
-            >
-              {timeString}
-            </div>
-
-            <div className="flex items-center justify-center w-full h-full overflow-visible">
-              <img
-                src={LOGO_URL}
-                alt="Markaz Al-Rahma"
-                className="object-contain"
-                style={{ transform: 'rotate(-90deg)', width: '95%', height: 'auto', maxHeight: '95%' }}
-                data-testid="portrait-logo"
-              />
-            </div>
-
-            <div
-              className="flex items-center gap-2 justify-self-center"
-              style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
-            >
-              <span className="font-bold text-cyan-700" style={{ fontSize: '1.6rem', lineHeight: '1.1', whiteSpace: 'nowrap' }}>
-                Markaz Al-Rahma
-              </span>
-              <span className="text-gray-600" style={{ fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
-                {dateString}
-              </span>
-            </div>
+            <img
+              src={LOGO_URL}
+              alt="Markaz Al-Rahma"
+              className="object-contain"
+              style={{ transform: 'rotate(-90deg)', width: '92%', height: 'auto', maxHeight: '92%' }}
+              data-testid="portrait-logo"
+            />
           </div>
 
           {/* MIDDLE — Prayer cards */}
