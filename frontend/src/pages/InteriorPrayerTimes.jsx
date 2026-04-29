@@ -176,17 +176,20 @@ const InteriorPrayerTimes = () => {
 
     return (
       <div className={`relative h-screen w-screen overflow-hidden ${pageBg}`} data-testid="interior-display-page">
-        {/* Floating clock + date at the bottom-right of preview = bottom-right of portrait page */}
+        {/* Floating title + date + time pill — stays clear of the centered logo */}
         <div
-          className="absolute z-10"
-          style={{ bottom: '12px', right: '12px', writingMode: 'vertical-rl', transform: 'rotate(180deg)', transformOrigin: 'center' }}
+          className="absolute z-10 flex items-stretch"
+          style={{ bottom: '14px', right: '14px', writingMode: 'vertical-rl', transform: 'rotate(180deg)', transformOrigin: 'center' }}
         >
-          <div className="flex items-baseline gap-3 bg-white/70 backdrop-blur-sm rounded-full px-4 py-2 shadow-md">
-            <span className="font-mono font-bold text-cyan-700 tabular-nums" style={{ fontSize: '1.5rem' }} data-testid="portrait-clock">
-              {timeString}
+          <div className="flex flex-col gap-1 bg-white/75 backdrop-blur-sm rounded-2xl px-5 py-3 shadow-md border border-cyan-100">
+            <span className="font-bold text-cyan-700" style={{ fontSize: '1.5rem', lineHeight: '1.1', whiteSpace: 'nowrap' }} data-testid="portrait-title">
+              Markaz Al-Rahma
             </span>
-            <span className="text-gray-600" style={{ fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+            <span className="text-gray-600" style={{ fontSize: '0.95rem', whiteSpace: 'nowrap' }} data-testid="portrait-date">
               {dateString}
+            </span>
+            <span className="font-mono font-bold text-cyan-700 tabular-nums" style={{ fontSize: '1.7rem', whiteSpace: 'nowrap' }} data-testid="portrait-clock">
+              {timeString}
             </span>
           </div>
         </div>
