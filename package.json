@@ -4,8 +4,7 @@
   "description": "Mosque website for Markaz Al-Rahma, Colindale, London",
   "packageManager": "yarn@1.22.22",
   "engines": {
-    "node": ">=18.x",
-    "yarn": "1.22.22"
+    "node": ">=18.x"
   },
   "scripts": {
     "install-all": "cd frontend && yarn install && cd ../backend && pip install -r requirements.txt",
