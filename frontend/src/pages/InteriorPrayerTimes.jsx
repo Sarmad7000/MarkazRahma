@@ -118,8 +118,8 @@ const InteriorPrayerTimes = () => {
           className={`${cardBase} ${bg} h-full`}
           data-testid={`portrait-prayer-${label.toLowerCase()}`}
         >
-          {/* Top: rotated time labels and values (Adhan on top, Iqamah below) */}
-          <div className="flex flex-col items-center gap-6 flex-1 justify-center">
+          {/* Top of card (right when in portrait): rotated time labels and values */}
+          <div className="flex flex-col items-center gap-6 pt-2">
             {!isShuruq && (
               <div className="flex items-center gap-2">
                 <VText className={`text-base uppercase tracking-wide ${labelTone}`}>{isJummah ? 'Time' : 'Adhan'}</VText>
@@ -143,8 +143,8 @@ const InteriorPrayerTimes = () => {
             )}
           </div>
 
-          {/* Bottom: rotated icon, Next badge, prayer name */}
-          <div className="flex flex-col items-center gap-3 mt-3">
+          {/* Bottom of card (left when in portrait): icon, Next badge, prayer name */}
+          <div className="flex flex-col items-center gap-3 mt-3 pb-2">
             {isHighlighted && (
               <VText
                 className="bg-cyan-600 text-white px-3 py-1 rounded-full text-sm uppercase font-semibold"
