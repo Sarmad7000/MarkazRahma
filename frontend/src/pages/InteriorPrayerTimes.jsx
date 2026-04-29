@@ -118,21 +118,21 @@ const InteriorPrayerTimes = () => {
           className={`${cardBase} ${bg} h-full`}
           data-testid={`portrait-prayer-${label.toLowerCase()}`}
         >
-          {/* Top: rotated time labels and values */}
+          {/* Top: rotated time labels and values (Adhan on top, Iqamah below) */}
           <div className="flex flex-col items-center gap-6 flex-1 justify-center">
-            {!isJummah && !isShuruq && (
-              <div className="flex items-center gap-2">
-                <VText className={`text-base uppercase tracking-wide ${labelTone}`}>Iqamah</VText>
-                <VText className={`font-mono font-bold tabular-nums ${iqamahTone}`} style={{ fontSize: '3.2rem' }}>
-                  {formatTime(iqamah)}
-                </VText>
-              </div>
-            )}
             {!isShuruq && (
               <div className="flex items-center gap-2">
                 <VText className={`text-base uppercase tracking-wide ${labelTone}`}>{isJummah ? 'Time' : 'Adhan'}</VText>
                 <VText className={`font-mono font-bold tabular-nums ${timeTone}`} style={{ fontSize: '3.2rem' }}>
                   {formatTime(adhan)}
+                </VText>
+              </div>
+            )}
+            {!isJummah && !isShuruq && (
+              <div className="flex items-center gap-2">
+                <VText className={`text-base uppercase tracking-wide ${labelTone}`}>Iqamah</VText>
+                <VText className={`font-mono font-bold tabular-nums ${iqamahTone}`} style={{ fontSize: '3.2rem' }}>
+                  {formatTime(iqamah)}
                 </VText>
               </div>
             )}
@@ -143,7 +143,7 @@ const InteriorPrayerTimes = () => {
             )}
           </div>
 
-          {/* Bottom: clock icon + Next badge + rotated prayer name */}
+          {/* Bottom: rotated icon, Next badge, prayer name */}
           <div className="flex flex-col items-center gap-3 mt-3">
             {isHighlighted && (
               <VText
@@ -153,9 +153,15 @@ const InteriorPrayerTimes = () => {
               </VText>
             )}
             {isShuruq ? (
-              <SunriseIcon className="h-7 w-7 text-amber-500" />
+              <SunriseIcon
+                className="h-7 w-7 text-amber-500"
+                style={{ transform: 'rotate(-90deg)' }}
+              />
             ) : (
-              <Clock className={`h-7 w-7 ${isJummah ? 'text-cyan-100' : isHighlighted ? 'text-cyan-700' : 'text-cyan-600'}`} />
+              <Clock
+                className={`h-7 w-7 ${isJummah ? 'text-cyan-100' : isHighlighted ? 'text-cyan-700' : 'text-cyan-600'}`}
+                style={{ transform: 'rotate(-90deg)' }}
+              />
             )}
             <VText
               className={`font-bold uppercase tracking-wide ${nameTone}`}
@@ -195,6 +201,7 @@ const InteriorPrayerTimes = () => {
               src={LOGO_URL}
               alt="Markaz Al-Rahma"
               className="w-full max-w-[340px] object-contain"
+              style={{ transform: 'rotate(-90deg)' }}
               data-testid="portrait-logo"
             />
 
