@@ -119,11 +119,11 @@ const InteriorPrayerTimes = () => {
           data-testid={`portrait-prayer-${label.toLowerCase()}`}
         >
           {/* Top of card (right when in portrait): rotated time labels and values */}
-          <div className="flex flex-col items-center gap-6 pt-2">
+          <div className="flex flex-col items-center gap-7 pt-2">
             {!isShuruq && (
               <div className="flex items-center gap-2">
                 <VText className={`text-base uppercase tracking-wide ${labelTone}`}>{isJummah ? 'Time' : 'Adhan'}</VText>
-                <VText className={`font-mono font-bold tabular-nums ${timeTone}`} style={{ fontSize: '3.2rem' }}>
+                <VText className={`font-mono font-bold tabular-nums ${timeTone}`} style={{ fontSize: '4rem' }}>
                   {formatTime(adhan)}
                 </VText>
               </div>
@@ -131,13 +131,13 @@ const InteriorPrayerTimes = () => {
             {!isJummah && !isShuruq && (
               <div className="flex items-center gap-2">
                 <VText className={`text-base uppercase tracking-wide ${labelTone}`}>Iqamah</VText>
-                <VText className={`font-mono font-bold tabular-nums ${iqamahTone}`} style={{ fontSize: '3.2rem' }}>
+                <VText className={`font-mono font-bold tabular-nums ${iqamahTone}`} style={{ fontSize: '4rem' }}>
                   {formatTime(iqamah)}
                 </VText>
               </div>
             )}
             {isShuruq && (
-              <VText className={`font-mono font-bold tabular-nums ${timeTone}`} style={{ fontSize: '3.2rem' }}>
+              <VText className={`font-mono font-bold tabular-nums ${timeTone}`} style={{ fontSize: '4rem' }}>
                 {formatTime(adhan)}
               </VText>
             )}
@@ -180,33 +180,35 @@ const InteriorPrayerTimes = () => {
           className="h-full w-full grid gap-3 px-3 pb-3"
           style={{
             gridTemplateColumns: heroEnabled
-              ? 'minmax(120px, 1fr) minmax(0, 4fr) minmax(0, 5.5fr)'
-              : 'minmax(140px, 1.2fr) minmax(0, 4fr)',
+              ? 'minmax(150px, 1.3fr) minmax(0, 5.2fr) minmax(0, 4fr)'
+              : 'minmax(160px, 1.3fr) minmax(0, 4fr)',
           }}
         >
-          {/* HEADER COLUMN — vertical text + bigger logo in middle */}
+          {/* HEADER COLUMN — clock at top, logo CENTER-LARGE, title/date at bottom */}
           <div
-            className="relative flex flex-col items-center justify-between py-6"
+            className="relative grid grid-rows-[auto_1fr_auto] items-center py-6"
             data-testid="portrait-header-column"
           >
             <div
-              className="font-mono font-bold text-cyan-700 tabular-nums"
+              className="font-mono font-bold text-cyan-700 tabular-nums justify-self-center"
               style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', fontSize: '2.2rem' }}
               data-testid="portrait-clock"
             >
               {timeString}
             </div>
 
-            <img
-              src={LOGO_URL}
-              alt="Markaz Al-Rahma"
-              className="w-full max-w-[340px] object-contain"
-              style={{ transform: 'rotate(-90deg)' }}
-              data-testid="portrait-logo"
-            />
+            <div className="flex items-center justify-center w-full h-full overflow-visible">
+              <img
+                src={LOGO_URL}
+                alt="Markaz Al-Rahma"
+                className="object-contain"
+                style={{ transform: 'rotate(-90deg)', width: '95%', height: 'auto', maxHeight: '95%' }}
+                data-testid="portrait-logo"
+              />
+            </div>
 
             <div
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 justify-self-center"
               style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
             >
               <span className="font-bold text-cyan-700" style={{ fontSize: '1.6rem', lineHeight: '1.1', whiteSpace: 'nowrap' }}>
