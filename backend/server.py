@@ -231,12 +231,35 @@ async def bulk_update_prayer_times(file: UploadFile = File(...), current_user: d
                 status_code=400, 
                 detail="Missing Dhuhr_Iqama/Duhur_Iqama column"
             )
-        
-        # Required headers (without Dhuhr variants)
+
+        # Check for Maghrib (accept both spellings)
+        maghrib_adhan_header = None
+        maghrib_iqama_header = None
+
+        if 'Maghrib_Adhan' in headers:
+            maghrib_adhan_header = 'Maghrib_Adhan'
+        elif 'Magrib_Adhan' in headers:
+            maghrib_adhan_header = 'Magrib_Adhan'
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail="Missing Maghrib_Adhan/Magrib_Adhan column"
+            )
+
+        if 'Maghrib_Iqama' in headers:
+            maghrib_iqama_header = 'Maghrib_Iqama'
+        elif 'Magrib_Iqama' in headers:
+            maghrib_iqama_header = 'Magrib_Iqama'
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail="Missing Maghrib_Iqama/Magrib_Iqama column"
+            )
+
+        # Required headers (without Dhuhr/Maghrib variants — those are resolved above)
         required_headers = [
             'Date', 'Fajr_Adhan', 'Fajr_Iqama', 
             'Asr_Adhan', 'Asr_Iqama', 
-            'Maghrib_Adhan', 'Maghrib_Iqama', 
             'Isha_Adhan', 'Isha_Iqama'
         ]
         
@@ -290,8 +313,8 @@ async def bulk_update_prayer_times(file: UploadFile = File(...), current_user: d
                     'iqamah': row['Asr_Iqama'].strip()
                 },
                 'Maghrib': {
-                    'adhan': row['Maghrib_Adhan'].strip(),
-                    'iqamah': row['Maghrib_Iqama'].strip()
+                    'adhan': row[maghrib_adhan_header].strip(),
+                    'iqamah': row[maghrib_iqama_header].strip()
                 },
                 'Isha': {
                     'adhan': row['Isha_Adhan'].strip(),
