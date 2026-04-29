@@ -14,11 +14,14 @@ const SettingsTab = ({
 }) => {
   const [portraitMode, setPortraitMode] = useState(false);
   const [showHero, setShowHero] = useState(true);
+  const [heroInterval, setHeroInterval] = useState('');
 
   const openInteriorDisplay = () => {
     const params = new URLSearchParams();
     if (portraitMode) params.set('orientation', 'portrait');
     if (!showHero) params.set('hero', 'off');
+    const intervalNum = parseInt(heroInterval, 10);
+    if (intervalNum > 0) params.set('interval', String(intervalNum));
     const qs = params.toString();
     window.open(`/admin/interior-display${qs ? `?${qs}` : ''}`, '_blank');
   };
@@ -68,6 +71,27 @@ const SettingsTab = ({
               data-testid="interior-hero-toggle"
             />
           </div>
+
+          {showHero && (
+            <div className="p-3 bg-gray-50 rounded-lg space-y-2">
+              <div className="flex items-center gap-3">
+                <Monitor className="h-4 w-4 text-cyan-600" />
+                <div>
+                  <Label htmlFor="interior-interval" className="font-medium">Hero auto-scroll interval (seconds)</Label>
+                  <p className="text-xs text-gray-500 mt-0.5">Override the carousel speed for this display only. Leave blank to use the site default.</p>
+                </div>
+              </div>
+              <Input
+                id="interior-interval"
+                type="number"
+                min="2"
+                placeholder="e.g. 8"
+                value={heroInterval}
+                onChange={(e) => setHeroInterval(e.target.value)}
+                data-testid="interior-interval-input"
+              />
+            </div>
+          )}
 
           <Button
             onClick={openInteriorDisplay}

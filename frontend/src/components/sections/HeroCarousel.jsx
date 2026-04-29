@@ -3,9 +3,10 @@ import { Button } from '../ui/button';
 import { MapPin, Heart, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useHeroCards, useHeroSettings } from '../../services/api';
 
-const HeroCarousel = ({ onDonate, onLocation }) => {
+const HeroCarousel = ({ onDonate, onLocation, intervalOverride, hideArrows = false, transparent = false }) => {
   const { cards, isLoading, isError } = useHeroCards();
-  const { carouselEnabled, scrollInterval, isError: settingsError } = useHeroSettings();
+  const { carouselEnabled, scrollInterval: defaultInterval, isError: settingsError } = useHeroSettings();
+  const scrollInterval = intervalOverride && intervalOverride > 0 ? intervalOverride : defaultInterval;
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [touchStart, setTouchStart] = useState(null);
@@ -148,11 +149,11 @@ const HeroCarousel = ({ onDonate, onLocation }) => {
   const renderCardContent = (card) => {
     if (card.content_type === 'default') {
       return (
-        <div className="relative bg-gradient-to-br from-cyan-50 via-white to-cyan-50 py-8 sm:py-12 md:py-16 min-h-[600px] flex items-center">
+        <div className={`relative py-8 sm:py-12 md:py-16 min-h-[600px] flex items-center ${transparent ? '' : 'bg-gradient-to-br from-cyan-50 via-white to-cyan-50'}`}>
           <div className="container mx-auto px-4 sm:px-6">
             <div className="max-w-4xl mx-auto">
               {/* Contained Card */}
-              <div className="bg-gradient-to-br from-cyan-50 to-white rounded-3xl shadow-xl p-8 sm:p-12 md:p-16 text-center border border-cyan-100">
+              <div className={`rounded-3xl shadow-xl p-8 sm:p-12 md:p-16 text-center border border-cyan-100 ${transparent ? 'bg-white/40 backdrop-blur-sm' : 'bg-gradient-to-br from-cyan-50 to-white'}`}>
                 {/* Logo - 2x bigger */}
                 <div className="mb-6 sm:mb-8 flex justify-center">
                   <img
@@ -201,7 +202,7 @@ const HeroCarousel = ({ onDonate, onLocation }) => {
     if (card.content_type === 'video') {
       const embedUrl = getYouTubeEmbedUrl(card.content_url);
       return (
-        <div className="relative bg-gradient-to-br from-cyan-50 via-white to-cyan-50 py-8 sm:py-12 md:py-16 min-h-[600px] flex items-center">
+        <div className={`relative py-8 sm:py-12 md:py-16 min-h-[600px] flex items-center ${transparent ? '' : 'bg-gradient-to-br from-cyan-50 via-white to-cyan-50'}`}>
           <div className="container mx-auto px-4 sm:px-6">
             <div className="max-w-4xl mx-auto">
               {/* Contained Card */}
@@ -236,7 +237,7 @@ const HeroCarousel = ({ onDonate, onLocation }) => {
 
     if (card.content_type === 'image') {
       return (
-        <div className="relative bg-gradient-to-br from-cyan-50 via-white to-cyan-50 py-8 sm:py-12 md:py-16 min-h-[600px] flex items-center">
+        <div className={`relative py-8 sm:py-12 md:py-16 min-h-[600px] flex items-center ${transparent ? '' : 'bg-gradient-to-br from-cyan-50 via-white to-cyan-50'}`}>
           <div className="container mx-auto px-4 sm:px-6">
             <div className="max-w-4xl mx-auto">
               {/* Contained Card */}
@@ -308,7 +309,7 @@ const HeroCarousel = ({ onDonate, onLocation }) => {
       </div>
 
       {/* Navigation Arrows - Only show if carousel enabled and has multiple cards */}
-      {carouselEnabled && baseCards.length > 1 && (
+      {carouselEnabled && baseCards.length > 1 && !hideArrows && (
         <>
           <button
             onClick={prevSlide}
