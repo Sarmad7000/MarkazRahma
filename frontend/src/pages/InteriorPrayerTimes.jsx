@@ -180,13 +180,13 @@ const InteriorPrayerTimes = () => {
           className="h-full w-full grid gap-3 px-3 pb-3"
           style={{
             gridTemplateColumns: heroEnabled
-              ? 'minmax(150px, 1.3fr) minmax(0, 5.2fr) minmax(0, 4fr)'
-              : 'minmax(160px, 1.3fr) minmax(0, 4fr)',
+              ? 'minmax(220px, 1.8fr) minmax(0, 5fr) minmax(0, 4fr)'
+              : 'minmax(220px, 1.8fr) minmax(0, 4fr)',
           }}
         >
           {/* HEADER COLUMN — clock at top, logo centered, title/date at bottom */}
           <div
-            className="relative grid grid-rows-[auto_1fr_auto] items-center py-6"
+            className="relative grid grid-rows-[auto_1fr_auto] items-center py-12 lg:py-16"
             data-testid="portrait-header-column"
           >
             <div
@@ -202,7 +202,7 @@ const InteriorPrayerTimes = () => {
                 src={LOGO_URL}
                 alt="Markaz Al-Rahma"
                 className="object-contain"
-                style={{ transform: 'rotate(-90deg)', width: '92%', height: 'auto', maxHeight: '92%' }}
+                style={{ transform: 'rotate(-90deg)', width: '95%', height: 'auto', maxHeight: '95%' }}
                 data-testid="portrait-logo"
               />
             </div>
@@ -295,23 +295,23 @@ const InteriorPrayerTimes = () => {
   // LANDSCAPE LAYOUTS (unchanged from previous step)
   // ============================================================
   const titleSize = !heroEnabled ? 'text-5xl xl:text-6xl 2xl:text-7xl' : 'text-3xl lg:text-4xl xl:text-5xl';
-  const clockSize = !heroEnabled ? 'text-8xl xl:text-9xl' : 'text-7xl lg:text-8xl xl:text-9xl';
+  const clockSize = !heroEnabled ? 'text-7xl xl:text-8xl 2xl:text-9xl' : 'text-5xl lg:text-6xl xl:text-7xl';
   const dateSize = !heroEnabled ? 'text-xl xl:text-2xl' : 'text-base lg:text-lg xl:text-xl';
-  const prayerNameSize = !heroEnabled ? 'text-4xl xl:text-5xl 2xl:text-6xl' : 'text-3xl lg:text-4xl xl:text-5xl';
-  const prayerTimeSize = !heroEnabled ? 'text-5xl xl:text-6xl 2xl:text-7xl' : 'text-3xl lg:text-4xl xl:text-5xl';
+  const prayerNameSize = !heroEnabled ? 'text-5xl xl:text-6xl 2xl:text-7xl' : 'text-4xl lg:text-5xl xl:text-6xl';
+  const prayerTimeSize = !heroEnabled ? 'text-5xl xl:text-6xl 2xl:text-7xl' : 'text-4xl lg:text-5xl xl:text-6xl';
   const labelSize = !heroEnabled ? 'text-base xl:text-lg' : 'text-sm lg:text-base';
-  const iconSize = !heroEnabled ? 'h-10 w-10 xl:h-12 xl:w-12' : 'h-8 w-8 lg:h-10 lg:w-10';
+  const iconSize = !heroEnabled ? 'h-12 w-12 xl:h-14 xl:w-14' : 'h-10 w-10 lg:h-12 lg:w-12';
 
   const PrayerTimesCard = (
     <Card className="shadow-2xl border-t-4 border-t-cyan-600 bg-white/80 backdrop-blur-sm flex-1 flex flex-col overflow-hidden">
-      <CardContent className="p-3 lg:p-5 xl:p-6 flex-1 flex flex-col justify-around gap-2 lg:gap-3">
+      <CardContent className="p-2 lg:p-3 xl:p-4 flex-1 flex flex-col justify-around gap-1 lg:gap-1.5 xl:gap-2">
         {prayerTimes?.prayers.map((prayer) => {
           const isNext = prayer.name === nextPrayer;
           const showShuruq = prayer.name === 'Fajr' && sunrise;
           return (
             <React.Fragment key={prayer.name}>
               <div
-                className={`flex items-center justify-between px-3 lg:px-5 xl:px-7 py-2 lg:py-3 xl:py-4 rounded-xl transition-all ${
+                className={`flex items-center justify-between px-3 lg:px-4 xl:px-5 py-1.5 lg:py-2 xl:py-2.5 rounded-xl transition-all ${
                   isNext ? 'bg-cyan-50 border-2 border-cyan-500 shadow-lg' : 'bg-gray-50/70'
                 }`}
               >
@@ -334,7 +334,7 @@ const InteriorPrayerTimes = () => {
                 </div>
               </div>
               {showShuruq && (
-                <div className="flex items-center justify-between px-3 lg:px-5 xl:px-7 py-2 lg:py-3 xl:py-4 rounded-xl bg-amber-50 border border-amber-200">
+                <div className="flex items-center justify-between px-3 lg:px-4 xl:px-5 py-1.5 lg:py-2 xl:py-2.5 rounded-xl bg-amber-50 border border-amber-200">
                   <div className="flex items-center gap-2 lg:gap-3 xl:gap-4">
                     <SunriseIcon className={`${iconSize} text-amber-500`} />
                     <div className="flex items-baseline gap-2">
@@ -349,7 +349,7 @@ const InteriorPrayerTimes = () => {
           );
         })}
         {prayerTimes?.jummah && (
-          <div className="px-3 lg:px-5 xl:px-7 py-2 lg:py-3 xl:py-4 bg-cyan-600 text-white rounded-xl shadow-lg">
+          <div className="px-3 lg:px-4 xl:px-5 py-1.5 lg:py-2 xl:py-2.5 bg-cyan-600 text-white rounded-xl shadow-lg">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 lg:gap-3 xl:gap-4">
                 <Clock className={iconSize} />
@@ -377,7 +377,7 @@ const InteriorPrayerTimes = () => {
         <img
           src={LOGO_URL}
           alt="Markaz Al-Rahma"
-          className={!heroEnabled ? 'h-32 xl:h-40 2xl:h-48 object-contain' : 'h-24 lg:h-28 xl:h-32 object-contain'}
+          className={!heroEnabled ? 'h-44 xl:h-52 2xl:h-60 object-contain' : 'h-36 lg:h-44 xl:h-52 object-contain'}
           data-testid="landscape-logo"
         />
       </div>
