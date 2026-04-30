@@ -184,17 +184,17 @@ const InteriorPrayerTimes = () => {
               : 'minmax(220px, 1.8fr) minmax(0, 4fr)',
           }}
         >
-          {/* HEADER COLUMN — clock at top, logo centered, title/date at bottom */}
+          {/* HEADER COLUMN — logo perfectly centered (aligned with carousel center); clock + title pinned to top/bottom */}
           <div
-            className="relative grid grid-rows-[auto_1fr_auto] items-center py-12 lg:py-16"
+            className="relative h-full w-full"
             data-testid="portrait-header-column"
           >
             <div
-              className="font-mono font-bold text-cyan-700 tabular-nums justify-self-center"
-              style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', fontSize: '3.4rem' }}
+              className="absolute font-mono font-bold text-cyan-700 tabular-nums"
+              style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', fontSize: '3.4rem', top: '24px', left: '50%', transformOrigin: 'center' }}
               data-testid="portrait-clock"
             >
-              {timeString}
+              <span style={{ display: 'block', transform: 'translateX(-50%)' }}>{timeString}</span>
             </div>
 
             <div className="flex items-center justify-center w-full h-full overflow-visible">
@@ -208,8 +208,8 @@ const InteriorPrayerTimes = () => {
             </div>
 
             <div
-              className="flex items-center gap-2 justify-self-center"
-              style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
+              className="absolute flex items-center gap-2"
+              style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg) translateX(50%)', bottom: '24px', left: '50%' }}
             >
               <span className="font-bold text-cyan-700" style={{ fontSize: '1.6rem', lineHeight: '1.1', whiteSpace: 'nowrap' }} data-testid="portrait-title">
                 Markaz Al-Rahma
