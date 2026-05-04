@@ -48,6 +48,30 @@ const InteriorPrayerTimes = () => {
   });
   const timeString = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 
+  // Hijri date — computed client-side via Intl Islamic calendar
+  let hijriString = prayerTimes?.hijri_date || '';
+  if (!hijriString) {
+    try {
+      hijriString = new Intl.DateTimeFormat('en-GB-u-ca-islamic-umalqura', {
+        day: 'numeric', month: 'long', year: 'numeric',
+      }).format(now);
+    } catch (e) {
+      hijriString = '';
+    }
+  }
+
+  // Detect viewport orientation — used to auto-rotate the portrait layout
+  // when the user opens it on a landscape device (e.g. a Firestick TV).
+  const [shouldRotatePortrait, setShouldRotatePortrait] = useState(false);
+  useEffect(() => {
+    const update = () => {
+      setShouldRotatePortrait(window.innerWidth > window.innerHeight);
+    };
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+
   const onDonate = () => {
     window.open('https://checkout.square.site/merchant/MLSD6EY5CMY2P/checkout/HXF33WVBEFWIA65YBXUQST3B?src=sheet', '_blank');
   };
@@ -177,8 +201,19 @@ const InteriorPrayerTimes = () => {
     return (
       <div className={`relative h-screen w-screen overflow-hidden ${pageBg}`} data-testid="interior-display-page">
         <div
-          className="h-full w-full grid gap-3 px-3 pb-3"
+          className="grid gap-3 px-3 pb-3"
           style={{
+            ...(shouldRotatePortrait
+              ? {
+                  position: 'fixed',
+                  top: '50%',
+                  left: '50%',
+                  width: '100vh',
+                  height: '100vw',
+                  transform: 'translate(-50%, -50%) rotate(90deg)',
+                  transformOrigin: 'center center',
+                }
+              : { width: '100%', height: '100%' }),
             gridTemplateColumns: heroEnabled
               ? 'minmax(220px, 1.8fr) minmax(0, 5fr) minmax(0, 4fr)'
               : 'minmax(220px, 1.8fr) minmax(0, 4fr)',
@@ -208,15 +243,20 @@ const InteriorPrayerTimes = () => {
             </div>
 
             <div
-              className="absolute flex items-center gap-2"
+              className="absolute flex flex-col items-start"
               style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg) translateX(50%)', bottom: '24px', left: '50%' }}
             >
               <span className="font-bold text-cyan-700" style={{ fontSize: '1.6rem', lineHeight: '1.1', whiteSpace: 'nowrap' }} data-testid="portrait-title">
                 Markaz Al-Rahma
               </span>
-              <span className="text-gray-600" style={{ fontSize: '0.85rem', whiteSpace: 'nowrap' }} data-testid="portrait-date">
+              <span className="text-gray-600 mt-1" style={{ fontSize: '0.9rem', whiteSpace: 'nowrap' }} data-testid="portrait-date">
                 {dateString}
               </span>
+              {hijriString && (
+                <span className="text-cyan-600 font-medium" style={{ fontSize: '0.85rem', whiteSpace: 'nowrap' }} data-testid="portrait-hijri">
+                  {hijriString}
+                </span>
+              )}
             </div>
           </div>
 
@@ -294,13 +334,13 @@ const InteriorPrayerTimes = () => {
   // ============================================================
   // LANDSCAPE LAYOUTS (unchanged from previous step)
   // ============================================================
-  const titleSize = !heroEnabled ? 'text-5xl xl:text-6xl 2xl:text-7xl' : 'text-3xl lg:text-4xl xl:text-5xl';
-  const clockSize = !heroEnabled ? 'text-7xl xl:text-8xl 2xl:text-9xl' : 'text-5xl lg:text-6xl xl:text-7xl';
-  const dateSize = !heroEnabled ? 'text-xl xl:text-2xl' : 'text-base lg:text-lg xl:text-xl';
-  const prayerNameSize = !heroEnabled ? 'text-5xl xl:text-6xl 2xl:text-7xl' : 'text-4xl lg:text-5xl xl:text-6xl';
-  const prayerTimeSize = !heroEnabled ? 'text-5xl xl:text-6xl 2xl:text-7xl' : 'text-4xl lg:text-5xl xl:text-6xl';
-  const labelSize = !heroEnabled ? 'text-base xl:text-lg' : 'text-sm lg:text-base';
-  const iconSize = !heroEnabled ? 'h-12 w-12 xl:h-14 xl:w-14' : 'h-10 w-10 lg:h-12 lg:w-12';
+  const titleSize = !heroEnabled ? 'text-5xl xl:text-6xl 2xl:text-7xl' : 'text-4xl lg:text-5xl xl:text-6xl';
+  const clockSize = !heroEnabled ? 'text-7xl xl:text-8xl 2xl:text-9xl' : 'text-6xl lg:text-7xl xl:text-8xl';
+  const dateSize = !heroEnabled ? 'text-xl xl:text-2xl' : 'text-lg lg:text-xl xl:text-2xl';
+  const prayerNameSize = !heroEnabled ? 'text-5xl xl:text-6xl 2xl:text-7xl' : 'text-5xl lg:text-6xl xl:text-7xl';
+  const prayerTimeSize = !heroEnabled ? 'text-5xl xl:text-6xl 2xl:text-7xl' : 'text-5xl lg:text-6xl xl:text-7xl';
+  const labelSize = !heroEnabled ? 'text-base xl:text-lg' : 'text-base lg:text-lg';
+  const iconSize = !heroEnabled ? 'h-12 w-12 xl:h-14 xl:w-14' : 'h-12 w-12 lg:h-14 lg:w-14';
 
   const PrayerTimesCard = (
     <Card className="shadow-2xl border-t-4 border-t-cyan-600 bg-white/80 backdrop-blur-sm flex-1 flex flex-col overflow-hidden">
@@ -371,7 +411,9 @@ const InteriorPrayerTimes = () => {
       <div className="flex-1">
         <h1 className={`font-bold text-cyan-700 ${titleSize}`}>Markaz Al-Rahma</h1>
         <p className={`text-gray-600 mt-1 ${dateSize}`}>{dateString}</p>
-        {prayerTimes?.hijri_date && <p className={`text-cyan-600 font-medium ${dateSize}`}>{prayerTimes.hijri_date}</p>}
+        {hijriString && (
+          <p className={`text-cyan-600 font-medium ${dateSize}`} data-testid="landscape-hijri">{hijriString}</p>
+        )}
       </div>
       <div className="flex-shrink-0 flex items-center justify-center">
         <img
