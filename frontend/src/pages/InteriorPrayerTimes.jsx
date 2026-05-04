@@ -48,13 +48,36 @@ const InteriorPrayerTimes = () => {
   });
   const timeString = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 
-  // Hijri date — computed client-side via Intl Islamic calendar
+  // Hijri date — compute via Intl Islamic calendar but use clean transliterated month names
+  const HIJRI_MONTHS = [
+    'Muharram',
+    'Safar',
+    "Rabi' al-Awwal",
+    "Rabi' al-Thani",
+    'Jumada al-Awwal',
+    'Jumada al-Thani',
+    'Rajab',
+    "Sha'ban",
+    'Ramadan',
+    'Shawwal',
+    "Dhul-Qi'dah",
+    'Dhul-Hijjah',
+  ];
+
   let hijriString = prayerTimes?.hijri_date || '';
   if (!hijriString) {
     try {
-      hijriString = new Intl.DateTimeFormat('en-GB-u-ca-islamic-umalqura', {
-        day: 'numeric', month: 'long', year: 'numeric',
-      }).format(now);
+      const fmt = new Intl.DateTimeFormat('en-GB-u-ca-islamic-umalqura', {
+        day: 'numeric', month: 'numeric', year: 'numeric',
+      });
+      const parts = fmt.formatToParts(now);
+      const day = parts.find(p => p.type === 'day')?.value;
+      const monthNum = parseInt(parts.find(p => p.type === 'month')?.value || '0', 10);
+      const year = parts.find(p => p.type === 'year')?.value;
+      const monthName = HIJRI_MONTHS[monthNum - 1];
+      if (day && monthName && year) {
+        hijriString = `${day} ${monthName} ${year} AH`;
+      }
     } catch (e) {
       hijriString = '';
     }
@@ -334,13 +357,13 @@ const InteriorPrayerTimes = () => {
   // ============================================================
   // LANDSCAPE LAYOUTS (unchanged from previous step)
   // ============================================================
-  const titleSize = !heroEnabled ? 'text-5xl xl:text-6xl 2xl:text-7xl' : 'text-4xl lg:text-5xl xl:text-6xl';
-  const clockSize = !heroEnabled ? 'text-7xl xl:text-8xl 2xl:text-9xl' : 'text-6xl lg:text-7xl xl:text-8xl';
-  const dateSize = !heroEnabled ? 'text-xl xl:text-2xl' : 'text-lg lg:text-xl xl:text-2xl';
-  const prayerNameSize = !heroEnabled ? 'text-5xl xl:text-6xl 2xl:text-7xl' : 'text-5xl lg:text-6xl xl:text-7xl';
-  const prayerTimeSize = !heroEnabled ? 'text-5xl xl:text-6xl 2xl:text-7xl' : 'text-5xl lg:text-6xl xl:text-7xl';
-  const labelSize = !heroEnabled ? 'text-base xl:text-lg' : 'text-base lg:text-lg';
-  const iconSize = !heroEnabled ? 'h-12 w-12 xl:h-14 xl:w-14' : 'h-12 w-12 lg:h-14 lg:w-14';
+  const titleSize = !heroEnabled ? 'text-4xl xl:text-5xl 2xl:text-6xl' : 'text-3xl lg:text-4xl xl:text-5xl';
+  const clockSize = !heroEnabled ? 'text-6xl xl:text-7xl 2xl:text-8xl' : 'text-5xl lg:text-6xl xl:text-7xl';
+  const dateSize = !heroEnabled ? 'text-lg xl:text-xl' : 'text-base lg:text-lg xl:text-xl';
+  const prayerNameSize = !heroEnabled ? 'text-4xl xl:text-5xl 2xl:text-6xl' : 'text-4xl lg:text-5xl xl:text-6xl';
+  const prayerTimeSize = !heroEnabled ? 'text-4xl xl:text-5xl 2xl:text-6xl' : 'text-4xl lg:text-5xl xl:text-6xl';
+  const labelSize = !heroEnabled ? 'text-base xl:text-lg' : 'text-sm lg:text-base';
+  const iconSize = !heroEnabled ? 'h-10 w-10 xl:h-12 xl:w-12' : 'h-10 w-10 lg:h-12 lg:w-12';
 
   const PrayerTimesCard = (
     <Card className="shadow-2xl border-t-4 border-t-cyan-600 bg-white/80 backdrop-blur-sm flex-1 flex flex-col overflow-hidden">
