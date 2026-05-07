@@ -9,6 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ArrowLeft,
+  History,
 } from 'lucide-react';
 
 const API = process.env.REACT_APP_BACKEND_URL;
@@ -54,7 +55,8 @@ const prettyDateShort = (iso) => {
   const day = d.getDate();
   const weekday = d.toLocaleDateString('en-GB', { weekday: 'short' });
   const month = d.toLocaleDateString('en-GB', { month: 'short' });
-  return `${weekday}, ${day}${ordinal(day)} ${month}`;
+  const year = d.getFullYear();
+  return `${weekday}, ${day}${ordinal(day)} ${month} ${year}`;
 };
 
 const hijriFromDate = (d) => {
@@ -72,24 +74,27 @@ const hijriFromDate = (d) => {
   return '';
 };
 
-// Header: bigger logo + "Today's Responsibility" (replaces "Markaz Al-Rahma")
-// + date + hijri on the right (where ACTIVE used to be)
+// Header: bigger logo + "Today's Responsibility" + date + hijri
+// Mobile-friendly: on small screens the date moves BELOW the title block
+// to prevent the title from overlapping the date on narrow iPhone widths.
 const PageHeader = ({ dateIso, hijri }) => (
-  <div className="flex items-center justify-between gap-4 mb-8">
-    <div className="flex items-center gap-4">
-      <img src={LOGO_URL} alt="Markaz Al-Rahma" className="h-20 w-20 sm:h-24 sm:w-24 object-contain" data-testid="duty-logo" />
-      <div>
-        <h1 className="text-lg sm:text-2xl font-extrabold tracking-[0.08em] uppercase text-gray-900 leading-tight" data-testid="today-label">
-          Today&rsquo;s<br className="sm:hidden" /> Responsibility
-        </h1>
-        <p className="text-xs sm:text-sm text-gray-500 mt-0.5">markazrahma.org</p>
+  <div className="mb-8">
+    <div className="flex items-start justify-between gap-3 flex-wrap sm:flex-nowrap">
+      <div className="flex items-center gap-4 min-w-0">
+        <img src={LOGO_URL} alt="Markaz Al-Rahma" className="h-20 w-20 sm:h-24 sm:w-24 object-contain shrink-0" data-testid="duty-logo" />
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-[0.05em] uppercase text-gray-900 leading-tight" data-testid="today-label">
+            Today&rsquo;s<br /> Responsibility
+          </h1>
+          <p className="text-xs sm:text-sm text-gray-500 mt-1">markazrahma.org</p>
+        </div>
       </div>
-    </div>
-    <div className="text-right shrink-0">
-      <p className="text-sm sm:text-base font-semibold text-cyan-700" data-testid="today-short-date">{prettyDateShort(dateIso)}</p>
-      {hijri && (
-        <p className="text-xs sm:text-sm text-gray-500 mt-0.5" data-testid="today-hijri-date">{hijri}</p>
-      )}
+      <div className="text-right shrink-0 w-full sm:w-auto mt-1 sm:mt-0 pr-1">
+        <p className="text-sm sm:text-base font-semibold text-cyan-700" data-testid="today-short-date">{prettyDateShort(dateIso)}</p>
+        {hijri && (
+          <p className="text-xs sm:text-sm text-gray-500 mt-0.5" data-testid="today-hijri-date">{hijri}</p>
+        )}
+      </div>
     </div>
   </div>
 );
@@ -185,7 +190,7 @@ const DayEditor = ({ dateIso }) => {
   }
 
   return (
-    <div className="space-y-5 sm:space-y-6">
+    <div className="space-y-6 sm:space-y-7">
       {PRAYERS.map((p, idx) => (
         <PrayerRowCard
           key={p.key}
@@ -274,8 +279,66 @@ const LookAheadView = ({ onBack }) => {
   );
 };
 
+const HistoryView = ({ onBack }) => {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const todayIso = toIsoDate(new Date());
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await axios.get(`${API}/api/duty-roster?limit=60`);
+        // Exclude today (it has its own page)
+        setItems((res.data || []).filter((r) => r.date !== todayIso));
+      } catch (e) { console.error(e); }
+      finally { setLoading(false); }
+    })();
+  }, [todayIso]);
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <button
+          onClick={onBack}
+          className="inline-flex items-center gap-2 text-cyan-700 hover:text-cyan-900 font-medium text-sm"
+          data-testid="history-back"
+        >
+          <ArrowLeft className="h-4 w-4" /> Back
+        </button>
+        <span className="text-xs font-semibold tracking-wider uppercase bg-cyan-100 text-cyan-700 px-3 py-1 rounded-full">
+          History Log
+        </span>
+      </div>
+
+      {loading ? (
+        <div className="py-12 text-center text-gray-400"><Loader2 className="h-5 w-5 animate-spin inline mr-2" />Loading history…</div>
+      ) : items.length === 0 ? (
+        <div className="py-16 text-center text-gray-400">
+          No previous days yet.<br /><span className="text-xs">History will populate as days go by.</span>
+        </div>
+      ) : (
+        <div className="space-y-3" data-testid="duty-history-list">
+          {items.map((item) => (
+            <div key={item.date} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4" data-testid={`duty-history-${item.date}`}>
+              <div className="text-sm font-semibold text-cyan-700 mb-3">{prettyDateFull(item.date)}</div>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
+                {PRAYERS.map((p) => (
+                  <div key={p.key} className="bg-gray-50 rounded-lg px-3 py-2">
+                    <div className="text-[10px] uppercase text-gray-500 tracking-wide">{p.label}</div>
+                    <div className="font-medium text-gray-900 truncate">{item[p.key] || '—'}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const DutyRoster = () => {
-  const [view, setView] = useState('today'); // 'today' | 'lookahead'
+  const [view, setView] = useState('today'); // 'today' | 'lookahead' | 'history'
   const today = new Date();
   const todayIso = toIsoDate(today);
   const todayHijri = hijriFromDate(today);
@@ -289,7 +352,7 @@ const DutyRoster = () => {
             <QuoteCard />
             <DayEditor dateIso={todayIso} />
 
-            <div className="mt-10">
+            <div className="mt-10 space-y-3">
               <button
                 onClick={() => setView('lookahead')}
                 className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-cyan-200 bg-white hover:bg-cyan-50 text-cyan-800 font-semibold text-base sm:text-lg py-4 transition-all"
@@ -297,6 +360,14 @@ const DutyRoster = () => {
               >
                 <CalendarIcon className="h-5 w-5" />
                 Look Ahead
+              </button>
+              <button
+                onClick={() => setView('history')}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-2xl text-gray-600 hover:text-cyan-700 font-medium text-sm sm:text-base py-2 transition-colors"
+                data-testid="duty-tab-history"
+              >
+                <History className="h-4 w-4" />
+                History Log
               </button>
             </div>
           </>
@@ -306,6 +377,13 @@ const DutyRoster = () => {
           <>
             <PageHeader dateIso={todayIso} hijri={todayHijri} />
             <LookAheadView onBack={() => setView('today')} />
+          </>
+        )}
+
+        {view === 'history' && (
+          <>
+            <PageHeader dateIso={todayIso} hijri={todayHijri} />
+            <HistoryView onBack={() => setView('today')} />
           </>
         )}
       </div>

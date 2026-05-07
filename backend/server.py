@@ -1730,6 +1730,18 @@ async def list_duty_rosters(
         raise HTTPException(status_code=500, detail="Failed to list duty rosters")
 
 
+@api_router.delete("/admin/duty-roster/history")
+async def clear_duty_roster_history(current_user: dict = Depends(get_current_user)):
+    """Clear all duty roster history except today (admin only). One-shot maintenance."""
+    try:
+        today_iso = datetime.now(timezone.utc).date().isoformat()
+        result = await db.duty_roster.delete_many({"date": {"$ne": today_iso}})
+        return {"message": f"Cleared {result.deleted_count} past entries", "kept_date": today_iso}
+    except Exception as e:
+        logger.error(f"Failed to clear duty history: {e}")
+        raise HTTPException(status_code=500, detail="Failed to clear duty history")
+
+
 # Include the router in the main app (MUST be at the end after all routes are defined)
 app.include_router(api_router)
 
