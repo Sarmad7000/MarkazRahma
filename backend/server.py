@@ -22,7 +22,8 @@ from models import (
     TimetableSettings, UpdateTimetableRequest, Event, CreateEventRequest, UpdateEventRequest,
     HeroCard, CreateHeroCardRequest, UpdateHeroCardRequest, HeroSettings, UpdateHeroSettingsRequest,
     ContactFormSettings, UpdateContactFormSettingsRequest, ContactSubmission,
-    CreateContactSubmissionRequest, UpdateContactSubmissionRequest
+    CreateContactSubmissionRequest, UpdateContactSubmissionRequest,
+    DutyRoster, UpdateDutyRosterRequest
 )
 from auth import authenticate_admin, create_access_token, get_current_user
 
@@ -1639,6 +1640,94 @@ async def format_all_sheet_tabs(current_user: dict = Depends(get_current_user)):
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
+
+
+# ===== DUTY ROSTER (Mosque Opening Responsibility Tracker) — UNLINKED =====
+DUTY_FIELDS = ["fajr", "dhuhr", "asr", "maghrib", "ishaa"]
+DEFAULT_FAJR = "Abu Mohamed"
+
+
+def _ensure_roster_shape(doc):
+    """Normalize a roster doc to the expected shape (fills defaults)."""
+    if not doc:
+        return None
+    for f in DUTY_FIELDS:
+        doc[f] = doc.get(f) or ("" if f != "fajr" else DEFAULT_FAJR)
+    return doc
+
+
+@api_router.get("/duty-roster/{date_str}")
+async def get_duty_roster(date_str: str):
+    """Get the duty roster for a specific date. Returns default-shaped empty roster if not yet created."""
+    try:
+        doc = await db.duty_roster.find_one({"date": date_str}, {"_id": 0})
+        if not doc:
+            # Return a default (unsaved) roster — Fajr pre-filled with Abu Mohamed
+            return {
+                "date": date_str,
+                "fajr": DEFAULT_FAJR,
+                "dhuhr": "",
+                "asr": "",
+                "maghrib": "",
+                "ishaa": "",
+                "exists": False,
+            }
+        doc = _ensure_roster_shape(doc)
+        doc["exists"] = True
+        return doc
+    except Exception as e:
+        logger.error(f"Error fetching duty roster: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch duty roster")
+
+
+@api_router.put("/duty-roster/{date_str}")
+async def update_duty_roster(date_str: str, request: UpdateDutyRosterRequest):
+    """Upsert a duty roster for a specific date. Only provided fields are updated."""
+    try:
+        update_data = {k: v for k, v in request.dict().items() if v is not None}
+        update_data["updated_at"] = datetime.now(timezone.utc)
+
+        existing = await db.duty_roster.find_one({"date": date_str})
+        if existing:
+            await db.duty_roster.update_one(
+                {"date": date_str}, {"$set": update_data}
+            )
+        else:
+            # Create a new entry; merge defaults
+            new_doc = DutyRoster(date=date_str).dict()
+            new_doc.update(update_data)
+            await db.duty_roster.insert_one(new_doc)
+
+        doc = await db.duty_roster.find_one({"date": date_str}, {"_id": 0})
+        doc = _ensure_roster_shape(doc)
+        return doc
+    except Exception as e:
+        logger.error(f"Error updating duty roster for {date_str}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update duty roster")
+
+
+@api_router.get("/duty-roster")
+async def list_duty_rosters(
+    start: Optional[str] = None,
+    end: Optional[str] = None,
+    limit: int = 60,
+):
+    """List past duty rosters. Optional start/end (YYYY-MM-DD). Returns newest first."""
+    try:
+        query = {}
+        if start and end:
+            query = {"date": {"$gte": start, "$lte": end}}
+        elif start:
+            query = {"date": {"$gte": start}}
+        elif end:
+            query = {"date": {"$lte": end}}
+
+        cursor = db.duty_roster.find(query, {"_id": 0}).sort("date", -1).limit(limit)
+        docs = await cursor.to_list(length=limit)
+        return [_ensure_roster_shape(d) for d in docs]
+    except Exception as e:
+        logger.error(f"Error listing duty rosters: {e}")
+        raise HTTPException(status_code=500, detail="Failed to list duty rosters")
 
 
 # Include the router in the main app (MUST be at the end after all routes are defined)

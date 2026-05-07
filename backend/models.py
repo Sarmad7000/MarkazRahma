@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 
 # Prayer Time Models
@@ -262,3 +262,24 @@ class CreateContactSubmissionRequest(BaseModel):
 
 class UpdateContactSubmissionRequest(BaseModel):
     status: Optional[str] = None
+
+
+
+# ===== Duty Roster (Mosque Opening Responsibility Tracker) =====
+class DutyRoster(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    date: str  # ISO date YYYY-MM-DD
+    fajr: Optional[str] = "Abu Mohamed"
+    dhuhr: Optional[str] = ""
+    asr: Optional[str] = ""
+    maghrib: Optional[str] = ""
+    ishaa: Optional[str] = ""
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class UpdateDutyRosterRequest(BaseModel):
+    fajr: Optional[str] = None
+    dhuhr: Optional[str] = None
+    asr: Optional[str] = None
+    maghrib: Optional[str] = None
+    ishaa: Optional[str] = None
