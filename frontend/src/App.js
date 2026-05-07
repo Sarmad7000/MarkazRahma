@@ -28,6 +28,16 @@ function ScrollToTop() {
 }
 
 function App() {
+  // Subdomain-based mount: tracker.markazrahma.org always shows the Duty Roster,
+  // with the URL preserved as the subdomain (no /duty-roster suffix needed).
+  if (typeof window !== 'undefined' && window.location.hostname === 'tracker.markazrahma.org') {
+    return (
+      <div className="App">
+        <DutyRoster />
+      </div>
+    );
+  }
+
   return (
     <div className="App">
       <BrowserRouter>
