@@ -75,23 +75,23 @@ const hijriFromDate = (d) => {
 };
 
 // Header: bigger logo + "Today's Responsibility" + date + hijri
-// All elements vertically centered; on mobile date drops below to avoid overlap.
+// Stays on one row at all viewport widths.
 const PageHeader = ({ dateIso, hijri }) => (
   <div className="mb-8">
-    <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
-      <div className="flex items-center gap-4 min-w-0">
-        <img src={LOGO_URL} alt="Markaz Al-Rahma" className="h-20 w-20 sm:h-24 sm:w-24 object-contain shrink-0" data-testid="duty-logo" />
+    <div className="flex items-center justify-between gap-3 flex-nowrap">
+      <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+        <img src={LOGO_URL} alt="Markaz Al-Rahma" className="h-16 w-16 sm:h-24 sm:w-24 object-contain shrink-0" data-testid="duty-logo" />
         <div className="min-w-0">
-          <h1 className="text-xl sm:text-2xl font-extrabold tracking-[0.05em] uppercase text-gray-900 leading-tight" data-testid="today-label">
-            Today&rsquo;s<br /> Responsibility
+          <h1 className="text-base sm:text-2xl font-extrabold tracking-[0.05em] uppercase text-gray-900 leading-tight" data-testid="today-label">
+            Today&rsquo;s Responsibility
           </h1>
-          <p className="text-xs sm:text-sm text-gray-500 mt-1">markazrahma.org</p>
+          <p className="text-[11px] sm:text-sm text-gray-500 mt-0.5">markazrahma.org</p>
         </div>
       </div>
-      <div className="text-right shrink-0 w-full sm:w-auto pr-1">
-        <p className="text-sm sm:text-base font-semibold text-cyan-700" data-testid="today-short-date">{prettyDateShort(dateIso)}</p>
+      <div className="text-right shrink-0">
+        <p className="text-xs sm:text-base font-semibold text-cyan-700 whitespace-nowrap" data-testid="today-short-date">{prettyDateShort(dateIso)}</p>
         {hijri && (
-          <p className="text-xs sm:text-sm text-gray-500 mt-0.5" data-testid="today-hijri-date">{hijri}</p>
+          <p className="text-[11px] sm:text-sm text-gray-500 mt-0.5 whitespace-nowrap" data-testid="today-hijri-date">{hijri}</p>
         )}
       </div>
     </div>
