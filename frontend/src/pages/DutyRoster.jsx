@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 
 const API = process.env.REACT_APP_BACKEND_URL;
-const LOGO_URL = 'https://customer-assets.emergentagent.com/job_markaz-rahma-1/artifacts/85zdrywf_Untitled%20design%20%281%29.png';
+const LOGO_URL = 'https://customer-assets.emergentagent.com/job_markaz-rahma-1/artifacts/u0mhd9po_Untitled%20design%20%2848%29.png';
 
 const PRAYERS = [
   { key: 'fajr', label: 'FAJR' },
@@ -75,11 +75,10 @@ const hijriFromDate = (d) => {
 };
 
 // Header: bigger logo + "Today's Responsibility" + date + hijri
-// Mobile-friendly: on small screens the date moves BELOW the title block
-// to prevent the title from overlapping the date on narrow iPhone widths.
+// All elements vertically centered; on mobile date drops below to avoid overlap.
 const PageHeader = ({ dateIso, hijri }) => (
   <div className="mb-8">
-    <div className="flex items-start justify-between gap-3 flex-wrap sm:flex-nowrap">
+    <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
       <div className="flex items-center gap-4 min-w-0">
         <img src={LOGO_URL} alt="Markaz Al-Rahma" className="h-20 w-20 sm:h-24 sm:w-24 object-contain shrink-0" data-testid="duty-logo" />
         <div className="min-w-0">
@@ -89,7 +88,7 @@ const PageHeader = ({ dateIso, hijri }) => (
           <p className="text-xs sm:text-sm text-gray-500 mt-1">markazrahma.org</p>
         </div>
       </div>
-      <div className="text-right shrink-0 w-full sm:w-auto mt-1 sm:mt-0 pr-1">
+      <div className="text-right shrink-0 w-full sm:w-auto pr-1">
         <p className="text-sm sm:text-base font-semibold text-cyan-700" data-testid="today-short-date">{prettyDateShort(dateIso)}</p>
         {hijri && (
           <p className="text-xs sm:text-sm text-gray-500 mt-0.5" data-testid="today-hijri-date">{hijri}</p>
@@ -190,7 +189,7 @@ const DayEditor = ({ dateIso }) => {
   }
 
   return (
-    <div className="space-y-6 sm:space-y-7">
+    <div className="grid gap-5 sm:gap-6">
       {PRAYERS.map((p, idx) => (
         <PrayerRowCard
           key={p.key}
