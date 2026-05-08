@@ -14,7 +14,7 @@ const formatTime = (time) => {
 };
 
 const InteriorPrayerTimes = () => {
-  const { prayerTimes, isLoading } = usePrayerTimes();
+  const { prayerTimes, isLoading, mutate } = usePrayerTimes();
   const [now, setNow] = useState(new Date());
   const [searchParams] = useSearchParams();
 
@@ -28,6 +28,45 @@ const InteriorPrayerTimes = () => {
     const t = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
+
+  // Silent revalidation: schedule a fetch ~5 seconds after each Iqamah passes
+  // so the "Next" indicator and any updated CSV data are reflected without
+  // any visible loading state. Re-arms automatically as the day progresses
+  // and at midnight rolls over to the next day's prayers.
+  useEffect(() => {
+    if (!prayerTimes?.prayers || !mutate) return;
+
+    const current = new Date();
+    const currentMinutes = current.getHours() * 60 + current.getMinutes() + current.getSeconds() / 60;
+    let nextEventDelayMs = null;
+
+    for (const prayer of prayerTimes.prayers) {
+      const [h, m] = (prayer.iqamah || '00:00').split(':').map(Number);
+      if (Number.isNaN(h) || Number.isNaN(m)) continue;
+      const prayerMinutes = h * 60 + m;
+      // Fire 5 seconds after the iqamah moment
+      const diffMin = prayerMinutes - currentMinutes;
+      if (diffMin > 0) {
+        nextEventDelayMs = Math.round(diffMin * 60 * 1000) + 5000;
+        break;
+      }
+    }
+
+    // After the last iqamah of the day, refresh once at next midnight + 5s
+    if (nextEventDelayMs == null) {
+      const midnight = new Date();
+      midnight.setHours(24, 0, 5, 0);
+      nextEventDelayMs = midnight.getTime() - current.getTime();
+    }
+
+    const timer = setTimeout(() => {
+      // Silent revalidation — SWR keeps existing data on screen while refetching,
+      // then swaps in the new payload with no flicker or loader.
+      mutate();
+    }, nextEventDelayMs);
+
+    return () => clearTimeout(timer);
+  }, [prayerTimes, mutate]);
 
   const getNextPrayer = () => {
     if (!prayerTimes) return null;
