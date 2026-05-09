@@ -128,6 +128,24 @@ export const getPrayerTimesByDate = async (date) => {
   }
 };
 
+// SWR hook for any date — used by the interior display to pre-fetch tomorrow's prayers
+export const usePrayerTimesByDate = (date) => {
+  const { data, error, isLoading, mutate } = useSWR(
+    date ? `${API}/prayers/date?date=${date}` : null,
+    fetcher,
+    {
+      refreshInterval: 0,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 60000,
+      fallbackData: null,
+      shouldRetryOnError: false,
+      errorRetryCount: 0,
+    }
+  );
+  return { prayerTimes: data, isLoading, isError: error, mutate };
+};
+
 export const getDonationStatus = async (sessionId) => {
   try {
     const response = await axios.get(`${API}/donations/status/${sessionId}`);

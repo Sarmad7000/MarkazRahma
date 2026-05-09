@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Clock, Sunrise as SunriseIcon } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import HeroCarousel from '../components/sections/HeroCarousel';
-import { usePrayerTimes } from '../services/api';
+import { usePrayerTimes, usePrayerTimesByDate } from '../services/api';
 import { mosqueInfo } from '../data/mock';
 
 const LOGO_URL = 'https://customer-assets.emergentagent.com/job_markaz-rahma-1/artifacts/85zdrywf_Untitled%20design%20%281%29.png';
@@ -15,6 +15,15 @@ const formatTime = (time) => {
 
 const InteriorPrayerTimes = () => {
   const { prayerTimes, isLoading, mutate } = usePrayerTimes();
+
+  // Pre-fetch tomorrow's prayer times so each prayer's row can roll over to
+  // the next day's value the moment its Iqamah passes.
+  const tomorrowIso = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().slice(0, 10);
+  })();
+  const { prayerTimes: tomorrowPrayers } = usePrayerTimesByDate(tomorrowIso);
   const [now, setNow] = useState(new Date());
   const [searchParams] = useSearchParams();
 
@@ -80,7 +89,35 @@ const InteriorPrayerTimes = () => {
   };
 
   const nextPrayer = getNextPrayer();
-  const sunrise = prayerTimes?.sunrise && prayerTimes.sunrise !== 'N/A' ? prayerTimes.sunrise : null;
+
+  // Per-prayer rollover: if today's Iqamah has passed, substitute tomorrow's
+  // adhan/iqamah for that prayer (and sunrise) so the screen always shows
+  // upcoming times. Re-evaluates every second via the live clock state.
+  const minutesNow = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+  const tomorrowByName = {};
+  if (tomorrowPrayers?.prayers) {
+    for (const p of tomorrowPrayers.prayers) tomorrowByName[p.name] = p;
+  }
+  const displayPrayers = (prayerTimes?.prayers || []).map((p) => {
+    const [h, m] = (p.iqamah || '00:00').split(':').map(Number);
+    const pmin = h * 60 + m;
+    if (pmin < minutesNow && tomorrowByName[p.name]) {
+      return { ...p, adhan: tomorrowByName[p.name].adhan, iqamah: tomorrowByName[p.name].iqamah };
+    }
+    return p;
+  });
+
+  const todaySunriseRaw = prayerTimes?.sunrise && prayerTimes.sunrise !== 'N/A' ? prayerTimes.sunrise : null;
+  const tomorrowSunriseRaw = tomorrowPrayers?.sunrise && tomorrowPrayers.sunrise !== 'N/A' ? tomorrowPrayers.sunrise : null;
+  let sunrise = todaySunriseRaw;
+  if (todaySunriseRaw) {
+    const [sh, sm] = todaySunriseRaw.split(':').map(Number);
+    if (sh * 60 + sm < minutesNow && tomorrowSunriseRaw) {
+      sunrise = tomorrowSunriseRaw;
+    }
+  } else if (tomorrowSunriseRaw) {
+    sunrise = tomorrowSunriseRaw;
+  }
 
   const dateString = now.toLocaleDateString('en-GB', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
@@ -331,7 +368,7 @@ const InteriorPrayerTimes = () => {
             ) : (
               <Card className="shadow-2xl border-t-4 border-t-cyan-600 bg-white/80 backdrop-blur-sm flex-1 overflow-hidden">
                 <CardContent className="p-3 h-full flex gap-2 items-stretch justify-end">
-                  {prayerTimes.prayers.map((prayer) => {
+                  {displayPrayers.map((prayer) => {
                     const isHighlighted = prayer.name === nextPrayer;
                     const cards = [
                       buildPrayerColumn(
@@ -407,7 +444,7 @@ const InteriorPrayerTimes = () => {
   const PrayerTimesCard = (
     <Card className="shadow-2xl border-t-4 border-t-cyan-600 bg-white/80 backdrop-blur-sm flex-1 flex flex-col overflow-hidden">
       <CardContent className="p-2 lg:p-3 xl:p-4 flex-1 flex flex-col justify-around gap-1 lg:gap-1.5 xl:gap-2">
-        {prayerTimes?.prayers.map((prayer) => {
+        {displayPrayers.map((prayer) => {
           const isNext = prayer.name === nextPrayer;
           const showShuruq = prayer.name === 'Fajr' && sunrise;
           return (
