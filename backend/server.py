@@ -44,6 +44,15 @@ app = FastAPI(title="Markaz Al-Rahma API", version="1.0.0")
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
+
+def _today_london() -> str:
+    """Return today's date string in Europe/London timezone (handles BST/GMT)."""
+    try:
+        from zoneinfo import ZoneInfo
+        return datetime.now(ZoneInfo("Europe/London")).strftime("%Y-%m-%d")
+    except Exception:
+        return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -60,9 +69,9 @@ async def root():
 
 @api_router.get("/prayers/today", response_model=PrayerTimes)
 async def get_todays_prayer_times():
-    """Get today's prayer times from database"""
+    """Get today's prayer times from database (London time, since the mosque is in Colindale)"""
     try:
-        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        today = _today_london()
         
         # Fetch from database
         stored_times = await db.prayer_times.find_one({"date": today}, {"_id": 0})
@@ -115,7 +124,7 @@ async def get_prayer_times_by_date(date: str):
 async def update_iqamah_time(request: UpdateIqamahRequest, current_user: dict = Depends(get_current_user)):
     """Update iqamah time for a specific prayer (admin only)"""
     try:
-        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        today = _today_london()
         
         # Get current prayer times
         current_times = await db.prayer_times.find_one({"date": today}, {"_id": 0})
@@ -159,7 +168,7 @@ async def update_iqamah_time(request: UpdateIqamahRequest, current_user: dict = 
 async def update_jummah_times(request: UpdateJummahRequest, current_user: dict = Depends(get_current_user)):
     """Update Jummah prayer time (admin only)"""
     try:
-        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        today = _today_london()
         
         # Get current prayer times
         current_times = await db.prayer_times.find_one({"date": today}, {"_id": 0})
@@ -1734,7 +1743,7 @@ async def list_duty_rosters(
 async def clear_duty_roster_history(current_user: dict = Depends(get_current_user)):
     """Clear all duty roster history except today (admin only). One-shot maintenance."""
     try:
-        today_iso = datetime.now(timezone.utc).date().isoformat()
+        today_iso = _today_london()
         result = await db.duty_roster.delete_many({"date": {"$ne": today_iso}})
         return {"message": f"Cleared {result.deleted_count} past entries", "kept_date": today_iso}
     except Exception as e:

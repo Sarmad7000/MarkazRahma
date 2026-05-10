@@ -14,7 +14,7 @@ import AboutSection from '../components/sections/AboutSection';
 import LocationSection from '../components/sections/LocationSection';
 import ContactSection from '../components/sections/ContactSection';
 import Footer from '../components/sections/Footer';
-import { usePrayerTimes, useDonationGoal, useAnnouncements, usePopupSettings, getDonationStatus } from '../services/api';
+import { usePrayerTimes, usePrayerTimesByDate, useDonationGoal, useAnnouncements, usePopupSettings, getDonationStatus } from '../services/api';
 import { mosqueInfo, donationInfo, aboutContent } from '../data/mock';
 
 const Home = () => {
@@ -23,6 +23,40 @@ const Home = () => {
 
   // Use SWR hooks for automatic caching and revalidation
   const { prayerTimes, isLoading: prayerLoading, isError: prayerError, mutate: mutatePrayerTimes } = usePrayerTimes();
+  // Pre-fetch tomorrow's prayer times for per-prayer rollover after Iqamah
+  const tomorrowIso = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().slice(0, 10);
+  })();
+  const { prayerTimes: tomorrowPrayers } = usePrayerTimesByDate(tomorrowIso);
+
+  // Build a rolled-over prayer times object for display: any prayer whose
+  // today Iqamah has passed shows tomorrow's adhan/iqamah instead.
+  const rolledPrayerTimes = (() => {
+    if (!prayerTimes?.prayers) return prayerTimes;
+    const minutesNow = currentTime.getHours() * 60 + currentTime.getMinutes() + currentTime.getSeconds() / 60;
+    const tomorrowByName = {};
+    if (tomorrowPrayers?.prayers) {
+      for (const p of tomorrowPrayers.prayers) tomorrowByName[p.name] = p;
+    }
+    const newPrayers = prayerTimes.prayers.map((p) => {
+      const [h, m] = (p.iqamah || '00:00').split(':').map(Number);
+      if (Number.isNaN(h) || Number.isNaN(m)) return p;
+      if (h * 60 + m < minutesNow && tomorrowByName[p.name]) {
+        return { ...p, adhan: tomorrowByName[p.name].adhan, iqamah: tomorrowByName[p.name].iqamah };
+      }
+      return p;
+    });
+    let nextSunrise = prayerTimes.sunrise;
+    if (prayerTimes.sunrise && prayerTimes.sunrise !== 'N/A') {
+      const [sh, sm] = prayerTimes.sunrise.split(':').map(Number);
+      if (sh * 60 + sm < minutesNow && tomorrowPrayers?.sunrise && tomorrowPrayers.sunrise !== 'N/A') {
+        nextSunrise = tomorrowPrayers.sunrise;
+      }
+    }
+    return { ...prayerTimes, prayers: newPrayers, sunrise: nextSunrise };
+  })();
   const { donationGoal, isLoading: goalLoading, isError: goalError } = useDonationGoal();
   const { announcements, announcementsEnabled } = useAnnouncements();
   const { popupSettings } = usePopupSettings();
@@ -177,7 +211,7 @@ const Home = () => {
 
       {/* Prayer Times Section */}
       <PrayerTimesSection 
-        prayerTimes={prayerTimes} 
+        prayerTimes={rolledPrayerTimes} 
         getNextPrayer={getNextPrayer} 
         formatTime={formatTime} 
       />
