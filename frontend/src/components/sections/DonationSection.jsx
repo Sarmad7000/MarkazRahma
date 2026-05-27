@@ -6,7 +6,7 @@ import DonationProgress from '../DonationProgress';
 
 const DonationSection = ({ donationInfo, donationGoal }) => {
   const handleDonateClick = () => {
-    window.open('https://checkout.square.site/merchant/MLSD6EY5CMY2P/checkout/HXF33WVBEFWIA65YBXUQST3B?src=sheet', '_blank');
+    window.open('https://pay.sumup.com/b2c/QHK4XJ9T', '_blank');
   };
 
   return (
