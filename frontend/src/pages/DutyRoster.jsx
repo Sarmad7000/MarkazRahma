@@ -10,6 +10,7 @@ import {
   ChevronRight,
   ArrowLeft,
   History,
+  Repeat,
 } from 'lucide-react';
 
 const API = process.env.REACT_APP_BACKEND_URL;
@@ -336,6 +337,128 @@ const HistoryView = ({ onBack }) => {
   );
 };
 
+const WEEKDAYS = [
+  { key: 'monday', label: 'Monday' },
+  { key: 'tuesday', label: 'Tuesday' },
+  { key: 'wednesday', label: 'Wednesday' },
+  { key: 'thursday', label: 'Thursday' },
+  { key: 'friday', label: 'Friday' },
+  { key: 'saturday', label: 'Saturday' },
+  { key: 'sunday', label: 'Sunday' },
+];
+
+const PersistentScheduleView = ({ onBack }) => {
+  const [schedule, setSchedule] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [savingCell, setSavingCell] = useState(null);
+  const [savedCell, setSavedCell] = useState(null);
+  const debounceTimers = useRef({});
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await axios.get(`${API}/api/duty-roster/persistent`);
+        setSchedule(res.data);
+      } catch (e) { console.error(e); }
+      finally { setLoading(false); }
+    })();
+  }, []);
+
+  const updateCell = (weekday, prayer, name) => {
+    setSchedule((prev) => ({
+      ...prev,
+      [weekday]: { ...(prev?.[weekday] || {}), [prayer]: name },
+    }));
+    const cellKey = `${weekday}.${prayer}`;
+    if (debounceTimers.current[cellKey]) clearTimeout(debounceTimers.current[cellKey]);
+    debounceTimers.current[cellKey] = setTimeout(async () => {
+      try {
+        setSavingCell(cellKey);
+        await axios.put(`${API}/api/duty-roster/persistent`, { weekday, prayer, name });
+        setSavedCell(cellKey);
+        setTimeout(() => setSavedCell((cur) => (cur === cellKey ? null : cur)), 1200);
+      } catch (e) { console.error('Persistent save failed', e); }
+      finally { setSavingCell((cur) => (cur === cellKey ? null : cur)); }
+    }, 500);
+  };
+
+  return (
+    <div data-testid="persistent-schedule-view">
+      <div className="flex items-center justify-between mb-6">
+        <button
+          onClick={onBack}
+          className="inline-flex items-center gap-2 text-cyan-700 hover:text-cyan-900 font-medium text-sm"
+          data-testid="persistent-back"
+        >
+          <ArrowLeft className="h-4 w-4" /> Back
+        </button>
+        <span className="text-xs font-semibold tracking-wider uppercase bg-cyan-100 text-cyan-700 px-3 py-1 rounded-full">
+          Persistent Schedule
+        </span>
+      </div>
+
+      <div className="mb-6">
+        <p className="text-xs font-bold tracking-[0.15em] text-gray-900 uppercase mb-1">Weekly default rota</p>
+        <p className="text-sm text-gray-500 leading-relaxed">
+          Names entered here automatically appear on every matching weekday unless someone overrides a specific date. Changes save automatically.
+        </p>
+      </div>
+
+      {loading || !schedule ? (
+        <div className="flex items-center justify-center py-16 text-gray-400">
+          <Loader2 className="h-5 w-5 animate-spin mr-2" /> Loading schedule…
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {WEEKDAYS.map((wd) => {
+            const slot = schedule[wd.key] || {};
+            return (
+              <div
+                key={wd.key}
+                className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-5"
+                data-testid={`persistent-day-${wd.key}`}
+              >
+                <div className="text-sm font-bold text-cyan-700 tracking-wide uppercase mb-3">
+                  {wd.label}
+                </div>
+                <div className="grid gap-2.5">
+                  {PRAYERS.map((p) => {
+                    const cellKey = `${wd.key}.${p.key}`;
+                    const labelText = (wd.key === 'friday' && p.key === 'dhuhr') ? "DHUHR (JUMU'AH)" : p.label;
+                    return (
+                      <div key={p.key} className="flex items-center gap-3">
+                        <div className="w-28 sm:w-40 shrink-0 text-[11px] sm:text-xs font-semibold tracking-wider uppercase text-gray-500">
+                          {labelText}
+                        </div>
+                        <div className="flex-1 relative">
+                          <input
+                            type="text"
+                            value={slot[p.key] || ''}
+                            onChange={(e) => updateCell(wd.key, p.key, e.target.value)}
+                            placeholder="Enter name…"
+                            className="w-full bg-gray-50 rounded-lg border border-gray-200 focus:border-cyan-400 focus:bg-white focus:outline-none px-3 py-2 text-sm sm:text-base text-gray-900 placeholder:text-gray-300"
+                            data-testid={`persistent-input-${wd.key}-${p.key}`}
+                          />
+                          {savingCell === cellKey && (
+                            <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 animate-spin text-cyan-500" />
+                          )}
+                          {savedCell === cellKey && savingCell !== cellKey && (
+                            <CheckCircle2 className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-green-500" />
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const DutyRoster = () => {
   const [view, setView] = useState('today'); // 'today' | 'lookahead' | 'history'
   const today = new Date();
@@ -361,6 +484,14 @@ const DutyRoster = () => {
                 Look Ahead
               </button>
               <button
+                onClick={() => setView('persistent')}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-cyan-200 bg-white hover:bg-cyan-50 text-cyan-800 font-semibold text-base sm:text-lg py-4 transition-all"
+                data-testid="duty-tab-persistent"
+              >
+                <Repeat className="h-5 w-5" />
+                Persistent Schedule
+              </button>
+              <button
                 onClick={() => setView('history')}
                 className="w-full inline-flex items-center justify-center gap-2 rounded-2xl text-gray-600 hover:text-cyan-700 font-medium text-sm sm:text-base py-2 transition-colors"
                 data-testid="duty-tab-history"
@@ -383,6 +514,13 @@ const DutyRoster = () => {
           <>
             <PageHeader dateIso={todayIso} hijri={todayHijri} />
             <HistoryView onBack={() => setView('today')} />
+          </>
+        )}
+
+        {view === 'persistent' && (
+          <>
+            <PageHeader dateIso={todayIso} hijri={todayHijri} />
+            <PersistentScheduleView onBack={() => setView('today')} />
           </>
         )}
       </div>

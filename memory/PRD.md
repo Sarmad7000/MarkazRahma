@@ -296,6 +296,15 @@ GET  /api/admin/donations/history
 
 ### Backend test results (iteration_3): 15/15 PASS, 100% frontend flows verified.
 
+---
+
+## Updates (Feb 2026 — Duty Roster + Persistent Schedule)
+
+### ✅ This Session
+- **Duty Roster Persistent Weekly Schedule**: New full-page view at `/duty-roster` → "Persistent Schedule" button. Grid of 7 weekdays × 5 prayers with debounced auto-save. Friday Dhuhr is labeled "DHUHR (JUMU'AH)". Seeded defaults match user's rota (Abu Muhammad / Mohamed / Adam Falastini / Mudaber / Abu Zayd).
+- **Backend**: `GET /api/duty-roster/persistent` (auto-seeds singleton) and `PUT /api/duty-roster/persistent` (per-cell update). Today/Look-Ahead views now fall back to this schedule when a date has no override.
+- **Files**: `/app/frontend/src/pages/DutyRoster.jsx` (added `PersistentScheduleView` + button), `/app/backend/server.py` (already in place), `/app/backend/models.py` (`WeeklyDutySchedule`, `UpdateWeeklyScheduleRequest`).
+
 ### 🔵 P1 / Backlog
 - Wire up real email notifications (Resend / SendGrid / Gmail SMTP) when user provides API key.
 - Verify domain in Resend if user wants emails sent from `noreply@markazrahma.org`.
