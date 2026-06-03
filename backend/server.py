@@ -23,7 +23,8 @@ from models import (
     HeroCard, CreateHeroCardRequest, UpdateHeroCardRequest, HeroSettings, UpdateHeroSettingsRequest,
     ContactFormSettings, UpdateContactFormSettingsRequest, ContactSubmission,
     CreateContactSubmissionRequest, UpdateContactSubmissionRequest,
-    DutyRoster, UpdateDutyRosterRequest
+    DutyRoster, UpdateDutyRosterRequest, WeeklyDutySchedule, WeekdayDutySlot,
+    UpdateWeeklyScheduleRequest
 )
 from auth import authenticate_admin, create_access_token, get_current_user
 
@@ -1653,35 +1654,111 @@ async def shutdown_db_client():
 
 # ===== DUTY ROSTER (Mosque Opening Responsibility Tracker) — UNLINKED =====
 DUTY_FIELDS = ["fajr", "dhuhr", "asr", "maghrib", "ishaa"]
-DEFAULT_FAJR = "Abu Mohamed"
+WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+
+# Default seed for the weekly schedule (matches the user's provided rota)
+DEFAULT_WEEKLY_SCHEDULE = {
+    "monday":    {"fajr": "Abu Muhammad", "dhuhr": "",         "asr": "",                "maghrib": "",                "ishaa": "Abu Muhammad"},
+    "tuesday":   {"fajr": "Abu Muhammad", "dhuhr": "",         "asr": "",                "maghrib": "Adam Falastini",  "ishaa": "Abu Muhammad"},
+    "wednesday": {"fajr": "Abu Muhammad", "dhuhr": "",         "asr": "",                "maghrib": "",                "ishaa": "Abu Muhammad"},
+    "thursday":  {"fajr": "Abu Muhammad", "dhuhr": "Mohamed",  "asr": "",                "maghrib": "Adam Falastini",  "ishaa": "Abu Muhammad"},
+    "friday":    {"fajr": "Abu Muhammad", "dhuhr": "Mohamed",  "asr": "Abu Muhammad",    "maghrib": "Mohamed",         "ishaa": "Mohamed"},
+    "saturday":  {"fajr": "Abu Muhammad", "dhuhr": "Mudaber",  "asr": "Mudaber",         "maghrib": "Adam Falastini",  "ishaa": "Abu Muhammad"},
+    "sunday":    {"fajr": "Abu Muhammad", "dhuhr": "Abu Zayd", "asr": "Adam Falastini",  "maghrib": "Adam Falastini",  "ishaa": "Mohamed"},
+}
+
+
+def _weekday_name(date_str: str) -> str:
+    """Return 'monday' .. 'sunday' for an ISO date string."""
+    d = datetime.fromisoformat(date_str)
+    return WEEKDAYS[d.weekday()]
+
+
+async def _get_or_seed_weekly_schedule():
+    """Load the singleton weekly schedule; seed with defaults if missing."""
+    doc = await db.duty_weekly_schedule.find_one({"id": "singleton"}, {"_id": 0})
+    if not doc:
+        seed = WeeklyDutySchedule().dict()
+        for wd, slot in DEFAULT_WEEKLY_SCHEDULE.items():
+            seed[wd] = slot
+        await db.duty_weekly_schedule.insert_one(seed)
+        doc = await db.duty_weekly_schedule.find_one({"id": "singleton"}, {"_id": 0})
+    return doc
 
 
 def _ensure_roster_shape(doc):
-    """Normalize a roster doc to the expected shape (fills defaults)."""
+    """Normalize a roster doc to the expected shape (fills defaults from weekly schedule)."""
     if not doc:
         return None
     for f in DUTY_FIELDS:
-        doc[f] = doc.get(f) or ("" if f != "fajr" else DEFAULT_FAJR)
+        doc[f] = doc.get(f) or ""
     return doc
+
+
+@api_router.get("/duty-roster/persistent")
+async def get_persistent_weekly_schedule():
+    """Get the persistent weekly schedule (one entry per weekday)."""
+    try:
+        doc = await _get_or_seed_weekly_schedule()
+        # Drop internal id field but keep weekday entries
+        for k in ("_id",):
+            doc.pop(k, None)
+        return doc
+    except Exception as e:
+        logger.error(f"Error fetching persistent schedule: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch persistent schedule")
+
+
+@api_router.put("/duty-roster/persistent")
+async def update_persistent_weekly_schedule(request: UpdateWeeklyScheduleRequest):
+    """Update a single cell in the persistent weekly schedule."""
+    if request.weekday not in WEEKDAYS:
+        raise HTTPException(status_code=400, detail=f"Invalid weekday: {request.weekday}")
+    if request.prayer not in DUTY_FIELDS:
+        raise HTTPException(status_code=400, detail=f"Invalid prayer: {request.prayer}")
+
+    try:
+        await _get_or_seed_weekly_schedule()  # ensure exists
+        await db.duty_weekly_schedule.update_one(
+            {"id": "singleton"},
+            {"$set": {
+                f"{request.weekday}.{request.prayer}": request.name,
+                "updated_at": datetime.now(timezone.utc),
+            }},
+        )
+        doc = await db.duty_weekly_schedule.find_one({"id": "singleton"}, {"_id": 0})
+        return doc
+    except Exception as e:
+        logger.error(f"Error updating persistent schedule: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update persistent schedule")
 
 
 @api_router.get("/duty-roster/{date_str}")
 async def get_duty_roster(date_str: str):
-    """Get the duty roster for a specific date. Returns default-shaped empty roster if not yet created."""
+    """Get the duty roster for a specific date. Empty slots fall back to the persistent weekly schedule."""
     try:
+        weekly = await _get_or_seed_weekly_schedule()
+        weekday = _weekday_name(date_str)
+        weekly_slot = weekly.get(weekday, {}) or {}
+
         doc = await db.duty_roster.find_one({"date": date_str}, {"_id": 0})
         if not doc:
-            # Return a default (unsaved) roster — Fajr pre-filled with Abu Mohamed
-            return {
+            base = {
                 "date": date_str,
-                "fajr": DEFAULT_FAJR,
-                "dhuhr": "",
-                "asr": "",
-                "maghrib": "",
-                "ishaa": "",
+                "fajr": weekly_slot.get("fajr", ""),
+                "dhuhr": weekly_slot.get("dhuhr", ""),
+                "asr": weekly_slot.get("asr", ""),
+                "maghrib": weekly_slot.get("maghrib", ""),
+                "ishaa": weekly_slot.get("ishaa", ""),
                 "exists": False,
             }
+            return base
+
         doc = _ensure_roster_shape(doc)
+        # Fall back to weekly schedule for empty fields
+        for f in DUTY_FIELDS:
+            if not doc.get(f):
+                doc[f] = weekly_slot.get(f, "")
         doc["exists"] = True
         return doc
     except Exception as e:

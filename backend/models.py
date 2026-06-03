@@ -269,7 +269,7 @@ class UpdateContactSubmissionRequest(BaseModel):
 class DutyRoster(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     date: str  # ISO date YYYY-MM-DD
-    fajr: Optional[str] = "Abu Mohamed"
+    fajr: Optional[str] = ""
     dhuhr: Optional[str] = ""
     asr: Optional[str] = ""
     maghrib: Optional[str] = ""
@@ -283,3 +283,31 @@ class UpdateDutyRosterRequest(BaseModel):
     asr: Optional[str] = None
     maghrib: Optional[str] = None
     ishaa: Optional[str] = None
+
+
+# Persistent weekly schedule — one document with one entry per weekday
+class WeekdayDutySlot(BaseModel):
+    fajr: str = ""
+    dhuhr: str = ""
+    asr: str = ""
+    maghrib: str = ""
+    ishaa: str = ""
+
+
+class WeeklyDutySchedule(BaseModel):
+    id: str = "singleton"
+    monday: WeekdayDutySlot = Field(default_factory=WeekdayDutySlot)
+    tuesday: WeekdayDutySlot = Field(default_factory=WeekdayDutySlot)
+    wednesday: WeekdayDutySlot = Field(default_factory=WeekdayDutySlot)
+    thursday: WeekdayDutySlot = Field(default_factory=WeekdayDutySlot)
+    friday: WeekdayDutySlot = Field(default_factory=WeekdayDutySlot)
+    saturday: WeekdayDutySlot = Field(default_factory=WeekdayDutySlot)
+    sunday: WeekdayDutySlot = Field(default_factory=WeekdayDutySlot)
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class UpdateWeeklyScheduleRequest(BaseModel):
+    weekday: str  # 'monday'..'sunday'
+    prayer: str   # 'fajr'..'ishaa'
+    name: str
+
