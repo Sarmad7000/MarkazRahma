@@ -44,7 +44,7 @@ const ContactSection = ({ mosqueInfo }) => {
             </a>
 
             <a
-              href="https://www.youtube.com/@markazal-rahma6441"
+              href="https://www.youtube.com/@markazrahma"
               target="_blank"
               rel="noopener noreferrer"
               className="block"
