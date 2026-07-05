@@ -196,7 +196,7 @@ const Home = () => {
 
       {/* Prayer Times Carousel (just under header) */}
       <PrayerTimesCarousel 
-        prayerTimes={prayerTimes} 
+        prayerTimes={rolledPrayerTimes} 
         formatTime={formatTime}
         getNextPrayer={getNextPrayer}
         announcements={announcements}
