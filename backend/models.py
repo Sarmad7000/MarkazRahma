@@ -118,6 +118,7 @@ class PopupSettings(BaseModel):
     citation: str
     image_path: str
     enabled: bool = True
+    donate_button_enabled: bool = True
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 class UpdatePopupSettingsRequest(BaseModel):
@@ -126,6 +127,7 @@ class UpdatePopupSettingsRequest(BaseModel):
     citation: Optional[str] = None
     image_path: Optional[str] = None
     enabled: Optional[bool] = None
+    donate_button_enabled: Optional[bool] = None
 
 # Announcement Models
 class Announcement(BaseModel):

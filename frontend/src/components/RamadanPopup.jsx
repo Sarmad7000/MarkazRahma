@@ -70,6 +70,8 @@ const RamadanPopup = ({ onDonate, popupSettings }) => {
             <Button 
               onClick={handleDonate}
               className="w-full bg-cyan-600 hover:bg-cyan-700 text-white py-2.5 md:py-3 text-sm font-semibold"
+              style={{ display: popupSettings.donate_button_enabled === false ? 'none' : undefined }}
+              data-testid="popup-donate-button"
             >
               Donate Now
             </Button>

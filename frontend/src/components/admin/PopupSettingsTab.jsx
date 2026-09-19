@@ -72,6 +72,21 @@ const PopupSettingsTab = ({
             />
           </div>
 
+          {/* Donate Button Toggle */}
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div>
+              <Label className="text-base font-semibold">Show Donate Button</Label>
+              <p className="text-sm text-gray-600">Display the "Donate Now" button inside the popup</p>
+            </div>
+            <Switch
+              data-testid="popup-donate-button-toggle"
+              checked={popupSettings.donate_button_enabled !== false}
+              onCheckedChange={(checked) =>
+                setPopupSettings({ ...popupSettings, donate_button_enabled: checked })
+              }
+            />
+          </div>
+
           {/* Image Upload */}
           <div className="space-y-2">
             <Label>Popup Image</Label>

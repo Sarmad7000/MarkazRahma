@@ -765,10 +765,15 @@ async def get_popup_settings():
                 "description": "Help us reach our goal of £100,000 to relocate before Ramadan ends. Every donation brings us closer to a permanent home for our community.",
                 "citation": '"Whoever builds a mosque for Allah, Allah will build for him a house like it in Paradise."\n- Sahih Al-Bukhari 450, Sahih Muslim 533',
                 "image_path": "https://customer-assets.emergentagent.com/job_markaz-rahma-1/artifacts/1w25b3eq_OUR%20LAST%20RAMADAN%20IN%20COLINDALE%20%282%29.png",
-                "enabled": True
+                "enabled": True,
+                "donate_button_enabled": True,
             }
             return default_settings
-        
+
+        # Back-fill default for legacy documents
+        if "donate_button_enabled" not in settings:
+            settings["donate_button_enabled"] = True
+
         return settings
         
     except Exception as e:
