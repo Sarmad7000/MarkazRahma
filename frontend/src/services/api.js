@@ -263,8 +263,6 @@ export const createDonationCheckout = async (amountOrOptions) => {
       cover_fee: Boolean(options.cover_fee),
       email: options.email || null,
       email_opt_in: Boolean(options.email_opt_in),
-      gift_aid: Boolean(options.gift_aid),
-      name: options.name || null,
       metadata: {
         source: options.returnPath === '/maintenance' ? 'maintenance' : 'web_donation',
         timestamp: new Date().toISOString()

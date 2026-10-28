@@ -471,23 +471,16 @@ def _gift_ago(moment) -> str:
 
 @api_router.get("/donations/recent")
 async def recent_public_donations():
-    try:
-        rows = await db.payment_transactions.find(
-            {"payment_status": "paid"},
-            {"_id": 0, "amount": 1, "metadata": 1, "updated_at": 1, "created_at": 1},
-        ).sort("updated_at", -1).limit(5).to_list(5)
-    except Exception:
-        logger.exception("Recent donations could not be read")
+    """Latest card gifts from Stripe, not a stored sample list."""
+    import asyncio
+
+    if _stripe_client() is None:
         return []
-    gifts = []
-    for row in rows:
-        metadata = row.get("metadata") or {}
-        gifts.append({
-            "initials": _gift_initials(metadata.get("donor_name", "")),
-            "amount": row.get("amount") or 0,
-            "ago": _gift_ago(row.get("updated_at") or row.get("created_at")),
-        })
-    return gifts
+    try:
+        return await asyncio.to_thread(_recent_stripe_gifts)
+    except Exception:
+        logger.exception("Recent card gifts could not be read")
+        return []
 
 _ALLOWED_RETURN_ORIGINS = {
     "http://localhost:3000",
@@ -668,6 +661,81 @@ def _raised_this_month_pounds() -> float:
     return round(pence / 100, 2)
 
 
+def _stripe_list_pages(list_call, params: dict):
+    starting_after = None
+    for _page in range(20):
+        query = dict(params)
+        if starting_after:
+            query["starting_after"] = starting_after
+        page = list_call(params=query)
+        data = page.data if hasattr(page, "data") else page["data"]
+        data = data or []
+        yield data
+        has_more = page.has_more if hasattr(page, "has_more") else page.get("has_more")
+        if not has_more or not data:
+            break
+        starting_after = _stripe_field(data[-1], "id")
+
+
+def _subscription_interval(subscription) -> str:
+    items = _stripe_field(subscription, "items")
+    data = items.get("data") if isinstance(items, dict) else _stripe_field(items, "data")
+    if not data:
+        return ""
+    price = _stripe_field(data[0], "price")
+    recurring = price.get("recurring") if isinstance(price, dict) else _stripe_field(price, "recurring")
+    if not recurring:
+        return ""
+    interval = recurring.get("interval") if isinstance(recurring, dict) else _stripe_field(recurring, "interval")
+    return str(interval or "")
+
+
+def _active_supporter_counts():
+    """Active daily and weekly card subscriptions. None when Stripe cannot be read."""
+    client = _stripe_client()
+    if client is None:
+        return None, None
+    daily = 0
+    weekly = 0
+    for data in _stripe_list_pages(client.subscriptions.list, {"limit": 100, "status": "active"}):
+        for subscription in data:
+            interval = _subscription_interval(subscription)
+            if interval == "day":
+                daily += 1
+            elif interval == "week":
+                weekly += 1
+    return daily, weekly
+
+
+def _recent_stripe_gifts(limit: int = 5):
+    """Latest succeeded GBP card gifts. Amounts only, with initials when Stripe has a name."""
+    client = _stripe_client()
+    if client is None:
+        return []
+    gifts = []
+    for data in _stripe_list_pages(client.charges.list, {"limit": 100}):
+        for charge in data:
+            if _stripe_field(charge, "status") != "succeeded":
+                continue
+            if str(_stripe_field(charge, "currency") or "").lower() != "gbp":
+                continue
+            net = int(_stripe_field(charge, "amount") or 0) - int(_stripe_field(charge, "amount_refunded") or 0)
+            if net <= 0:
+                continue
+            created = _stripe_field(charge, "created")
+            moment = datetime.utcfromtimestamp(int(created)) if created else None
+            billing = _stripe_field(charge, "billing_details") or {}
+            name = billing.get("name") if isinstance(billing, dict) else _stripe_field(billing, "name")
+            gifts.append({
+                "initials": _gift_initials(name or ""),
+                "amount": round(net / 100, 2),
+                "ago": _gift_ago(moment),
+            })
+            if len(gifts) >= limit:
+                return gifts
+    return gifts
+
+
 def _return_origin(http_request: Request) -> str:
     configured = os.environ.get("FRONTEND_URL", "").strip().rstrip("/")
     origin = (http_request.headers.get("origin") or "").strip().rstrip("/")
@@ -751,15 +819,12 @@ async def create_donation_checkout(request: DonationRequest, http_request: Reque
     donor_name = (request.name or "").strip()
     if email and ("@" not in email or len(email) > 200):
         raise HTTPException(status_code=400, detail="Enter a valid email address.")
-    if request.gift_aid and (not donor_name or not email):
-        raise HTTPException(status_code=400, detail="Gift Aid needs your name and email.")
-
     metadata = {
         "source": "maintenance",
         "frequency": request.frequency,
         "cover_fee": "yes" if request.cover_fee else "no",
         "email_opt_in": "yes" if request.email_opt_in else "no",
-        "gift_aid": "yes" if request.gift_aid else "no",
+        "gift_aid": "no",
         "charged_amount": f"{pounds:.2f}",
     }
     if email:
@@ -781,7 +846,7 @@ async def create_donation_checkout(request: DonationRequest, http_request: Reque
         "cancel_url": cancel_url,
         "metadata": metadata,
         "integration_identifier": f"markazdonate{suffix}",
-        "billing_address_collection": "required" if request.gift_aid else "auto",
+        "billing_address_collection": "auto",
     }
     if email:
         params["customer_email"] = email
@@ -872,7 +937,19 @@ async def monthly_card_total():
     except Exception:
         logger.exception("Monthly card total could not be read")
         raise HTTPException(status_code=502, detail="The monthly total could not be read")
-    return {"raised": raised, "goal": goal, "currency": "gbp", "live": mode == "live"}
+    daily = weekly = None
+    try:
+        daily, weekly = await asyncio.to_thread(_active_supporter_counts)
+    except Exception:
+        logger.exception("Supporter counts could not be read")
+    return {
+        "raised": raised,
+        "goal": goal,
+        "currency": "gbp",
+        "live": mode == "live",
+        "daily": daily,
+        "weekly": weekly,
+    }
 
 
 # ============== DONATION GOAL ENDPOINTS ==============

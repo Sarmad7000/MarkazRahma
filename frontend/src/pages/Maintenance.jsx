@@ -96,6 +96,7 @@ const ShareIcon = ({ id }) => {
 };
 
 const supporterLine = (tier) => {
+  if (tier.joined == null) return 'Loading the live supporter total.';
   const remaining = Math.max(0, tier.target - tier.joined);
   if (remaining === 0) return 'This supporter goal has been reached.';
   if (tier.id === 'weekly') {
@@ -145,18 +146,22 @@ const Maintenance = () => {
   const [coverFee, setCoverFee] = useState(true);
   const [email, setEmail] = useState('');
   const [emailOptIn, setEmailOptIn] = useState(false);
-  const [giftAid, setGiftAid] = useState(false);
-  const [donorName, setDonorName] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitTarget, setSubmitTarget] = useState('');
   const [donateError, setDonateError] = useState('');
   const [showBank, setShowBank] = useState(false);
   const [recentGifts, setRecentGifts] = useState([]);
   const [raised, setRaised] = useState(0);
+  const [dailyJoined, setDailyJoined] = useState(null);
+  const [weeklyJoined, setWeeklyJoined] = useState(null);
   const [totalLive, setTotalLive] = useState(false);
   const [totalStatus, setTotalStatus] = useState('loading');
   const donationResult = searchParams.get('donation');
-  const { goal, supporters } = maintenanceTracker;
+  const { goal } = maintenanceTracker;
+  const supporters = maintenanceTracker.supporters.map((tier) => ({
+    ...tier,
+    joined: tier.id === 'daily' ? dailyJoined : weeklyJoined,
+  }));
   const raisedPercent = percentOf(raised, goal);
   const ticks = [0, 0.25, 0.5, 0.75, 1].map((step) => Math.round(goal * step));
 
@@ -185,6 +190,8 @@ const Maintenance = () => {
         if (cancelled) return;
         if (data && data.live) {
           setRaised(Number(data.raised) || 0);
+          setDailyJoined(typeof data.daily === 'number' ? data.daily : null);
+          setWeeklyJoined(typeof data.weekly === 'number' ? data.weekly : null);
           setTotalLive(true);
           setTotalStatus('live');
         } else {
@@ -211,12 +218,8 @@ const Maintenance = () => {
       setDonateError('Enter an amount between £1 and £10,000.');
       return;
     }
-    if ((giftAid || emailOptIn) && !email.trim()) {
-      setDonateError(giftAid ? 'Gift Aid needs your name and email.' : 'Enter your email address.');
-      return;
-    }
-    if (giftAid && !donorName.trim()) {
-      setDonateError('Gift Aid needs your name and email.');
+    if (emailOptIn && !email.trim()) {
+      setDonateError('Enter your email address.');
       return;
     }
     setSubmitting(true);
@@ -228,8 +231,6 @@ const Maintenance = () => {
         cover_fee: coverFee,
         email: email.trim(),
         email_opt_in: emailOptIn,
-        gift_aid: giftAid,
-        name: donorName.trim(),
         returnPath: '/maintenance',
       });
       window.location.assign(checkout.url);
@@ -288,12 +289,6 @@ const Maintenance = () => {
                 {maintenanceTracker.intro}
               </p>
 
-              {maintenanceTracker.placeholder && (
-                <p className="mt-4 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 max-w-xl">
-                  Daily and weekly supporter counts are a preview.
-                </p>
-              )}
-
               <div className="grid sm:grid-cols-2 gap-4 mt-8">
                 {supporters.map((tier) => {
                   const tierPercent = percentOf(tier.joined, tier.target);
@@ -304,13 +299,13 @@ const Maintenance = () => {
                     >
                       <p className="text-sm text-gray-600">{tier.title}</p>
                       <p className="mt-2 text-2xl font-semibold tracking-tight">
-                        <span className="text-cyan-600">{tier.joined}</span>
+                        <span className="text-cyan-600">{tier.joined == null ? '—' : tier.joined}</span>
                         <span className="text-gray-400 font-medium"> of {tier.target}</span>
                       </p>
                       <div
                         className="mt-3 h-1.5 rounded-full bg-gray-100 overflow-hidden"
                         role="progressbar"
-                        aria-valuenow={tier.joined}
+                        aria-valuenow={tier.joined || 0}
                         aria-valuemin={0}
                         aria-valuemax={tier.target}
                         aria-label={tier.title}
@@ -364,7 +359,9 @@ const Maintenance = () => {
                     ? 'This is the live card total for this month.'
                     : totalStatus === 'error'
                       ? 'The card total could not be loaded.'
-                      : 'The live card total is not available yet.'}
+                      : totalStatus === 'loading'
+                        ? 'Loading the live card total.'
+                        : 'The live card total is not available yet.'}
                 </p>
               </article>
 
@@ -607,9 +604,11 @@ const Maintenance = () => {
                               ? 'Less than the price of a takeaway coffee. Helps keep the masjid open every day.'
                               : 'One small gift each week from brothers and sisters who give on a Friday.'}
                           </span>
-                          <span className="mt-2 inline-flex rounded-full bg-cyan-100 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-cyan-800">
-                            {tier.joined} / {tier.target} joined
-                          </span>
+                          {tier.joined != null && (
+                            <span className="mt-2 inline-flex rounded-full bg-cyan-100 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-cyan-800">
+                              {tier.joined} / {tier.target} joined
+                            </span>
+                          )}
                         </button>
                       );
                     })}
@@ -629,15 +628,6 @@ const Maintenance = () => {
                     <label className="flex items-start gap-3 px-1 py-1 text-sm text-gray-700">
                       <input
                         type="checkbox"
-                        checked={giftAid}
-                        onChange={(event) => setGiftAid(event.target.checked)}
-                        className="mt-0.5 h-5 w-5 shrink-0 accent-cyan-600"
-                      />
-                      <span>Yes, claim Gift Aid</span>
-                    </label>
-                    <label className="flex items-start gap-3 px-1 py-1 text-sm text-gray-700">
-                      <input
-                        type="checkbox"
                         checked={emailOptIn}
                         onChange={(event) => setEmailOptIn(event.target.checked)}
                         className="mt-0.5 h-5 w-5 shrink-0 accent-cyan-600"
@@ -645,36 +635,17 @@ const Maintenance = () => {
                       <span>Yes, keep me updated on Markaz Al-Rahma by email.</span>
                     </label>
                   </div>
-                  {(giftAid || emailOptIn) && (
-                    <div className="mt-3 space-y-2">
-                      {giftAid && (
-                        <label className="block text-sm text-gray-600">
-                          Full name
-                          <input
-                            type="text"
-                            value={donorName}
-                            onChange={(event) => setDonorName(event.target.value)}
-                            autoComplete="name"
-                            className="mt-1 w-full min-h-11 rounded-xl border border-gray-200 px-3 text-gray-900"
-                          />
-                        </label>
-                      )}
-                      <label className="block text-sm text-gray-600">
-                        Email
-                        <input
-                          type="email"
-                          value={email}
-                          onChange={(event) => setEmail(event.target.value)}
-                          autoComplete="email"
-                          className="mt-1 w-full min-h-11 rounded-xl border border-gray-200 px-3 text-gray-900"
-                        />
-                      </label>
-                      {giftAid && (
-                        <p className="text-xs text-gray-500 leading-relaxed">
-                          I am a UK taxpayer and I want Markaz Al-Rahma to claim Gift Aid on this gift and donations I make in the future or have made in the past four years. I understand that if I pay less Income Tax or Capital Gains Tax than the Gift Aid claimed, it is my responsibility to pay the difference.
-                        </p>
-                      )}
-                    </div>
+                  {emailOptIn && (
+                    <label className="mt-3 block text-sm text-gray-600">
+                      Email
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(event) => setEmail(event.target.value)}
+                        autoComplete="email"
+                        className="mt-1 w-full min-h-11 rounded-xl border border-gray-200 px-3 text-gray-900"
+                      />
+                    </label>
                   )}
                   {donateError && (
                     <p className="mt-3 text-sm text-red-600">{donateError}</p>
