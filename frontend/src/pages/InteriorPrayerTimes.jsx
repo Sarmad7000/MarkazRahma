@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Clock, Sunrise as SunriseIcon } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import HeroCarousel from '../components/sections/HeroCarousel';
@@ -171,8 +171,9 @@ const InteriorPrayerTimes = () => {
     return () => window.removeEventListener('resize', update);
   }, []);
 
+  const navigate = useNavigate();
   const onDonate = () => {
-    window.open('https://pay.sumup.com/b2c/QHK4XJ9T', '_blank');
+    navigate('/maintenance');
   };
   const onLocation = () => {
     window.open(mosqueInfo?.googleMapsUrl || 'https://maps.google.com', '_blank');

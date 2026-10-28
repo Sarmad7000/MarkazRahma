@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { toast, Toaster } from 'sonner';
@@ -18,6 +19,7 @@ import { usePrayerTimes, usePrayerTimesByDate, useDonationGoal, useAnnouncements
 import { mosqueInfo, donationInfo, aboutContent } from '../data/mock';
 
 const Home = () => {
+  const navigate = useNavigate();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [donationModalOpen, setDonationModalOpen] = useState(false);
 
@@ -169,7 +171,7 @@ const Home = () => {
   };
 
   const handleDonate = () => {
-    window.open('https://pay.sumup.com/b2c/QHK4XJ9T', '_blank');
+    navigate('/maintenance');
   };
 
   // Just show loading state briefly, then show the site even without prayer times

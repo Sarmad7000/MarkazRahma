@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Heart, Menu, X } from 'lucide-react';
 import { Button } from '../ui/button';
 
-const Header = ({ mosqueInfo, onDonate }) => {
+const Header = ({ mosqueInfo }) => {
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const donate = () => navigate('/maintenance');
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
@@ -21,18 +24,19 @@ const Header = ({ mosqueInfo, onDonate }) => {
           </div>
           
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-6 absolute left-1/2 transform -translate-x-1/2">
-            <a href="/" className="text-gray-700 hover:text-cyan-600 transition-colors whitespace-nowrap">Home</a>
-            <a href="/timetable" className="text-gray-700 hover:text-cyan-600 transition-colors whitespace-nowrap">Prayer Timetable</a>
-            <a href="/events" className="text-gray-700 hover:text-cyan-600 transition-colors whitespace-nowrap">Events</a>
-            <a href="/youtube-recordings" className="text-gray-700 hover:text-cyan-600 transition-colors whitespace-nowrap">YouTube Recordings</a>
-            <a href="/#about" className="text-gray-700 hover:text-cyan-600 transition-colors whitespace-nowrap">About</a>
-            <a href="/contact" className="text-gray-700 hover:text-cyan-600 transition-colors whitespace-nowrap">Contact</a>
+          <nav className="hidden md:flex items-center gap-4 xl:gap-5 absolute left-1/2 transform -translate-x-1/2">
+            <a href="/" className="text-gray-700 hover:text-cyan-600 transition-colors whitespace-nowrap text-sm xl:text-base">Home</a>
+            <a href="/timetable" className="text-gray-700 hover:text-cyan-600 transition-colors whitespace-nowrap text-sm xl:text-base">Prayer Timetable</a>
+            <a href="/events" className="text-gray-700 hover:text-cyan-600 transition-colors whitespace-nowrap text-sm xl:text-base">Events</a>
+            <a href="/youtube-recordings" className="text-gray-700 hover:text-cyan-600 transition-colors whitespace-nowrap text-sm xl:text-base">Recordings</a>
+            <a href="/maintenance" className="text-gray-700 hover:text-cyan-600 transition-colors whitespace-nowrap text-sm xl:text-base">Maintenance</a>
+            <a href="/#about" className="text-gray-700 hover:text-cyan-600 transition-colors whitespace-nowrap text-sm xl:text-base">About</a>
+            <a href="/contact" className="text-gray-700 hover:text-cyan-600 transition-colors whitespace-nowrap text-sm xl:text-base">Contact</a>
           </nav>
           
           {/* Desktop Donate Button */}
           <div className="w-64 flex justify-end">
-            <Button onClick={onDonate} className="bg-cyan-600 hover:bg-cyan-700 text-white hidden md:flex items-center gap-2">
+            <Button onClick={donate} className="bg-cyan-600 hover:bg-cyan-700 text-white hidden md:flex items-center gap-2">
               <Heart className="h-4 w-4" />
               Donate Now
             </Button>
@@ -40,7 +44,7 @@ const Header = ({ mosqueInfo, onDonate }) => {
             {/* Mobile Buttons - Donate + Menu */}
             <div className="md:hidden flex items-center gap-2">
               <Button 
-                onClick={onDonate}
+                onClick={donate}
                 className="bg-cyan-600 hover:bg-cyan-700 text-white flex items-center gap-1.5 px-3 py-2 text-sm font-medium"
                 size="sm"
               >
@@ -89,7 +93,14 @@ const Header = ({ mosqueInfo, onDonate }) => {
                 className="text-gray-700 hover:text-cyan-600 transition-colors py-2 px-4 rounded hover:bg-gray-50"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                YouTube Recordings
+                Recordings
+              </a>
+              <a 
+                href="/maintenance" 
+                className="text-gray-700 hover:text-cyan-600 transition-colors py-2 px-4 rounded hover:bg-gray-50"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Maintenance
               </a>
               <a 
                 href="/#about" 

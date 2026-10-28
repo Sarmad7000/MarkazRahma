@@ -1,12 +1,14 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Heart, Play } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import DonationProgress from '../DonationProgress';
 
 const DonationSection = ({ donationInfo, donationGoal }) => {
+  const navigate = useNavigate();
   const handleDonateClick = () => {
-    window.open('https://pay.sumup.com/b2c/QHK4XJ9T', '_blank');
+    navigate('/maintenance');
   };
 
   return (

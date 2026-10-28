@@ -91,7 +91,7 @@ const Contact = () => {
   };
 
   const handleDonate = () => {
-    window.open('https://pay.sumup.com/b2c/QHK4XJ9T', '_blank');
+    navigate('/maintenance');
   };
 
   return (

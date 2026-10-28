@@ -234,19 +234,39 @@ export const getDonationGoal = async () => {
   }
 };
 
-export const createDonationCheckout = async (amount) => {
+export const getRecentDonations = async () => {
+  const response = await axios.get(`${API}/donations/recent`);
+  return Array.isArray(response.data) ? response.data : [];
+};
+
+export const getMonthlyRaised = async () => {
+  const response = await axios.get(`${API}/donations/monthly`);
+  return response.data;
+};
+
+export const createDonationCheckout = async (amountOrOptions) => {
   try {
+    const options = typeof amountOrOptions === 'object' && amountOrOptions !== null
+      ? amountOrOptions
+      : { amount: amountOrOptions };
     const originUrl = window.location.origin;
-    const successUrl = `${originUrl}/?donation=success&session_id={CHECKOUT_SESSION_ID}`;
-    const cancelUrl = `${originUrl}/?donation=cancelled`;
-    
+    const returnPath = options.returnPath || '/';
+    const successUrl = `${originUrl}${returnPath}?donation=success&session_id={CHECKOUT_SESSION_ID}`;
+    const cancelUrl = `${originUrl}${returnPath}?donation=cancelled`;
+
     const response = await axios.post(`${API}/donations/create-checkout`, {
-      amount: parseFloat(amount),
+      amount: parseFloat(options.amount),
       currency: 'gbp',
       success_url: successUrl,
       cancel_url: cancelUrl,
+      frequency: options.frequency || 'once',
+      cover_fee: Boolean(options.cover_fee),
+      email: options.email || null,
+      email_opt_in: Boolean(options.email_opt_in),
+      gift_aid: Boolean(options.gift_aid),
+      name: options.name || null,
       metadata: {
-        source: 'web_donation',
+        source: options.returnPath === '/maintenance' ? 'maintenance' : 'web_donation',
         timestamp: new Date().toISOString()
       }
     });

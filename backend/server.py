@@ -11,6 +11,9 @@ import uuid
 import csv
 import io
 import httpx
+import secrets
+import string
+import stripe
 
 from models import (
     PrayerTimes, UpdateIqamahRequest, UpdateJummahRequest, Prayer, JummahTime,
@@ -36,8 +39,9 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-# Stripe configuration
-STRIPE_API_KEY = os.environ.get('STRIPE_API_KEY', 'sk_test_emergent')
+# Stripe configuration. A restricted key (rk_) belongs in the environment, never in source.
+STRIPE_API_KEY = os.environ.get('STRIPE_API_KEY', '').strip()
+STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', '').strip()
 
 # Create the main app without a prefix
 app = FastAPI(title="Markaz Al-Rahma API", version="1.0.0")
@@ -441,38 +445,434 @@ async def bulk_update_prayer_times(file: UploadFile = File(...), current_user: d
         raise HTTPException(status_code=500, detail=f"Failed to process CSV: {str(e)}")
 
 # ============== DONATION ENDPOINTS ==============
-# Note: Stripe checkout replaced with Square external redirect
-# These endpoints kept for API compatibility but return not implemented
+
+def _gift_initials(name: str) -> str:
+    parts = [part for part in (name or "").split() if part]
+    if len(parts) >= 2:
+        return f"{parts[0][0]}{parts[-1][0]}".upper()
+    if parts:
+        return parts[0][0].upper()
+    return ""
+
+
+def _gift_ago(moment) -> str:
+    if not isinstance(moment, datetime):
+        return ""
+    minutes = int(max(0, (datetime.utcnow() - moment).total_seconds()) // 60)
+    if minutes < 1:
+        return "now"
+    if minutes < 60:
+        return f"{minutes}m"
+    hours = minutes // 60
+    if hours < 24:
+        return f"{hours}h"
+    return f"{hours // 24}d"
+
+
+@api_router.get("/donations/recent")
+async def recent_public_donations():
+    try:
+        rows = await db.payment_transactions.find(
+            {"payment_status": "paid"},
+            {"_id": 0, "amount": 1, "metadata": 1, "updated_at": 1, "created_at": 1},
+        ).sort("updated_at", -1).limit(5).to_list(5)
+    except Exception:
+        logger.exception("Recent donations could not be read")
+        return []
+    gifts = []
+    for row in rows:
+        metadata = row.get("metadata") or {}
+        gifts.append({
+            "initials": _gift_initials(metadata.get("donor_name", "")),
+            "amount": row.get("amount") or 0,
+            "ago": _gift_ago(row.get("updated_at") or row.get("created_at")),
+        })
+    return gifts
+
+_ALLOWED_RETURN_ORIGINS = {
+    "http://localhost:3000",
+    "https://www.markazrahma.org",
+    "https://markazrahma.org",
+    "https://markaz-rahma.vercel.app",
+}
+
+
+def _stripe_client():
+    if not STRIPE_API_KEY or STRIPE_API_KEY == "sk_test_emergent":
+        return None
+    return stripe.StripeClient(STRIPE_API_KEY, stripe_version="2026-09-30.endive")
+
+
+def _use_stripe_cli() -> bool:
+    return os.environ.get("STRIPE_USE_CLI", "").strip().lower() in {"1", "true", "yes"}
+
+
+def _cli_data(prefix: str, value, out: list) -> None:
+    if isinstance(value, dict):
+        for key, item in value.items():
+            _cli_data(f"{prefix}[{key}]", item, out)
+    elif isinstance(value, list):
+        for index, item in enumerate(value):
+            _cli_data(f"{prefix}[{index}]", item, out)
+    elif isinstance(value, bool):
+        out.append(f"{prefix}={'true' if value else 'false'}")
+    elif value is None:
+        return
+    else:
+        out.append(f"{prefix}={value}")
+
+
+def _create_checkout_via_cli(params: dict) -> dict:
+    """Create a test Checkout Session with the logged-in Stripe CLI. Never passes --live."""
+    import json
+    import subprocess
+
+    cli = os.environ.get("STRIPE_CLI", "").strip() or "stripe"
+    data = []
+    for key, value in params.items():
+        _cli_data(key, value, data)
+    command = [
+        cli, "post", "/v1/checkout/sessions",
+        "--confirm", "--color", "off", "--log-level", "error",
+        "-v", "2026-09-30.endive",
+    ]
+    for item in data:
+        command.extend(["-d", item])
+    completed = subprocess.run(command, capture_output=True, text=True, timeout=40)
+    if completed.returncode != 0:
+        logger.error("Stripe CLI could not create a checkout session")
+        raise RuntimeError("stripe cli failed")
+    raw = completed.stdout or ""
+    start = raw.find("{")
+    if start < 0:
+        raise RuntimeError("stripe cli returned no session")
+    payload = json.loads(raw[start:])
+    if payload.get("livemode") is not False or not str(payload.get("id", "")).startswith("cs_test_"):
+        raise RuntimeError("refusing a checkout session that is not a test session")
+    if not payload.get("url"):
+        raise RuntimeError("stripe cli returned no payment page")
+    return payload
+
+
+def _stripe_key_mode() -> str:
+    if STRIPE_API_KEY.startswith(("sk_live_", "rk_live_")):
+        return "live"
+    if STRIPE_API_KEY.startswith(("sk_test_", "rk_test_")):
+        return "test"
+    return ""
+
+
+def _stripe_field(obj, name):
+    if isinstance(obj, dict):
+        return obj.get(name)
+    return getattr(obj, name, None)
+
+
+def _london_now():
+    """Current UK civil time. Uses the system timezone database, then the BST/GMT rule."""
+    try:
+        from zoneinfo import ZoneInfo
+        return datetime.now(ZoneInfo("Europe/London"))
+    except Exception:
+        utc = datetime.now(timezone.utc)
+
+        def _last_sunday(year, month):
+            if month == 12:
+                cursor = datetime(year + 1, 1, 1, tzinfo=timezone.utc)
+            else:
+                cursor = datetime(year, month + 1, 1, tzinfo=timezone.utc)
+            last = cursor - timedelta(days=1)
+            return last - timedelta(days=(last.weekday() + 1) % 7)
+
+        start_bst = _last_sunday(utc.year, 3).replace(hour=1, minute=0, second=0, microsecond=0)
+        end_bst = _last_sunday(utc.year, 10).replace(hour=1, minute=0, second=0, microsecond=0)
+        offset = timedelta(hours=1) if start_bst <= utc < end_bst else timedelta(0)
+        return utc.astimezone(timezone(offset))
+
+
+def _london_month_bounds():
+    now = _london_now()
+    start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    if start.month == 12:
+        end = start.replace(year=start.year + 1, month=1)
+    else:
+        end = start.replace(month=start.month + 1)
+    return int(start.timestamp()), int(end.timestamp())
+
+
+def _pence_from_charges(charges) -> int:
+    total = 0
+    for charge in charges or []:
+        if _stripe_field(charge, "status") != "succeeded":
+            continue
+        if str(_stripe_field(charge, "currency") or "").lower() != "gbp":
+            continue
+        amount = int(_stripe_field(charge, "amount") or 0)
+        refunded = int(_stripe_field(charge, "amount_refunded") or 0)
+        total += max(0, amount - refunded)
+    return total
+
+
+def _cli_get_json(path: str) -> dict:
+    """Read a Stripe API path with the CLI. Never passes --live."""
+    import json
+    import subprocess
+
+    cli = os.environ.get("STRIPE_CLI", "").strip() or "stripe"
+    completed = subprocess.run(
+        [cli, "get", path, "--confirm", "--color", "off", "--log-level", "error"],
+        capture_output=True, text=True, timeout=40,
+    )
+    if completed.returncode != 0:
+        logger.error("Stripe CLI could not read charges")
+        raise RuntimeError("stripe cli failed")
+    raw = completed.stdout or ""
+    start = raw.find("{")
+    if start < 0:
+        raise RuntimeError("stripe cli returned no charges")
+    return json.loads(raw[start:])
+
+
+def _raised_this_month_pounds() -> float:
+    """Succeeded GBP charges for the current Europe/London month, minus refunds."""
+    start, end = _london_month_bounds()
+    pence = 0
+    client = _stripe_client()
+    if client is not None:
+        starting_after = None
+        for _page in range(20):
+            params = {"limit": 100, "created": {"gte": start, "lt": end}}
+            if starting_after:
+                params["starting_after"] = starting_after
+            page = client.charges.list(params=params)
+            data = page.data if hasattr(page, "data") else page["data"]
+            pence += _pence_from_charges(data)
+            has_more = page.has_more if hasattr(page, "has_more") else page.get("has_more")
+            if not has_more or not data:
+                break
+            starting_after = _stripe_field(data[-1], "id")
+    elif _use_stripe_cli() and not os.environ.get("VERCEL"):
+        starting_after = None
+        for _page in range(20):
+            path = f"/v1/charges?limit=100&created[gte]={start}&created[lt]={end}"
+            if starting_after:
+                path += f"&starting_after={starting_after}"
+            page = _cli_get_json(path)
+            data = page.get("data") or []
+            pence += _pence_from_charges(data)
+            if not page.get("has_more") or not data:
+                break
+            starting_after = data[-1].get("id")
+    else:
+        return 0.0
+    return round(pence / 100, 2)
+
+
+def _return_origin(http_request: Request) -> str:
+    configured = os.environ.get("FRONTEND_URL", "").strip().rstrip("/")
+    origin = (http_request.headers.get("origin") or "").strip().rstrip("/")
+    if origin in _ALLOWED_RETURN_ORIGINS or (configured and origin == configured):
+        return origin
+    if configured:
+        return configured
+    return "http://localhost:3000"
+
+
+def _same_origin(url: str, origin: str) -> bool:
+    return url == origin or url.startswith(origin + "/") or url.startswith(origin + "?")
+
+
+def _charge_pounds(net_pounds: float, cover_fee: bool) -> float:
+    # Estimate for a UK card: 1.5% + 20p. The donor sees this before leaving the site.
+    if not cover_fee:
+        return round(net_pounds, 2)
+    return round((net_pounds + 0.20) / (1 - 0.015), 2)
+
+
+async def _record_paid_session(session) -> None:
+    session_id = session.get("id") if isinstance(session, dict) else session.id
+    payment_status = session.get("payment_status") if isinstance(session, dict) else session.payment_status
+    if payment_status == "unpaid":
+        return
+    amount_total = session.get("amount_total") if isinstance(session, dict) else session.amount_total
+    currency = session.get("currency") if isinstance(session, dict) else session.currency
+    raw_metadata = session.get("metadata") if isinstance(session, dict) else session.metadata
+    metadata = dict(raw_metadata or {})
+    pounds = (amount_total or 0) / 100
+    if not pounds:
+        try:
+            pounds = float(metadata.get("charged_amount") or 0)
+        except (TypeError, ValueError):
+            pounds = 0
+    previous = await db.payment_transactions.find_one_and_update(
+        {"session_id": session_id},
+        {"$set": {
+            "session_id": session_id,
+            "amount": pounds,
+            "currency": currency or "gbp",
+            "payment_status": "paid",
+            "status": "complete",
+            "metadata": metadata,
+            "updated_at": datetime.utcnow(),
+        }, "$setOnInsert": {
+            "id": str(uuid.uuid4()),
+            "created_at": datetime.utcnow(),
+        }},
+        upsert=True,
+    )
+    if previous and previous.get("payment_status") == "paid":
+        return
+    await update_donation_goal_progress(pounds, currency or "gbp")
+
 
 @api_router.post("/donations/create-checkout", response_model=DonationResponse)
 async def create_donation_checkout(request: DonationRequest, http_request: Request):
-    """
-    Legacy endpoint - Now using Square external checkout
-    Kept for API compatibility
-    """
-    raise HTTPException(
-        status_code=501, 
-        detail="Direct checkout deprecated. Please use Square external link."
-    )
+    if os.environ.get("VERCEL") and _stripe_key_mode() != "live":
+        raise HTTPException(status_code=503, detail="Card payments are not switched on yet.")
+    client = _stripe_client()
+    if client is None and not _use_stripe_cli():
+        raise HTTPException(status_code=503, detail="Card payments are not switched on yet.")
+    if request.amount is None or request.amount < 1 or request.amount > 10000:
+        raise HTTPException(status_code=400, detail="Enter an amount between £1 and £10,000.")
+    recurring = request.frequency in ("day", "week", "month")
+    if request.frequency != "once" and not recurring:
+        raise HTTPException(status_code=400, detail="Choose how often to give.")
+
+    origin = _return_origin(http_request)
+    success_url = request.success_url if _same_origin(request.success_url, origin) else f"{origin}/maintenance?donation=success&session_id={{CHECKOUT_SESSION_ID}}"
+    cancel_url = request.cancel_url if _same_origin(request.cancel_url, origin) else f"{origin}/maintenance?donation=cancelled"
+    if "{CHECKOUT_SESSION_ID}" not in success_url:
+        join = "&" if "?" in success_url else "?"
+        success_url = f"{success_url}{join}session_id={{CHECKOUT_SESSION_ID}}"
+
+    pounds = _charge_pounds(request.amount, request.cover_fee)
+    unit_amount = int(round(pounds * 100))
+    email = (request.email or "").strip()
+    donor_name = (request.name or "").strip()
+    if email and ("@" not in email or len(email) > 200):
+        raise HTTPException(status_code=400, detail="Enter a valid email address.")
+    if request.gift_aid and (not donor_name or not email):
+        raise HTTPException(status_code=400, detail="Gift Aid needs your name and email.")
+
+    metadata = {
+        "source": "maintenance",
+        "frequency": request.frequency,
+        "cover_fee": "yes" if request.cover_fee else "no",
+        "email_opt_in": "yes" if request.email_opt_in else "no",
+        "gift_aid": "yes" if request.gift_aid else "no",
+        "charged_amount": f"{pounds:.2f}",
+    }
+    if email:
+        metadata["email"] = email
+    if donor_name:
+        metadata["donor_name"] = donor_name[:200]
+    suffix = "".join(secrets.choice(string.ascii_lowercase) for _ in range(8))
+    price_data = {
+        "currency": "gbp",
+        "unit_amount": unit_amount,
+        "product_data": {"name": "Markaz Al-Rahma donation"},
+    }
+    if recurring:
+        price_data["recurring"] = {"interval": request.frequency}
+    params = {
+        "mode": "subscription" if recurring else "payment",
+        "line_items": [{"quantity": 1, "price_data": price_data}],
+        "success_url": success_url,
+        "cancel_url": cancel_url,
+        "metadata": metadata,
+        "integration_identifier": f"markazdonate{suffix}",
+        "billing_address_collection": "required" if request.gift_aid else "auto",
+    }
+    if email:
+        params["customer_email"] = email
+    if recurring:
+        params["subscription_data"] = {"metadata": metadata}
+
+    try:
+        if client is not None:
+            session = client.checkout.sessions.create(params=params)
+            session_id = session.id
+            session_url = session.url
+        else:
+            session = _create_checkout_via_cli(params)
+            session_id = session["id"]
+            session_url = session["url"]
+    except Exception:
+        logger.exception("Stripe checkout session was not created")
+        raise HTTPException(status_code=502, detail="The payment page could not be opened.")
+
+    try:
+        await db.payment_transactions.insert_one({
+            "id": str(uuid.uuid4()),
+            "session_id": session_id,
+            "amount": pounds,
+            "currency": "gbp",
+            "payment_status": "pending",
+            "status": "initiated",
+            "metadata": metadata,
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow(),
+        })
+    except Exception:
+        logger.exception("The payment page was created, but the local record was not saved")
+    return DonationResponse(url=session_url, session_id=session_id)
+
 
 @api_router.get("/donations/status/{session_id}", response_model=CheckoutStatusResponse)
 async def get_donation_status(session_id: str, http_request: Request):
-    """
-    Legacy endpoint - Now using Square external checkout
-    Kept for API compatibility
-    """
-    raise HTTPException(
-        status_code=501,
-        detail="Status check deprecated. Donations tracked manually via admin panel."
+    record = await db.payment_transactions.find_one({"session_id": session_id})
+    if not record:
+        raise HTTPException(status_code=404, detail="Donation not found")
+    return CheckoutStatusResponse(
+        status=record.get("status", "initiated"),
+        payment_status=record.get("payment_status", "pending"),
+        amount=record.get("amount", 0),
+        currency=record.get("currency", "gbp"),
+        metadata=record.get("metadata"),
     )
+
 
 @api_router.post("/webhook/stripe")
 async def stripe_webhook(request: Request):
-    """
-    Legacy Stripe webhook endpoint
-    Not used with Square checkout
-    """
-    return {"status": "deprecated", "message": "Using Square checkout - webhook not applicable"}
+    if not STRIPE_WEBHOOK_SECRET:
+        raise HTTPException(status_code=503, detail="Card payments are not switched on yet.")
+    payload = await request.body()
+    signature = request.headers.get("stripe-signature")
+    try:
+        event = stripe.Webhook.construct_event(payload, signature, STRIPE_WEBHOOK_SECRET)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid webhook signature")
+
+    event_type = event["type"] if isinstance(event, dict) else event.type
+    data_object = event["data"]["object"] if isinstance(event, dict) else event.data.object
+    if event_type in ("checkout.session.completed", "checkout.session.async_payment_succeeded"):
+        await _record_paid_session(data_object)
+    elif event_type == "checkout.session.async_payment_failed":
+        session_id = data_object.get("id") if isinstance(data_object, dict) else data_object.id
+        await db.payment_transactions.update_one(
+            {"session_id": session_id},
+            {"$set": {"payment_status": "failed", "status": "cancelled", "updated_at": datetime.utcnow()}},
+        )
+    return {"received": True}
+
+
+@api_router.get("/donations/monthly")
+async def monthly_card_total():
+    """Card total for the current London month. The public figure is live Stripe only."""
+    import asyncio
+
+    goal = 2600
+    mode = _stripe_key_mode()
+    on_vercel = bool(os.environ.get("VERCEL"))
+    can_read = mode == "live" or (not on_vercel and (mode == "test" or _use_stripe_cli()))
+    if not can_read:
+        return {"raised": 0, "goal": goal, "currency": "gbp", "live": False}
+    try:
+        raised = await asyncio.to_thread(_raised_this_month_pounds)
+    except Exception:
+        logger.exception("Monthly card total could not be read")
+        raise HTTPException(status_code=502, detail="The monthly total could not be read")
+    return {"raised": raised, "goal": goal, "currency": "gbp", "live": mode == "live"}
 
 
 # ============== DONATION GOAL ENDPOINTS ==============
@@ -1389,6 +1789,57 @@ async def search_youtube_videos(q: str):
     except Exception as e:
         logger.error(f"Error searching YouTube videos: {e}")
         raise HTTPException(status_code=500, detail="Failed to search videos")
+
+
+def _playlist_kind(title: str) -> str:
+    normalised = (title or "").lower().replace("’", "'").replace("'", "")
+    if "quran" in normalised:
+        return "quran"
+    if "audio" in normalised:
+        return "audio"
+    return ""
+
+
+@api_router.get("/youtube/station")
+async def get_youtube_station():
+    """Live status, upcoming streams, and the Quran / audio playlists. Files stay on YouTube."""
+    try:
+        from services.youtube_service import get_youtube_service
+
+        youtube = get_youtube_service(YOUTUBE_API_KEY)
+        channel_id = await youtube.get_channel_id_from_handle(YOUTUBE_CHANNEL_HANDLE)
+        if not channel_id:
+            raise HTTPException(status_code=404, detail="Channel not found")
+
+        playlists = await youtube.get_playlists(channel_id)
+        quran_playlist_id = None
+        audio_playlist_id = None
+        for playlist in playlists:
+            kind = _playlist_kind(playlist.get("title", ""))
+            if kind == "quran" and not quran_playlist_id:
+                quran_playlist_id = playlist["id"]
+            if kind == "audio" and not audio_playlist_id:
+                audio_playlist_id = playlist["id"]
+
+        live = await youtube.get_broadcasts(channel_id, "live")
+        upcoming = await youtube.get_broadcasts(channel_id, "upcoming")
+        audio_videos = await youtube.get_playlist_videos(audio_playlist_id) if audio_playlist_id else []
+        lecture_radio_playlist_id = audio_playlist_id or f"UU{channel_id[2:]}"
+
+        return {
+            "channel_id": channel_id,
+            "live": live[0] if live else None,
+            "upcoming": upcoming,
+            "quran_playlist_id": quran_playlist_id,
+            "audio_playlist_id": audio_playlist_id,
+            "lecture_radio_playlist_id": lecture_radio_playlist_id,
+            "audio_videos": audio_videos,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching YouTube station: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch station")
 
 
 # ===== CONTACT FORM ENDPOINTS =====

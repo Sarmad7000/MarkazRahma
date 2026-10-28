@@ -37,6 +37,12 @@ class DonationRequest(BaseModel):
     success_url: str
     cancel_url: str
     metadata: Optional[Dict[str, str]] = None
+    frequency: str = "once"
+    cover_fee: bool = False
+    email: Optional[str] = None
+    email_opt_in: bool = False
+    gift_aid: bool = False
+    name: Optional[str] = None
 
 class DonationResponse(BaseModel):
     url: str

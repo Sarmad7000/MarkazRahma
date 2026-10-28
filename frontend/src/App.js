@@ -10,6 +10,7 @@ import Contact from "./pages/Contact";
 import YouTubeRecordings from "./pages/YouTubeRecordings";
 import InteriorPrayerTimes from "./pages/InteriorPrayerTimes";
 import DutyRoster from "./pages/DutyRoster";
+import Maintenance from "./pages/Maintenance";
 
 // Component to scroll to top on route change
 function ScrollToTop() {
@@ -47,6 +48,7 @@ function App() {
           <Route path="/timetable" element={<Timetable />} />
           <Route path="/events" element={<Events />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/maintenance" element={<Maintenance />} />
           <Route path="/youtube-recordings" element={<YouTubeRecordings />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
