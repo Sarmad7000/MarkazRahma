@@ -747,8 +747,10 @@ def _recent_stripe_gifts(limit: int = 5):
                 continue
             created = _stripe_field(charge, "created")
             moment = datetime.utcfromtimestamp(int(created)) if created else None
+            public_name = _gift_public_name(_charge_payer_name(charge, client))
             gifts.append({
-                "name": _gift_public_name(_charge_payer_name(charge, client)),
+                "name": public_name,
+                "initials": public_name,
                 "amount": round(net / 100, 2),
                 "ago": _gift_ago(moment),
             })
