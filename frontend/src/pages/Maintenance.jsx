@@ -376,11 +376,11 @@ const Maintenance = () => {
                   <ul className="mt-3 flex gap-2 overflow-x-auto pb-1">
                     {recentGifts.map((gift, index) => (
                       <li
-                        key={`${gift.initials}-${gift.ago}-${index}`}
-                        className="min-w-[4.75rem] rounded-2xl border border-gray-200 bg-white px-3 py-2.5"
+                        key={`${gift.name || gift.initials}-${gift.ago}-${index}`}
+                        className="min-w-[7.5rem] rounded-2xl border border-gray-200 bg-white px-3 py-2.5"
                       >
                         <div className="flex items-center justify-between gap-2 text-[11px] text-gray-400">
-                          <span className="font-semibold text-gray-600">{gift.initials || 'Gift'}</span>
+                          <span className="font-semibold text-gray-700 whitespace-nowrap">{gift.name || gift.initials || 'Gift'}</span>
                           <span>{gift.ago}</span>
                         </div>
                         <p className="mt-1 text-sm font-semibold text-gray-900">{formatExact(gift.amount || 0)}</p>

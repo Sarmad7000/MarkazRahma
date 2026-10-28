@@ -446,13 +446,15 @@ async def bulk_update_prayer_times(file: UploadFile = File(...), current_user: d
 
 # ============== DONATION ENDPOINTS ==============
 
-def _gift_initials(name: str) -> str:
-    parts = [part for part in (name or "").split() if part]
-    if len(parts) >= 2:
-        return f"{parts[0][0]}{parts[-1][0]}".upper()
-    if parts:
-        return parts[0][0].upper()
-    return ""
+def _gift_public_name(name: str) -> str:
+    """First name and last initial, so the public list never shows a full surname."""
+    parts = [part for part in (name or "").replace(".", " ").split() if part]
+    if not parts:
+        return ""
+    first = parts[0][:1].upper() + parts[0][1:].lower()
+    if len(parts) == 1:
+        return first
+    return f"{first} {parts[-1][:1].upper()}."
 
 
 def _gift_ago(moment) -> str:
@@ -707,8 +709,29 @@ def _active_supporter_counts():
     return daily, weekly
 
 
+def _charge_payer_name(charge, client) -> str:
+    billing = _stripe_field(charge, "billing_details") or {}
+    name = billing.get("name") if isinstance(billing, dict) else _stripe_field(billing, "name")
+    if name:
+        return str(name)
+    metadata = _stripe_field(charge, "metadata") or {}
+    donor = metadata.get("donor_name") if isinstance(metadata, dict) else ""
+    if donor:
+        return str(donor)
+    customer_id = _stripe_field(charge, "customer")
+    if client is not None and isinstance(customer_id, str) and customer_id.startswith("cus_"):
+        try:
+            customer = client.customers.retrieve(customer_id)
+            customer_name = _stripe_field(customer, "name")
+            if customer_name:
+                return str(customer_name)
+        except Exception:
+            logger.exception("The payer name could not be read")
+    return ""
+
+
 def _recent_stripe_gifts(limit: int = 5):
-    """Latest succeeded GBP card gifts. Amounts only, with initials when Stripe has a name."""
+    """Latest succeeded GBP card gifts, labelled with a first name and last initial."""
     client = _stripe_client()
     if client is None:
         return []
@@ -724,10 +747,8 @@ def _recent_stripe_gifts(limit: int = 5):
                 continue
             created = _stripe_field(charge, "created")
             moment = datetime.utcfromtimestamp(int(created)) if created else None
-            billing = _stripe_field(charge, "billing_details") or {}
-            name = billing.get("name") if isinstance(billing, dict) else _stripe_field(billing, "name")
             gifts.append({
-                "initials": _gift_initials(name or ""),
+                "name": _gift_public_name(_charge_payer_name(charge, client)),
                 "amount": round(net / 100, 2),
                 "ago": _gift_ago(moment),
             })
