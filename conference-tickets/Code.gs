@@ -154,7 +154,7 @@ function sendTestEmails() {
 
 function doGet(e) {
   var params = (e && e.parameter) || {};
-  if (params.callback) return doorCallback_(params);
+  if (params.action === 'scan' || params.action === 'pin' || params.callback) return doorCallback_(params);
   var ticket = params.ticket;
   if (ticket) {
     var page = HtmlService.createTemplateFromFile('Ticket');

@@ -2385,6 +2385,30 @@ async def clear_duty_roster_history(current_user: dict = Depends(get_current_use
 
 
 # Include the router in the main app (MUST be at the end after all routes are defined)
+@api_router.post("/conference/scan")
+async def conference_scan(request: Request):
+    """Door check for the conference. The Google web app address stays on the server."""
+    base = os.environ.get("CONFERENCE_WEB_APP_URL", "").strip()
+    if not base.startswith("https://script.google.com/macros/s/") or not base.rstrip("/").endswith("/exec"):
+        raise HTTPException(status_code=503, detail="The door scanner is not connected yet.")
+    body = await request.json()
+    code = str(body.get("code") or "").strip()
+    pin = str(body.get("pin") or "").strip()
+    if not code or not pin:
+        raise HTTPException(status_code=400, detail="Type the door PIN and scan a ticket.")
+    try:
+        async with httpx.AsyncClient(timeout=25, follow_redirects=True) as client:
+            response = await client.get(base, params={"action": "scan", "code": code, "pin": pin})
+    except Exception:
+        logger.exception("The conference scanner could not reach the sheet")
+        raise HTTPException(status_code=502, detail="The sheet could not be reached.")
+    try:
+        return response.json()
+    except Exception:
+        logger.error("The conference scanner returned an unexpected response")
+        raise HTTPException(status_code=502, detail="The sheet could not be reached. Deploy a new version of the web app.")
+
+
 app.include_router(api_router)
 
 app.add_middleware(

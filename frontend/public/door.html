@@ -13,54 +13,68 @@
     button { width: 100%; margin-top: 10px; min-height: 52px; border: 0; border-radius: 12px; background: #0e7490; color: white; font-size: 18px; }
     #reader { margin-top: 16px; min-height: 260px; border-radius: 16px; overflow: hidden; background: #111; }
     #reader video { width: 100% !important; height: auto !important; border-radius: 16px; }
-    .card { margin-top: 16px; padding: 16px; border-radius: 16px; background: #fff; }
+    .popup { position: fixed; inset: 0; z-index: 20; display: flex; align-items: flex-end; justify-content: center; padding: 16px; background: rgba(15, 23, 42, 0.72); }
+    .popup[hidden] { display: none; }
+    .card { width: 100%; max-width: 420px; padding: 20px 18px 16px; border-radius: 20px; background: #fff; }
     .ok { background: #e3f9e5; }
     .bad { background: #ffe3e3; }
-    .name { font-size: 28px; margin: 0; }
-    .list { font-size: 18px; font-weight: bold; letter-spacing: 0.04em; }
-    .day { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid #e4e7eb; }
-    .validated { color: #147d64; }
+    .name { font-size: 30px; line-height: 1.15; margin: 0; }
+    .guest { font-size: 20px; margin: 8px 0 0; }
+    .list { font-size: 16px; font-weight: bold; letter-spacing: 0.06em; text-transform: uppercase; }
+    .day { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid rgba(31, 41, 51, 0.12); font-size: 18px; }
+    .validated { color: #147d64; font-weight: bold; }
     .open { color: #627d98; }
     .not-attending { color: #9aa5b1; }
+    .linkish { margin-top: 14px; background: transparent; color: #0e7490; min-height: 36px; }
   </style>
 </head>
 <body>
   <main>
     <h1>Door scanner</h1>
-    <p>Tap Start camera. The phone should ask for camera access, then show a live picture.</p>
-    <label>Sheet web app address
-      <input id="script" type="url" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off">
-    </label>
-    <label>Door PIN
-      <input id="pin" type="password" autocomplete="current-password">
-    </label>
+    <p>Tap Start camera and allow access. The result opens over the picture.</p>
+    <div id="pin-row">
+      <label>Door PIN
+        <input id="pin" type="password" autocomplete="current-password">
+      </label>
+    </div>
     <button type="button" id="start">Start camera</button>
     <div id="reader" hidden></div>
     <label>Or type a code
       <input id="manual" type="text" autocapitalize="characters">
     </label>
     <button type="button" id="manual-go">Check typed code</button>
-    <div id="result"></div>
+    <button type="button" id="forget" class="linkish" hidden>Forget the saved PIN on this phone</button>
   </main>
+  <div id="popup" class="popup" hidden>
+    <div id="popup-card" class="card"></div>
+  </div>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script>
     var busy = false;
     var scanner = null;
-    var scriptInput = document.getElementById('script');
-    scriptInput.value = localStorage.getItem('markazDoorScript') || '';
+    var pinInput = document.getElementById('pin');
+    var savedPin = localStorage.getItem('markazDoorPin') || '';
+    if (savedPin) {
+      pinInput.value = savedPin;
+      document.getElementById('pin-row').hidden = true;
+      document.getElementById('forget').hidden = false;
+    }
     document.getElementById('start').onclick = function() {
-      saveScript();
       document.getElementById('reader').hidden = false;
       startCamera();
     };
     document.getElementById('manual-go').onclick = function() {
-      saveScript();
       onScan(document.getElementById('manual').value);
     };
-
-    function saveScript() {
-      localStorage.setItem('markazDoorScript', scriptInput.value.trim());
-    }
+    document.getElementById('forget').onclick = function() {
+      localStorage.removeItem('markazDoorPin');
+      pinInput.value = '';
+      document.getElementById('pin-row').hidden = false;
+      document.getElementById('forget').hidden = true;
+    };
+    document.getElementById('popup').onclick = function(event) {
+      if (event.target.id === 'popup' || event.target.id === 'next') closePopup();
+    };
 
     function startCamera() {
       if (typeof Html5Qrcode !== 'function') {
@@ -78,53 +92,39 @@
     function onScan(raw) {
       if (busy) return;
       var code = extractCode(raw);
-      var pin = document.getElementById('pin').value.trim();
-      var base = scriptInput.value.trim();
+      var pin = pinInput.value.trim();
       if (!code) return;
       if (!pin) {
         show({ ok: false, message: 'Type the door PIN first.' });
         return;
       }
-      if (!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec\/?$/.test(base)) {
-        show({ ok: false, message: 'Paste the web app address that ends in /exec.' });
-        return;
-      }
       busy = true;
-      callSheet(base, 'scan', { code: code, pin: pin }).then(function(response) {
-        show(response);
-        setTimeout(function() { busy = false; }, 1200);
+      if (scanner && scanner.pause) scanner.pause(true);
+      fetch('/api/conference/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: code, pin: pin })
+      }).then(function(response) {
+        return response.json().then(function(data) {
+          if (!response.ok) throw new Error(data.detail || 'The sheet could not be reached.');
+          return data;
+        });
+      }).then(function(data) {
+        if (data.ok || (data.ticket && pin)) localStorage.setItem('markazDoorPin', pin);
+        if (localStorage.getItem('markazDoorPin')) {
+          document.getElementById('pin-row').hidden = true;
+          document.getElementById('forget').hidden = false;
+        }
+        show(data);
       }).catch(function(error) {
-        busy = false;
-        show({ ok: false, message: error.message || 'The sheet could not be reached. Deploy a new version of the web app, with access set to Anyone.' });
+        show({ ok: false, message: error.message || 'The sheet could not be reached.' });
       });
     }
 
-    function callSheet(base, action, fields) {
-      return new Promise(function(resolve, reject) {
-        var cb = 'doorCb_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
-        var script = document.createElement('script');
-        var timer = setTimeout(function() {
-          cleanup();
-          reject(new Error('The sheet did not answer.'));
-        }, 20000);
-        function cleanup() {
-          clearTimeout(timer);
-          delete window[cb];
-          if (script.parentNode) script.parentNode.removeChild(script);
-        }
-        window[cb] = function(data) {
-          cleanup();
-          resolve(data);
-        };
-        var query = 'action=' + encodeURIComponent(action) + '&callback=' + cb + '&pin=' + encodeURIComponent(fields.pin || '');
-        if (fields.code) query += '&code=' + encodeURIComponent(fields.code);
-        script.src = base.replace(/\/$/, '') + '?' + query;
-        script.onerror = function() {
-          cleanup();
-          reject(new Error('The sheet could not be reached.'));
-        };
-        document.body.appendChild(script);
-      });
+    function closePopup() {
+      document.getElementById('popup').hidden = true;
+      busy = false;
+      if (scanner && scanner.resume) scanner.resume();
     }
 
     function extractCode(raw) {
@@ -135,16 +135,19 @@
     }
 
     function show(response) {
-      var box = document.getElementById('result');
+      var popup = document.getElementById('popup');
+      var card = document.getElementById('popup-card');
       var ticket = response.ticket;
       var days = ticket ? ticket.days.map(function(day) {
         var state = day.state === 'validated' ? 'Validated' : day.state === 'open' ? 'Not yet' : 'Not attending';
         return '<div class="day"><span>Day ' + day.n + '/3</span><span class="' + day.state + '">' + state + '</span></div>';
       }).join('') : '';
-      box.innerHTML = '<div class="card ' + (response.ok ? 'ok' : 'bad') + '">'
-        + '<p class="name">' + escapeHtml(response.message || '') + '</p>'
-        + (ticket ? '<p class="list">' + escapeHtml(ticket.list) + '</p><p>' + escapeHtml(ticket.name) + '</p>' + days : '')
-        + '</div>';
+      card.className = 'card ' + (response.ok ? 'ok' : 'bad');
+      card.innerHTML = '<p class="name">' + escapeHtml(response.message || '') + '</p>'
+        + (ticket ? '<p class="list">' + escapeHtml(ticket.list) + '</p><p class="guest">' + escapeHtml(ticket.name) + '</p>' + days : '')
+        + '<button type="button" id="next">Next guest</button>';
+      popup.hidden = false;
+      document.getElementById('next').onclick = closePopup;
     }
 
     function escapeHtml(value) {
