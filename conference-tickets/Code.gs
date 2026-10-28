@@ -167,13 +167,16 @@ function doGet(e) {
 }
 
 function doorCallback_(params) {
-  var callback = String(params.callback || '').replace(/[^\w$]/g, '');
-  if (!callback) callback = 'doorCallback';
   var result = { ok: false, message: 'Unknown action.' };
   if (params.action === 'pin') result = checkPin(params.pin);
   if (params.action === 'scan') result = scanTicket(params.code, params.pin);
+  var body = JSON.stringify(result);
+  var callback = String(params.callback || '').replace(/[^\w$]/g, '');
+  if (!callback) {
+    return ContentService.createTextOutput(body).setMimeType(ContentService.MimeType.JSON);
+  }
   return ContentService
-    .createTextOutput(callback + '(' + JSON.stringify(result) + ')')
+    .createTextOutput(callback + '(' + body + ')')
     .setMimeType(ContentService.MimeType.JAVASCRIPT);
 }
 

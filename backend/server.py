@@ -2398,15 +2398,32 @@ async def conference_scan(request: Request):
         raise HTTPException(status_code=400, detail="Type the door PIN and scan a ticket.")
     try:
         async with httpx.AsyncClient(timeout=25, follow_redirects=True) as client:
-            response = await client.get(base, params={"action": "scan", "code": code, "pin": pin})
+            response = await client.get(
+                base,
+                params={"action": "scan", "code": code, "pin": pin},
+                headers={"User-Agent": "Mozilla/5.0"},
+            )
     except Exception:
         logger.exception("The conference scanner could not reach the sheet")
         raise HTTPException(status_code=502, detail="The sheet could not be reached.")
     try:
-        return response.json()
+        return _sheet_scan_result(response.text)
     except Exception:
         logger.error("The conference scanner returned an unexpected response")
         raise HTTPException(status_code=502, detail="The sheet could not be reached. Deploy a new version of the web app.")
+
+
+def _sheet_scan_result(text: str):
+    import json
+    raw = (text or "").strip().lstrip("\ufeff")
+    try:
+        return json.loads(raw)
+    except Exception:
+        start = raw.find("{")
+        end = raw.rfind("}")
+        if start < 0 or end <= start:
+            raise
+        return json.loads(raw[start:end + 1])
 
 
 app.include_router(api_router)
