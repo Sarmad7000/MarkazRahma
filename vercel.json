@@ -31,6 +31,10 @@
       "dest": "/manifest.json"
     },
     {
+      "src": "/door.html",
+      "dest": "/door.html"
+    },
+    {
       "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|json))",
       "dest": "/$1"
     },

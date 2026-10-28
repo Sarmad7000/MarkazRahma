@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Door scanner</title>
+  <style>
+    body { margin: 0; font-family: Georgia, serif; background: #f4f7f8; color: #1f2933; }
+    main { max-width: 420px; margin: 0 auto; padding: 20px 16px 40px; }
+    h1 { font-size: 28px; margin: 0 0 8px; }
+    p, label { color: #52606d; display: block; }
+    input { width: 100%; box-sizing: border-box; font-size: 18px; padding: 12px; border: 1px solid #cbd2d9; border-radius: 12px; margin-top: 6px; }
+    button { width: 100%; margin-top: 10px; min-height: 52px; border: 0; border-radius: 12px; background: #0e7490; color: white; font-size: 18px; }
+    #reader { margin-top: 16px; min-height: 260px; border-radius: 16px; overflow: hidden; background: #111; }
+    #reader video { width: 100% !important; height: auto !important; border-radius: 16px; }
+    .card { margin-top: 16px; padding: 16px; border-radius: 16px; background: #fff; }
+    .ok { background: #e3f9e5; }
+    .bad { background: #ffe3e3; }
+    .name { font-size: 28px; margin: 0; }
+    .list { font-size: 18px; font-weight: bold; letter-spacing: 0.04em; }
+    .day { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid #e4e7eb; }
+    .validated { color: #147d64; }
+    .open { color: #627d98; }
+    .not-attending { color: #9aa5b1; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Door scanner</h1>
+    <p>Tap Start camera. The phone should ask for camera access, then show a live picture.</p>
+    <label>Sheet web app address
+      <input id="script" type="url" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off">
+    </label>
+    <label>Door PIN
+      <input id="pin" type="password" autocomplete="current-password">
+    </label>
+    <button type="button" id="start">Start camera</button>
+    <div id="reader" hidden></div>
+    <label>Or type a code
+      <input id="manual" type="text" autocapitalize="characters">
+    </label>
+    <button type="button" id="manual-go">Check typed code</button>
+    <div id="result"></div>
+  </main>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script>
+    var busy = false;
+    var scanner = null;
+    var scriptInput = document.getElementById('script');
+    scriptInput.value = localStorage.getItem('markazDoorScript') || '';
+    document.getElementById('start').onclick = function() {
+      saveScript();
+      document.getElementById('reader').hidden = false;
+      startCamera();
+    };
+    document.getElementById('manual-go').onclick = function() {
+      saveScript();
+      onScan(document.getElementById('manual').value);
+    };
+
+    function saveScript() {
+      localStorage.setItem('markazDoorScript', scriptInput.value.trim());
+    }
+
+    function startCamera() {
+      if (typeof Html5Qrcode !== 'function') {
+        show({ ok: false, message: 'The camera library did not load. Check the internet connection and tap Start camera again.' });
+        return;
+      }
+      if (scanner) return;
+      scanner = new Html5Qrcode('reader');
+      scanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: { width: 240, height: 240 } }, onScan).catch(function(error) {
+        scanner = null;
+        show({ ok: false, message: 'The camera did not start. ' + (error && error.message ? error.message : 'Allow camera access in the phone settings, then tap Start camera again.') });
+      });
+    }
+
+    function onScan(raw) {
+      if (busy) return;
+      var code = extractCode(raw);
+      var pin = document.getElementById('pin').value.trim();
+      var base = scriptInput.value.trim();
+      if (!code) return;
+      if (!pin) {
+        show({ ok: false, message: 'Type the door PIN first.' });
+        return;
+      }
+      if (!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec\/?$/.test(base)) {
+        show({ ok: false, message: 'Paste the web app address that ends in /exec.' });
+        return;
+      }
+      busy = true;
+      callSheet(base, 'scan', { code: code, pin: pin }).then(function(response) {
+        show(response);
+        setTimeout(function() { busy = false; }, 1200);
+      }).catch(function(error) {
+        busy = false;
+        show({ ok: false, message: error.message || 'The sheet could not be reached. Deploy a new version of the web app, with access set to Anyone.' });
+      });
+    }
+
+    function callSheet(base, action, fields) {
+      return new Promise(function(resolve, reject) {
+        var cb = 'doorCb_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+        var script = document.createElement('script');
+        var timer = setTimeout(function() {
+          cleanup();
+          reject(new Error('The sheet did not answer.'));
+        }, 20000);
+        function cleanup() {
+          clearTimeout(timer);
+          delete window[cb];
+          if (script.parentNode) script.parentNode.removeChild(script);
+        }
+        window[cb] = function(data) {
+          cleanup();
+          resolve(data);
+        };
+        var query = 'action=' + encodeURIComponent(action) + '&callback=' + cb + '&pin=' + encodeURIComponent(fields.pin || '');
+        if (fields.code) query += '&code=' + encodeURIComponent(fields.code);
+        script.src = base.replace(/\/$/, '') + '?' + query;
+        script.onerror = function() {
+          cleanup();
+          reject(new Error('The sheet could not be reached.'));
+        };
+        document.body.appendChild(script);
+      });
+    }
+
+    function extractCode(raw) {
+      var text = String(raw || '').trim();
+      var match = text.match(/[?&]ticket=([^&]+)/);
+      if (match) return decodeURIComponent(match[1]);
+      return text;
+    }
+
+    function show(response) {
+      var box = document.getElementById('result');
+      var ticket = response.ticket;
+      var days = ticket ? ticket.days.map(function(day) {
+        var state = day.state === 'validated' ? 'Validated' : day.state === 'open' ? 'Not yet' : 'Not attending';
+        return '<div class="day"><span>Day ' + day.n + '/3</span><span class="' + day.state + '">' + state + '</span></div>';
+      }).join('') : '';
+      box.innerHTML = '<div class="card ' + (response.ok ? 'ok' : 'bad') + '">'
+        + '<p class="name">' + escapeHtml(response.message || '') + '</p>'
+        + (ticket ? '<p class="list">' + escapeHtml(ticket.list) + '</p><p>' + escapeHtml(ticket.name) + '</p>' + days : '')
+        + '</div>';
+    }
+
+    function escapeHtml(value) {
+      return String(value || '').replace(/[&<>"']/g, function(ch) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+      });
+    }
+  </script>
+</body>
+</html>
