@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Conference ticket</title>
+  <style>
+    body { margin: 0; background: #f7f6f3; color: #111827; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    main { max-width: 440px; margin: 0 auto; padding: 28px 16px 48px; }
+    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; }
+    .brand { padding: 18px 22px; border-bottom: 3px solid #0891b2; font-weight: 700; }
+    .brand img { width: 32px; height: 32px; vertical-align: middle; }
+    .brand span { display: inline-block; vertical-align: middle; padding-left: 10px; }
+    .body { padding: 22px; }
+    h1 { font-size: 26px; line-height: 1.2; margin: 0 0 8px; }
+    .muted { color: #4b5563; line-height: 1.5; }
+    .who { margin-top: 18px; padding: 14px 16px; background: #f7f6f3; border-radius: 10px; }
+    .who strong { display: block; font-size: 18px; }
+    .list { margin: 4px 0 0; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #0e7490; }
+    canvas { display: block; width: 220px; height: 220px; margin: 22px auto 8px; }
+    .day { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid #e5e7eb; }
+    .validated { color: #147d64; font-weight: 700; }
+    .open { color: #0e7490; }
+    .not-attending { color: #9ca3af; }
+    .missing { color: #9b1c1c; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="card">
+      <div class="brand">
+        <img src="https://customer-assets.emergentagent.com/job_markaz-rahma-1/artifacts/q7pgbb1k_Untitled%20design%20%2848%29.png" alt="">
+        <span>Markaz Al-Rahma</span>
+      </div>
+      <div class="body" id="app">
+        <p class="muted">Opening your ticket…</p>
+      </div>
+    </div>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <script>
+    var params = new URLSearchParams(window.location.search);
+    var code = params.get('ticket') || '';
+    var app = document.getElementById('app');
+    if (!code) {
+      app.innerHTML = '<p class="missing">This ticket link is incomplete.</p>';
+    } else {
+      fetch('/api/conference/ticket?code=' + encodeURIComponent(code))
+        .then(function(response) { return response.json().then(function(data) { return { ok: response.ok, data: data }; }); })
+        .then(function(result) {
+          var data = result.data || {};
+          if (!result.ok || !data.ok) {
+            app.innerHTML = '<p class="missing">' + escapeHtml(data.detail || data.message || 'This ticket could not be opened.') + '</p>';
+            return;
+          }
+          var ticket = data.ticket;
+          app.innerHTML = '<h1>Building Sound Foundations in Islam</h1>'
+            + '<p class="muted">6–8 November 2026<br>Cavendish Banqueting Hall, Edgware Road, London NW9 5AL</p>'
+            + '<div class="who"><strong>' + escapeHtml(ticket.name) + '</strong><p class="list">' + escapeHtml(ticket.list) + '</p></div>'
+            + '<canvas id="qr"></canvas>'
+            + ticket.days.map(function(day) {
+              var state = day.state === 'validated' ? 'Validated' : day.state === 'open' ? 'Not yet' : 'Not attending';
+              return '<div class="day"><span>Day ' + day.n + '/3<br><span class="muted">' + escapeHtml(day.when) + '</span></span><span class="' + day.state + '">' + state + '</span></div>';
+            }).join('')
+            + '<p class="muted">Show this QR code at the door. It can be scanned once each day.</p>';
+          QRCode.toCanvas(document.getElementById('qr'), window.location.href, { width: 220, margin: 1 });
+        })
+        .catch(function() {
+          app.innerHTML = '<p class="missing">This ticket could not be opened.</p>';
+        });
+    }
+    function escapeHtml(value) {
+      return String(value || '').replace(/[&<>"']/g, function(ch) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+      });
+    }
+  </script>
+</body>
+</html>

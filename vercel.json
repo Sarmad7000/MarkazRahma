@@ -35,6 +35,10 @@
       "dest": "/door.html"
     },
     {
+      "src": "/ticket.html",
+      "dest": "/ticket.html"
+    },
+    {
       "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|json))",
       "dest": "/$1"
     },

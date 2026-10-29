@@ -2385,6 +2385,32 @@ async def clear_duty_roster_history(current_user: dict = Depends(get_current_use
 
 
 # Include the router in the main app (MUST be at the end after all routes are defined)
+@api_router.get("/conference/ticket")
+async def conference_ticket(code: str = ""):
+    """Guest ticket page. The Google address stays on the server."""
+    base = os.environ.get("CONFERENCE_WEB_APP_URL", "").strip()
+    if not base.startswith("https://script.google.com/macros/s/") or not base.rstrip("/").endswith("/exec"):
+        raise HTTPException(status_code=503, detail="This ticket page is not connected yet.")
+    code = str(code or "").strip()
+    if not code:
+        raise HTTPException(status_code=400, detail="This ticket link is incomplete.")
+    try:
+        async with httpx.AsyncClient(timeout=25, follow_redirects=True) as client:
+            response = await client.get(
+                base,
+                params={"action": "ticket", "code": code},
+                headers={"User-Agent": "Mozilla/5.0"},
+            )
+    except Exception:
+        logger.exception("The conference ticket page could not reach the sheet")
+        raise HTTPException(status_code=502, detail="The ticket could not be opened.")
+    try:
+        return _sheet_scan_result(response.text)
+    except Exception:
+        logger.error("The conference ticket page returned an unexpected response")
+        raise HTTPException(status_code=502, detail="The ticket could not be opened. Deploy a new version of the web app.")
+
+
 @api_router.post("/conference/scan")
 async def conference_scan(request: Request):
     """Door check for the conference. The Google web app address stays on the server."""
