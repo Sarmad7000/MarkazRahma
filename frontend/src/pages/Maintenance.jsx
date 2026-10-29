@@ -258,20 +258,19 @@ const Maintenance = () => {
             <div className="rounded-3xl bg-white p-6 shadow-[0_10px_30px_rgba(8,145,178,0.08)] ring-1 ring-cyan-100">
               <dt className="text-sm text-gray-500">Monthly running figure</dt>
               <dd className="mt-2 text-4xl font-semibold tracking-tight text-gray-900">{formatPounds(goal)}</dd>
-              <dd className="mt-2 text-sm text-gray-500">{maintenanceTracker.footnote}</dd>
             </div>
             <div className="rounded-3xl bg-gradient-to-br from-cyan-600 to-cyan-800 p-6 text-white shadow-[0_10px_30px_rgba(8,145,178,0.25)]">
               <dt className="text-sm text-cyan-100">Card gifts this month</dt>
               <dd className="mt-2 text-4xl font-semibold tracking-tight">{formatPounds(raised)}</dd>
-              <dd className="mt-2 text-sm text-cyan-100">
-                {totalLive
-                  ? 'Added as card payments clear.'
-                  : totalStatus === 'error'
+              {!totalLive && (
+                <dd className="mt-2 text-sm text-cyan-100">
+                  {totalStatus === 'error'
                     ? 'The card total could not be loaded.'
                     : totalStatus === 'loading'
                       ? 'Loading the card total.'
                       : 'The card total is not available yet.'}
-              </dd>
+                </dd>
+              )}
             </div>
           </dl>
 
