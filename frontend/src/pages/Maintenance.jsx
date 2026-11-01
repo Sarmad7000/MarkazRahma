@@ -445,6 +445,8 @@ const Maintenance = () => {
                   >
                     <span className="font-medium">{gift.name || gift.initials || 'Gift'}</span>
                     <span className="mx-2 text-cyan-300">·</span>
+                    <span>{frequencyLabel(gift.frequency)}</span>
+                    <span className="mx-2 text-cyan-300">·</span>
                     {formatExact(gift.amount || 0)}
                     <span className="ml-2 text-cyan-700/70">{gift.ago}</span>
                   </li>
