@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, ChevronRight, Copy, Landmark, MapPin, Wallet } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronRight, Copy, Landmark, MapPin, Wallet } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import Header from '../components/sections/Header';
 import Footer from '../components/sections/Footer';
 import { mosqueInfo, donationInfo } from '../data/mock';
 import { maintenanceTracker } from '../data/maintenance';
-import { createDonationCheckout, getMonthlyRaised, getRecentDonations } from '../services/api';
+import { createDonationCheckout, getMonthDonors, getMonthlyRaised, getRecentDonations } from '../services/api';
 
 const PAYPAL_URL = 'http://paypal.me/markazalrahma';
 const AMOUNT_PRESETS = [5, 10, 20, 50, 100, 200];
@@ -29,6 +29,13 @@ const chargeWhen = (frequency) => {
   if (frequency === 'week') return 'a week';
   if (frequency === 'month') return 'a month';
   return 'paid once';
+};
+
+const frequencyLabel = (frequency) => {
+  if (frequency === 'day') return 'Daily';
+  if (frequency === 'week') return 'Weekly';
+  if (frequency === 'month') return 'Monthly';
+  return 'Single';
 };
 
 const formatPounds = (amount) =>
@@ -119,6 +126,9 @@ const Maintenance = () => {
   const [donateError, setDonateError] = useState('');
   const [showBank, setShowBank] = useState(false);
   const [recentGifts, setRecentGifts] = useState([]);
+  const [monthDonors, setMonthDonors] = useState([]);
+  const [donorsOpen, setDonorsOpen] = useState(false);
+  const [donorsStatus, setDonorsStatus] = useState('loading');
   const [raised, setRaised] = useState(0);
   const [totalLive, setTotalLive] = useState(false);
   const [totalStatus, setTotalStatus] = useState('loading');
@@ -141,6 +151,19 @@ const Maintenance = () => {
       })
       .catch(() => {
         if (!cancelled) setRecentGifts([]);
+      });
+    getMonthDonors()
+      .then((donors) => {
+        if (!cancelled) {
+          setMonthDonors(donors);
+          setDonorsStatus('ready');
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setMonthDonors([]);
+          setDonorsStatus('error');
+        }
       });
     getMonthlyRaised()
       .then((data) => {
@@ -428,6 +451,38 @@ const Maintenance = () => {
                 ))}
               </ul>
             )}
+            <div className="mt-4 overflow-hidden rounded-2xl border border-cyan-100 bg-cyan-50/70">
+              <button
+                type="button"
+                aria-expanded={donorsOpen}
+                onClick={() => setDonorsOpen((open) => !open)}
+                className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm font-semibold text-cyan-900"
+              >
+                All donors this month
+                <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${donorsOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {donorsOpen && (
+                donorsStatus === 'loading' ? (
+                  <p className="border-t border-cyan-100 px-4 py-3 text-sm text-cyan-800">Loading this month’s donors.</p>
+                ) : donorsStatus === 'error' ? (
+                  <p className="border-t border-cyan-100 px-4 py-3 text-sm text-cyan-800">This month’s donors could not be loaded.</p>
+                ) : monthDonors.length === 0 ? (
+                  <p className="border-t border-cyan-100 px-4 py-3 text-sm text-cyan-800">No card gifts this month yet.</p>
+                ) : (
+                  <ul className="max-h-80 overflow-y-auto border-t border-cyan-100">
+                    {monthDonors.map((gift, index) => (
+                      <li
+                        key={`${gift.name || gift.initials}-${gift.frequency}-${index}`}
+                        className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm"
+                      >
+                        <span className="font-medium text-cyan-900">{gift.name || gift.initials || 'Gift'}</span>
+                        <span className="shrink-0 text-cyan-700">{frequencyLabel(gift.frequency)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )
+              )}
+            </div>
           </section>
 
           <section className="mt-4 rounded-[28px] bg-white p-6 shadow-sm ring-1 ring-cyan-100 md:p-8">

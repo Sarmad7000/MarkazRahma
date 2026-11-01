@@ -484,6 +484,20 @@ async def recent_public_donations():
         logger.exception("Recent card gifts could not be read")
         return []
 
+
+@api_router.get("/donations/month-donors")
+async def month_public_donors():
+    """Every succeeded card gift in the current London month, with its cadence."""
+    import asyncio
+
+    if _stripe_client() is None:
+        return []
+    try:
+        return await asyncio.to_thread(_month_stripe_donors)
+    except Exception:
+        logger.exception("This month's donors could not be read")
+        return []
+
 _ALLOWED_RETURN_ORIGINS = {
     "http://localhost:3000",
     "https://www.markazrahma.org",
@@ -730,32 +744,166 @@ def _charge_payer_name(charge, client) -> str:
     return ""
 
 
+def _invoice_subscription(invoice):
+    """Subscription on an invoice, including the newer parent.subscription_details shape."""
+    if not invoice or isinstance(invoice, str):
+        return None
+    legacy = _stripe_field(invoice, "subscription")
+    if legacy:
+        return legacy
+    parent = _stripe_field(invoice, "parent")
+    if not parent:
+        return None
+    details = parent.get("subscription_details") if isinstance(parent, dict) else _stripe_field(parent, "subscription_details")
+    if not details:
+        return None
+    if isinstance(details, dict):
+        return details.get("subscription")
+    return _stripe_field(details, "subscription")
+
+
+def _metadata_frequency(obj) -> str:
+    metadata = _stripe_field(obj, "metadata") or {}
+    if not isinstance(metadata, dict):
+        return ""
+    raw = str(metadata.get("frequency") or "")
+    if raw in {"once", "day", "week", "month"}:
+        return raw
+    return ""
+
+
+def _cached_stripe(cache, key, load):
+    if key in cache:
+        return cache[key]
+    try:
+        record = load()
+    except Exception:
+        logger.exception("A donation record could not be read")
+        record = None
+    cache[key] = record
+    return record
+
+
+def _invoice_marked_frequency(invoice) -> str:
+    if not invoice or isinstance(invoice, str):
+        return ""
+    parent = _stripe_field(invoice, "parent")
+    if not parent:
+        return ""
+    details = parent.get("subscription_details") if isinstance(parent, dict) else _stripe_field(parent, "subscription_details")
+    if not isinstance(details, dict):
+        return ""
+    raw = str((details.get("metadata") or {}).get("frequency") or "")
+    if raw in {"day", "week", "month"}:
+        return raw
+    return ""
+
+
+def _frequency_for_charge(charge, client, cache) -> str:
+    """once, day, week, or month. A charge with no subscription is a single gift."""
+    marked = _metadata_frequency(charge)
+    if marked:
+        return marked
+    invoice = _stripe_field(charge, "invoice")
+    if not invoice:
+        return "once"
+    if isinstance(invoice, str) and client is not None:
+        invoice = _cached_stripe(cache, f"in:{invoice}", lambda: client.invoices.retrieve(invoice))
+    marked = _invoice_marked_frequency(invoice)
+    if marked:
+        return marked
+    subscription = _invoice_subscription(invoice)
+    if not subscription:
+        return "once"
+    if not isinstance(subscription, str):
+        marked = _metadata_frequency(subscription)
+        if marked and marked != "once":
+            return marked
+        interval = _subscription_interval(subscription)
+        if interval in {"day", "week", "month"}:
+            return interval
+        return "month"
+    if client is None:
+        return "month"
+    loaded = _cached_stripe(cache, f"sub:{subscription}", lambda: client.subscriptions.retrieve(subscription))
+    if not loaded:
+        return "month"
+    marked = _metadata_frequency(loaded)
+    if marked and marked != "once":
+        return marked
+    interval = _subscription_interval(loaded)
+    if interval in {"day", "week", "month"}:
+        return interval
+    return "month"
+
+
+def _public_gift(charge, client, cache):
+    if _stripe_field(charge, "status") != "succeeded":
+        return None
+    if str(_stripe_field(charge, "currency") or "").lower() != "gbp":
+        return None
+    net = int(_stripe_field(charge, "amount") or 0) - int(_stripe_field(charge, "amount_refunded") or 0)
+    if net <= 0:
+        return None
+    created = _stripe_field(charge, "created")
+    moment = datetime.utcfromtimestamp(int(created)) if created else None
+    public_name = _gift_public_name(_charge_payer_name(charge, client))
+    return {
+        "name": public_name,
+        "initials": public_name,
+        "amount": round(net / 100, 2),
+        "ago": _gift_ago(moment),
+        "frequency": _frequency_for_charge(charge, client, cache),
+    }
+
+
+def _iter_charge_pages(client, params):
+    expanded = dict(params)
+    expanded["expand"] = ["data.invoice"]
+    try:
+        pages = _stripe_list_pages(client.charges.list, expanded)
+        first = next(pages, None)
+    except Exception:
+        logger.exception("Charge list could not include invoices")
+        yield from _stripe_list_pages(client.charges.list, params)
+        return
+    if first is not None:
+        yield first
+        yield from pages
+
+
 def _recent_stripe_gifts(limit: int = 5):
     """Latest succeeded GBP card gifts, labelled with a first name and last initial."""
     client = _stripe_client()
     if client is None:
         return []
     gifts = []
-    for data in _stripe_list_pages(client.charges.list, {"limit": 100}):
+    cache = {}
+    for data in _iter_charge_pages(client, {"limit": 100}):
         for charge in data:
-            if _stripe_field(charge, "status") != "succeeded":
+            gift = _public_gift(charge, client, cache)
+            if not gift:
                 continue
-            if str(_stripe_field(charge, "currency") or "").lower() != "gbp":
-                continue
-            net = int(_stripe_field(charge, "amount") or 0) - int(_stripe_field(charge, "amount_refunded") or 0)
-            if net <= 0:
-                continue
-            created = _stripe_field(charge, "created")
-            moment = datetime.utcfromtimestamp(int(created)) if created else None
-            public_name = _gift_public_name(_charge_payer_name(charge, client))
-            gifts.append({
-                "name": public_name,
-                "initials": public_name,
-                "amount": round(net / 100, 2),
-                "ago": _gift_ago(moment),
-            })
+            gifts.append(gift)
             if len(gifts) >= limit:
                 return gifts
+    return gifts
+
+
+def _month_stripe_donors():
+    """Succeeded GBP card gifts in the current London month, newest first."""
+    client = _stripe_client()
+    if client is None:
+        return []
+    start, end = _london_month_bounds()
+    cache = {}
+    gifts = []
+    params = {"limit": 100, "created": {"gte": start, "lt": end}}
+    for data in _iter_charge_pages(client, params):
+        for charge in data:
+            gift = _public_gift(charge, client, cache)
+            if gift:
+                gifts.append(gift)
     return gifts
 
 

@@ -239,6 +239,11 @@ export const getRecentDonations = async () => {
   return Array.isArray(response.data) ? response.data : [];
 };
 
+export const getMonthDonors = async () => {
+  const response = await axios.get(`${API}/donations/month-donors`);
+  return Array.isArray(response.data) ? response.data : [];
+};
+
 export const getMonthlyRaised = async () => {
   const response = await axios.get(`${API}/donations/monthly`);
   return response.data;
