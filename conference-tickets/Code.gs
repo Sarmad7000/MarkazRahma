@@ -23,8 +23,13 @@ function onOpen() {
     .addItem('Treat today as day 3', 'setTestDay3')
     .addItem('Use the real November dates', 'clearTestDay')
     .addSeparator()
+    .addItem('Limit tickets to the days they applied for', 'setAccessApplied')
+    .addItem('Allow tickets on all 3 days', 'setAccessAll')
+    .addSeparator()
     .addItem('Set the door PIN', 'setStaffPin')
     .addItem('Set the one.com sender address', 'setSenderEmail')
+    .addItem('Set the Resend API key', 'setResendKey')
+    .addItem('Set the Brevo API key', 'setBrevoKey')
     .addToUi();
 }
 
@@ -65,6 +70,48 @@ function setSenderEmail() {
   ui.alert('Sender address saved.');
 }
 
+function setResendKey() {
+  var ui = SpreadsheetApp.getUi();
+  var answer = ui.prompt(
+    'Resend API key',
+    'Paste the Resend API key. The domain markazrahma.org must already be verified in Resend, and the sender must be info@markazrahma.org. Leave blank to go back to Gmail.',
+    ui.ButtonSet.OK_CANCEL
+  );
+  if (answer.getSelectedButton() !== ui.Button.OK) return;
+  var key = answer.getResponseText().trim();
+  if (key && key.indexOf('re_') !== 0) {
+    ui.alert('That does not look like a Resend API key.');
+    return;
+  }
+  if (key) props_().setProperty('RESEND_API_KEY', key);
+  else props_().deleteProperty('RESEND_API_KEY');
+  props_().deleteProperty('MAIL_PAUSE_UNTIL');
+  ui.alert(key
+    ? 'Resend is on. Ticket emails will send from info@markazrahma.org through Resend. Run Email everyone not sent yet once.'
+    : 'Resend is off. Ticket emails will send through Gmail again.');
+}
+
+function setBrevoKey() {
+  var ui = SpreadsheetApp.getUi();
+  var answer = ui.prompt(
+    'Brevo API key',
+    'Paste the Brevo API key. In Brevo, add info@markazrahma.org as a sender and confirm it first. Leave blank to turn Brevo off.',
+    ui.ButtonSet.OK_CANCEL
+  );
+  if (answer.getSelectedButton() !== ui.Button.OK) return;
+  var key = answer.getResponseText().trim();
+  if (key && key.indexOf('xkeysib-') !== 0) {
+    ui.alert('That does not look like a Brevo API key.');
+    return;
+  }
+  if (key) props_().setProperty('BREVO_API_KEY', key);
+  else props_().deleteProperty('BREVO_API_KEY');
+  props_().deleteProperty('MAIL_PAUSE_UNTIL');
+  ui.alert(key
+    ? 'Brevo is on. Ticket emails will send from info@markazrahma.org through Brevo. Run Email everyone not sent yet once.'
+    : 'Brevo is off.');
+}
+
 function prepareSheet() {
   var sheet = SpreadsheetApp.getActiveSheet();
   var map = headerMap_(sheet);
@@ -83,31 +130,37 @@ function prepareSheet() {
     sheet.getRange(2, sendCol, sheet.getLastRow() - 1, 1).insertCheckboxes();
   }
   sheet.setFrozenRows(1);
-  SpreadsheetApp.getUi().alert('Ticket columns are ready on "' + sheet.getName() + '". Rename the tab to Brothers or Sisters if it is not named that yet.');
+  var result = issueCodesOnSheet_(sheet);
+  SpreadsheetApp.getUi().alert(codesReadyMessage_(sheet.getName(), result));
 }
 
 function issueCodes() {
   var sheet = SpreadsheetApp.getActiveSheet();
+  var result = issueCodesOnSheet_(sheet);
+  if (!result) return;
+  SpreadsheetApp.getUi().alert(codesReadyMessage_(sheet.getName(), result));
+}
+
+function issueCodesOnSheet_(sheet) {
   var map = headerMap_(sheet);
   requireColumns_(map, ['Email address', 'First Name', 'Last Name', 'Ticket code', 'Days allowed']);
   var last = sheet.getLastRow();
-  if (last < 2) {
-    SpreadsheetApp.getUi().alert('Add a test row first.');
-    return;
-  }
-  var width = sheet.getLastColumn();
-  var rows = sheet.getRange(2, 1, last - 1, width).getValues();
+  if (last < 2) return { made: 0, underAge: 0 };
+  var rows = sheet.getRange(2, 1, last - 1, sheet.getLastColumn()).getValues();
   var listName = listName_(sheet.getName());
   var made = 0;
+  var underAge = 0;
   rows.forEach(function(row, index) {
-    var email = String(row[map['Email address'] - 1] || '').trim();
-    var first = String(row[map['First Name'] - 1] || '').trim();
-    if (!email || !first) return;
+    var email = textAt_(row, map['Email address']);
+    var first = textAt_(row, map['First Name']);
+    var lastName = textAt_(row, map['Last Name']);
+    if (!email && !first && !lastName) return;
     if (!eligible_(row[ageCol_(map) - 1])) {
       sheet.getRange(index + 2, map['Ticket code']).setValue('Not eligible');
+      underAge += 1;
       return;
     }
-    var code = String(row[map['Ticket code'] - 1] || '').trim();
+    var code = textAt_(row, map['Ticket code']);
     if (!code || code === 'Not eligible') {
       code = newCode_(listName);
       sheet.getRange(index + 2, map['Ticket code']).setValue(code);
@@ -115,7 +168,25 @@ function issueCodes() {
     }
     sheet.getRange(index + 2, map['Days allowed']).setValue(allowedDays_(row[daysCol_(map) - 1]).join(','));
   });
-  SpreadsheetApp.getUi().alert('Created ' + made + ' new ticket code' + (made === 1 ? '' : 's') + ' on ' + listName + '.');
+  return { made: made, underAge: underAge };
+}
+
+function codesReadyMessage_(sheetName, result) {
+  var listName = listName_(sheetName);
+  var made = result.made;
+  var message = 'Created ' + made + ' new ticket code' + (made === 1 ? '' : 's') + ' on ' + listName + '.';
+  if (!/brother|sister/i.test(sheetName)) {
+    message += ' Rename the tab to Brothers or Sisters if it is not named that yet.';
+  }
+  if (result.underAge) {
+    message += ' ' + result.underAge + ' answered No to being 15 or over, so no ticket was made for them.';
+  }
+  return message;
+}
+
+function textAt_(row, column) {
+  if (!column) return '';
+  return String(row[column - 1] || '').trim();
 }
 
 function sendTestEmails() {
@@ -140,9 +211,10 @@ function sendTestEmails() {
     var last = String(row[map['Last Name'] - 1] || '').trim();
     if (!email || !code || code === 'Not eligible') return;
     if (sent >= 25) return;
-    sendTicketEmail_(email, first, last, listName, code, '1,2,3');
+    var days = allowedDays_(row[daysCol_(map) - 1]).join(',');
+    sendTicketEmail_(email, first, last, listName, code, days);
     sheet.getRange(index + 2, map['Email sent']).setValue(new Date());
-    sheet.getRange(index + 2, map['Days allowed']).setValue('1,2,3');
+    sheet.getRange(index + 2, map['Days allowed']).setValue(days);
     sheet.getRange(index + 2, map['Send test']).setValue(false);
     paintSentRow_(sheet, index + 2);
     noteMailSends_(1);
@@ -155,15 +227,75 @@ function sendTestEmails() {
 
 function sendTicketEmail_(email, first, last, listName, code, allowed) {
   var ticketUrl = 'https://www.markazrahma.org/ticket.html?ticket=' + encodeURIComponent(code);
+  var subject = 'Your ticket — Building Sound Foundations in Islam';
+  var html = emailHtml_(first, last, listName, ticketUrl, allowed);
+  var text = emailText_(first, last, listName, ticketUrl, allowed);
+  if (usingBrevo_()) {
+    sendWithBrevo_(email, subject, html, text, 'https://quickchart.io/qr?size=480&margin=1&text=' + encodeURIComponent(ticketUrl));
+    return;
+  }
+  if (usingResend_()) {
+    sendWithResend_(email, subject, html, text, 'https://quickchart.io/qr?size=480&margin=1&text=' + encodeURIComponent(ticketUrl));
+    return;
+  }
   var qrBlob = UrlFetchApp.fetch('https://quickchart.io/qr?size=480&margin=1&text=' + encodeURIComponent(ticketUrl)).getBlob().setName('ticket.png');
   var options = {
-    htmlBody: emailHtml_(first, last, listName, ticketUrl, allowed),
+    htmlBody: html,
     inlineImages: { qr: qrBlob },
     name: 'Markaz Al-Rahma'
   };
   var sender = props_().getProperty('SENDER_EMAIL') || '';
   if (sender) options.from = sender;
-  GmailApp.sendEmail(email, 'Your ticket — Building Sound Foundations in Islam', emailText_(first, last, listName, ticketUrl, allowed), options);
+  GmailApp.sendEmail(email, subject, text, options);
+}
+
+function sendWithBrevo_(email, subject, html, text, qrUrl) {
+  var fromAddress = props_().getProperty('SENDER_EMAIL') || 'info@markazrahma.org';
+  var response = UrlFetchApp.fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'post',
+    contentType: 'application/json',
+    headers: { 'api-key': props_().getProperty('BREVO_API_KEY') },
+    muteHttpExceptions: true,
+    payload: JSON.stringify({
+      sender: { name: 'Markaz Al-Rahma', email: fromAddress },
+      to: [{ email: email }],
+      subject: subject,
+      htmlContent: html.replace('src="cid:qr"', 'src="' + qrUrl + '"'),
+      textContent: text
+    })
+  });
+  var code = response.getResponseCode();
+  if (code >= 200 && code < 300) return;
+  throw new Error('Brevo ' + code + ' ' + response.getContentText().slice(0, 240));
+}
+
+function usingBrevo_() {
+  return !!(props_().getProperty('BREVO_API_KEY') || '').replace(/^\s+|\s+$/g, '');
+}
+
+function sendWithResend_(email, subject, html, text, qrUrl) {
+  var fromAddress = props_().getProperty('SENDER_EMAIL') || 'info@markazrahma.org';
+  var response = UrlFetchApp.fetch('https://api.resend.com/emails', {
+    method: 'post',
+    contentType: 'application/json',
+    headers: { Authorization: 'Bearer ' + props_().getProperty('RESEND_API_KEY') },
+    muteHttpExceptions: true,
+    payload: JSON.stringify({
+      from: 'Markaz Al-Rahma <' + fromAddress + '>',
+      to: [email],
+      subject: subject,
+      html: html,
+      text: text,
+      attachments: [{ path: qrUrl, filename: 'ticket.png', content_id: 'qr' }]
+    })
+  });
+  var code = response.getResponseCode();
+  if (code >= 200 && code < 300) return;
+  throw new Error('Resend ' + code + ' ' + response.getContentText().slice(0, 240));
+}
+
+function usingResend_() {
+  return !!(props_().getProperty('RESEND_API_KEY') || '').replace(/^\s+|\s+$/g, '');
 }
 
 // Installable trigger only. A simple onFormSubmit cannot send Gmail, and both together would email twice.
@@ -190,9 +322,9 @@ function sendTicketOnSignup(e) {
     var email = String(row[map['Email address'] - 1] || '').trim();
     var first = String(row[map['First Name'] - 1] || '').trim();
     var last = String(row[map['Last Name'] - 1] || '').trim();
-    if (!first) return;
+    if (!first && !last) return;
     var listName = listName_(sheet.getName());
-    var days = '1,2,3';
+    var days = allowedDays_(row[daysCol_(map) - 1]).join(',');
     code = newCode_(listName);
     sheet.getRange(rowIndex, map['Ticket code']).setValue(code);
     sheet.getRange(rowIndex, map['Days allowed']).setValue(days);
@@ -245,9 +377,10 @@ function emailEveryoneOutstanding() {
   }
   var sent = sendOutstandingTickets();
   var remaining = countUnsent_(book);
-  var sender = props_().getProperty('SENDER_EMAIL') || 'this Google account';
+  var sender = usingBrevo_() ? 'Brevo' : (usingResend_() ? 'Resend' : (props_().getProperty('SENDER_EMAIL') || 'this Google account'));
+  var pace = (usingBrevo_() || usingResend_()) ? '50 every 5 minutes' : '25 every 5 minutes';
   SpreadsheetApp.getUi().alert(remaining
-    ? 'Sent ' + sent + ' from ' + sender + '. ' + remaining + ' still to go. The rest send on their own, 25 every 5 minutes, until the list is finished.'
+    ? 'Sent ' + sent + ' from ' + sender + '. ' + remaining + ' still to go. The rest send on their own, ' + pace + ', until the list is finished.'
     : 'Sent ' + sent + ' from ' + sender + '. Everyone with an email address now has a ticket.');
 }
 
@@ -274,11 +407,12 @@ function sendOutstandingTickets() {
       var listName = listName_(sheet.getName());
       var code = String(row[map['Ticket code'] - 1] || '').trim();
       if (!code || code === 'Not eligible') code = newCode_(listName);
+      var days = allowedDays_(row[daysCol_(map) - 1]).join(',');
       sheet.getRange(rowIndex, map['Ticket code']).setValue(code);
-      sheet.getRange(rowIndex, map['Days allowed']).setValue('1,2,3');
+      sheet.getRange(rowIndex, map['Days allowed']).setValue(days);
       sheet.getRange(rowIndex, map['Email sent']).setValue('Sending');
       try {
-        sendTicketEmail_(email, first, last, listName, code, '1,2,3');
+        sendTicketEmail_(email, first, last, listName, code, days);
         sheet.getRange(rowIndex, map['Email sent']).setValue(new Date());
         paintSentRow_(sheet, rowIndex);
         noteMailSends_(1);
@@ -321,7 +455,8 @@ function eachUnsentRow_(book, fn) {
       if (pending && pending !== 'Sending') continue;
       var email = String(row[map['Email address'] - 1] || '').trim();
       var first = String(row[map['First Name'] - 1] || '').trim();
-      if (!email || !first) continue;
+      var lastName = String(row[map['Last Name'] - 1] || '').trim();
+      if (!email || (!first && !lastName)) continue;
       if (!eligible_(row[ageCol_(map) - 1])) continue;
       if (String(row[map['Ticket code'] - 1] || '').trim() === 'Not eligible') continue;
       if (fn(sheet, map, i + 2, row) === false) return;
@@ -336,6 +471,7 @@ function countUnsent_(book) {
 }
 
 function mailRoom_() {
+  if (usingBrevo_() || usingResend_()) return 50;
   var hour = recentMailSends_(60 * 60 * 1000);
   var cutoff = Date.now() - 5 * 60 * 1000;
   var five = 0;
@@ -377,11 +513,16 @@ function removeBacklogTrigger_() {
 }
 
 function isMailLimit_(err) {
-  return /quota|rate limit|too many|limit exceeded|user-rate|daily limit/i.test(String(err && err.message ? err.message : err));
+  return /quota|rate limit|too many|limit exceeded|user-rate|daily limit|daily_quota_exceeded|monthly_quota_exceeded/i.test(String(err && err.message ? err.message : err));
 }
 
 function pauseFor_(err) {
   var text = String(err && err.message ? err.message : err);
+  if (/daily_quota_exceeded/i.test(text)) {
+    var now = new Date();
+    var next = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 5, 0);
+    return Math.max(60 * 1000, next - Date.now());
+  }
   if (/per day|daily|one day/i.test(text)) return 12 * 60 * 60 * 1000;
   return 60 * 60 * 1000;
 }
@@ -392,7 +533,7 @@ function markBouncedTickets() {
     if (!book) return;
     var bounces = bouncedAddresses_();
     book.getSheets().forEach(function(sheet) {
-      grantAllDays_(sheet);
+      applyAccessMode_(sheet);
       paintTicketRows_(sheet, bounces);
     });
   } catch (err) {
@@ -430,21 +571,41 @@ function paintTicketRows_(sheet, bounces) {
   if (changed) sheet.getRange(2, 1, last - 1, width).setBackgrounds(backgrounds);
 }
 
-function grantAllDays_(sheet) {
+function applyAccessMode_(sheet) {
   var map = headerMap_(sheet);
-  if (!map['Ticket code'] || !map['Days allowed']) return;
+  if (!map['Days allowed']) return;
   var last = sheet.getLastRow();
   if (last < 2) return;
-  var codes = sheet.getRange(2, map['Ticket code'], last - 1, 1).getValues();
+  var rows = sheet.getRange(2, 1, last - 1, sheet.getLastColumn()).getValues();
   var days = sheet.getRange(2, map['Days allowed'], last - 1, 1).getValues();
+  var formCol = daysCol_(map);
   var changed = false;
-  codes.forEach(function(codeRow, index) {
-    if (!/^MR[BS]-/.test(String(codeRow[0] || '').trim())) return;
-    if (String(days[index][0]) === '1,2,3') return;
-    days[index][0] = '1,2,3';
+  rows.forEach(function(row, index) {
+    var code = map['Ticket code'] ? String(row[map['Ticket code'] - 1] || '').trim() : '';
+    if (code === 'Not eligible') return;
+    var first = map['First Name'] ? String(row[map['First Name'] - 1] || '').trim() : '';
+    if (!code && !first) return;
+    var next = allowedDays_(row[formCol - 1]).join(',');
+    if (String(days[index][0]) === next) return;
+    days[index][0] = next;
     changed = true;
   });
   if (changed) sheet.getRange(2, map['Days allowed'], last - 1, 1).setValues(days);
+}
+
+function setAccessApplied() { setAccessMode_('applied'); }
+function setAccessAll() { setAccessMode_('all'); }
+
+function setAccessMode_(mode) {
+  props_().setProperty('ACCESS_MODE', mode);
+  SpreadsheetApp.getActive().getSheets().forEach(applyAccessMode_);
+  SpreadsheetApp.getUi().alert(mode === 'applied'
+    ? 'Each ticket now works only on the days that person chose. Deploy a new version of the web app so the door uses this. A blank days answer still allows all 3 days.'
+    : 'Every ticket can be used on all 3 days. Deploy a new version of the web app so the door uses this.');
+}
+
+function accessMode_() {
+  return props_().getProperty('ACCESS_MODE') === 'applied' ? 'applied' : 'all';
 }
 
 function bouncedAddresses_() {
@@ -669,11 +830,27 @@ function currentDay_() {
 }
 
 function allowedFromStored_(found) {
-  return [1, 2, 3];
+  if (accessMode_() === 'all') return [1, 2, 3];
+  var raw = String(found.sheet.getRange(found.row, found.map['Days allowed']).getValue() || '');
+  var nums = raw.split(',').map(function(part) { return Number(part); }).filter(function(n) { return n >= 1 && n <= 3; });
+  if (nums.length) return nums;
+  var row = found.sheet.getRange(found.row, 1, 1, found.sheet.getLastColumn()).getValues()[0];
+  return chosenDays_(row[daysCol_(found.map) - 1]);
 }
 
 function allowedDays_(value) {
-  return [1, 2, 3];
+  if (accessMode_() === 'all') return [1, 2, 3];
+  return chosenDays_(value);
+}
+
+function chosenDays_(value) {
+  var text = String(value || '');
+  var days = [];
+  if (/\b6\b|6th|friday/i.test(text)) days.push(1);
+  if (/\b7\b|7th|saturday/i.test(text)) days.push(2);
+  if (/\b8\b|8th|sunday/i.test(text)) days.push(3);
+  if (!days.length || /all|every|whole|three/i.test(text)) return [1, 2, 3];
+  return days;
 }
 
 function eligible_(value) {
