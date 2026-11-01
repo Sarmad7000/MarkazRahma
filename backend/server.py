@@ -799,16 +799,48 @@ def _invoice_marked_frequency(invoice) -> str:
     return ""
 
 
+def _payment_intent_id(charge) -> str:
+    intent = _stripe_field(charge, "payment_intent")
+    if isinstance(intent, str):
+        return intent
+    return str(_stripe_field(intent, "id") or "")
+
+
+def _invoice_for_charge(charge, client, cache):
+    """The invoice behind a charge. Newer Stripe responses omit charge.invoice."""
+    invoice = _stripe_field(charge, "invoice")
+    if invoice and not isinstance(invoice, str):
+        return invoice
+    if isinstance(invoice, str) and client is not None:
+        return _cached_stripe(cache, f"in:{invoice}", lambda: client.invoices.retrieve(invoice))
+    intent_id = _payment_intent_id(charge)
+    if not intent_id or client is None:
+        return None
+
+    def load():
+        page = client.invoice_payments.list(params={
+            "payment": {"type": "payment_intent", "payment_intent": intent_id},
+            "limit": 1,
+        })
+        data = _stripe_field(page, "data") or []
+        if not data:
+            return None
+        found = _stripe_field(data[0], "invoice")
+        if isinstance(found, str):
+            return client.invoices.retrieve(found)
+        return found
+
+    return _cached_stripe(cache, f"pi-in:{intent_id}", load)
+
+
 def _frequency_for_charge(charge, client, cache) -> str:
     """once, day, week, or month. A charge with no subscription is a single gift."""
     marked = _metadata_frequency(charge)
     if marked:
         return marked
-    invoice = _stripe_field(charge, "invoice")
+    invoice = _invoice_for_charge(charge, client, cache)
     if not invoice:
         return "once"
-    if isinstance(invoice, str) and client is not None:
-        invoice = _cached_stripe(cache, f"in:{invoice}", lambda: client.invoices.retrieve(invoice))
     marked = _invoice_marked_frequency(invoice)
     if marked:
         return marked
