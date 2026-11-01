@@ -32,10 +32,10 @@ const chargeWhen = (frequency) => {
 };
 
 const frequencyLabel = (frequency) => {
-  if (frequency === 'day') return 'Daily';
-  if (frequency === 'week') return 'Weekly';
-  if (frequency === 'month') return 'Monthly';
-  return 'Single';
+  if (frequency === 'day' || frequency === 'week' || frequency === 'month' || frequency === 'subscription') {
+    return 'Subscription';
+  }
+  return 'Single donation';
 };
 
 const formatPounds = (amount) =>

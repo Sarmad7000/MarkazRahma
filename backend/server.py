@@ -833,40 +833,140 @@ def _invoice_for_charge(charge, client, cache):
     return _cached_stripe(cache, f"pi-in:{intent_id}", load)
 
 
+def _stripe_id(value) -> str:
+    if isinstance(value, str):
+        return value
+    return str(_stripe_field(value, "id") or "")
+
+
+def _kind_from_session(session) -> str:
+    mode = str(_stripe_field(session, "mode") or "")
+    marked = _metadata_frequency(session)
+    if mode == "subscription" or marked in {"day", "week", "month"} or _stripe_field(session, "subscription"):
+        return "subscription"
+    return "once"
+
+
+def _recent_checkout_index(client, cache):
+    if "checkout-index" in cache:
+        return cache["checkout-index"]
+    by_intent = {}
+    by_customer = []
+    try:
+        pages = _stripe_list_pages(client.checkout.sessions.list, {"limit": 100, "status": "complete"})
+        for page_number, data in enumerate(pages):
+            for session in data:
+                kind = _kind_from_session(session)
+                intent_id = _stripe_id(_stripe_field(session, "payment_intent"))
+                if intent_id:
+                    by_intent[intent_id] = kind
+                customer_id = _stripe_id(_stripe_field(session, "customer"))
+                if customer_id:
+                    by_customer.append((
+                        customer_id,
+                        int(_stripe_field(session, "amount_total") or 0),
+                        int(_stripe_field(session, "created") or 0),
+                        kind,
+                    ))
+            if page_number >= 2:
+                break
+    except Exception:
+        logger.exception("Checkout sessions could not be read")
+    index = {"intent": by_intent, "customer": by_customer}
+    cache["checkout-index"] = index
+    return index
+
+
+def _subscription_amount(subscription) -> int:
+    items = _stripe_field(subscription, "items")
+    data = items.get("data") if isinstance(items, dict) else _stripe_field(items, "data")
+    if not data:
+        return 0
+    price = _stripe_field(data[0], "price")
+    amount = price.get("unit_amount") if isinstance(price, dict) else _stripe_field(price, "unit_amount")
+    try:
+        return int(amount or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _customer_subscriptions(client, cache, customer_id):
+    key = f"subs:{customer_id}"
+    if key in cache:
+        return cache[key]
+    found = []
+    try:
+        pages = _stripe_list_pages(client.subscriptions.list, {"customer": customer_id, "status": "all", "limit": 100})
+        for page_number, data in enumerate(pages):
+            found.extend(data)
+            if page_number >= 1:
+                break
+    except Exception:
+        logger.exception("Subscriptions could not be read")
+    cache[key] = found
+    return found
+
+
+def _subscription_was_active(subscription, charge_time: int) -> bool:
+    created = int(_stripe_field(subscription, "created") or 0)
+    if created and charge_time + 3600 < created:
+        return False
+    stopped = int(_stripe_field(subscription, "canceled_at") or 0) or int(_stripe_field(subscription, "ended_at") or 0)
+    if stopped and charge_time > stopped + 3600:
+        return False
+    return True
+
+
+def _invoice_is_subscription(invoice) -> bool:
+    if not invoice or isinstance(invoice, str):
+        return False
+    reason = str(_stripe_field(invoice, "billing_reason") or "")
+    if reason.startswith("subscription"):
+        return True
+    return bool(_invoice_subscription(invoice))
+
+
 def _frequency_for_charge(charge, client, cache) -> str:
-    """once, day, week, or month. A charge with no subscription is a single gift."""
+    """subscription or once. Repeating card gifts are subscriptions."""
     marked = _metadata_frequency(charge)
-    if marked:
-        return marked
-    invoice = _invoice_for_charge(charge, client, cache)
-    if not invoice:
+    if marked in {"day", "week", "month"}:
+        return "subscription"
+    if marked == "once":
         return "once"
-    marked = _invoice_marked_frequency(invoice)
-    if marked:
-        return marked
-    subscription = _invoice_subscription(invoice)
-    if not subscription:
-        return "once"
-    if not isinstance(subscription, str):
-        marked = _metadata_frequency(subscription)
-        if marked and marked != "once":
-            return marked
-        interval = _subscription_interval(subscription)
-        if interval in {"day", "week", "month"}:
-            return interval
-        return "month"
+    description = str(_stripe_field(charge, "description") or "").lower()
+    if "subscription" in description:
+        return "subscription"
     if client is None:
-        return "month"
-    loaded = _cached_stripe(cache, f"sub:{subscription}", lambda: client.subscriptions.retrieve(subscription))
-    if not loaded:
-        return "month"
-    marked = _metadata_frequency(loaded)
-    if marked and marked != "once":
-        return marked
-    interval = _subscription_interval(loaded)
-    if interval in {"day", "week", "month"}:
-        return interval
-    return "month"
+        return "once"
+
+    intent_id = _payment_intent_id(charge)
+    if intent_id:
+        intent = _cached_stripe(cache, f"pi:{intent_id}", lambda: client.payment_intents.retrieve(intent_id))
+        marked = _metadata_frequency(intent)
+        if marked in {"day", "week", "month"}:
+            return "subscription"
+        if marked == "once":
+            return "once"
+        sessions = _recent_checkout_index(client, cache)
+        if intent_id in sessions["intent"]:
+            return sessions["intent"][intent_id]
+
+    invoice = _invoice_for_charge(charge, client, cache)
+    if invoice:
+        return "subscription" if _invoice_is_subscription(invoice) else "once"
+
+    customer_id = _stripe_id(_stripe_field(charge, "customer"))
+    amount = int(_stripe_field(charge, "amount") or 0)
+    charge_time = int(_stripe_field(charge, "created") or 0)
+    if customer_id:
+        sessions = _recent_checkout_index(client, cache)
+        for session_customer, session_amount, session_time, kind in sessions["customer"]:
+            if session_customer == customer_id and session_amount == amount and abs(charge_time - session_time) <= 6 * 3600:
+                return kind
+        for subscription in _customer_subscriptions(client, cache, customer_id):
+            if _subscription_was_active(subscription, charge_time) and _subscription_amount(subscription) == amount and amount:
+                return "subscription"
+    return "once"
 
 
 def _public_gift(charge, client, cache):
